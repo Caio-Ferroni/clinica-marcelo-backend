@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../../css/style.css">
+    <title>Dashboard</title>
+</head>
+<body>
+        <div class="d-flex position-relative" style="min-height: 100vh">
+        <nav class="d-flex flex-column flex-shrink-0 bg-body border-end position-absolute top-0 start-0 h-100" style="width: 270px; z-index: 1000;">
+            <div class="p-3 border-bottom d-flex align-items-center justify-content-center gap-3">
+                <span class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px"><strong>JC</strong></span>
+                <div class="lh-sm">
+                    <strong class="d-block">Olá Marcelo!</strong>
+                </div>
+            </div>
+
+            <ul class="nav flex-column mb-auto p-2 text-center">
+                <li class="nav-item w-100"><a class="nav-link active py-3 fs-5 w-100" aria-current="page" href="#">Início</a></li>
+                <li class="nav-item w-100"><a class="nav-link py-3 fs-5 w-100" href="#">Pacientes</a></li>
+                <li class="nav-item w-100"><a class="nav-link py-3 fs-5 w-100" href="#">Consultas</a></li>
+                <li class="nav-item w-100"><a class="nav-link py-3 fs-5 w-100" href="#">Relatórios</a></li>
+                <li class="nav-item w-100"><a class="nav-link py-3 fs-5 w-100" href="#">Tarefas</a></li>
+            </ul>
+
+            <div class="p-3 border-top text-center">
+                <a href="#" class="nav-link py-2 fs-6 w-100">Meu perfil</a>
+                <a href="#" class="nav-link py-2 fs-6 w-100">Home</a>
+                <a href="#" class="nav-link py-2 fs-6 w-100 text-danger">Sair</a>
+            </div>
+        </nav>
+
+        <main class="flex-grow-1 p-4" style="margin-left: 270px;">
+            <div>
+                <h1 class="mb-4" style="text-align: center;">Agendamento</h1>
+                <div class="container d-flex justify-content-left">
+                     <button class=".btn btn-outline-dark rounded-4 mb-4 px-4 py-2 d-inline-block">
+                        <!--onclick="window.location.href='../../Views/Agendamento/adicionar_agendamento.html'-->
+                Adicionar agendamento
+                     </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th scope=".sm:col-4 with .gx-4 gutters" class=".sm:col-4 with .gy-4 gutters">Horario Inicio</th>
+                                <th scope=".sm:col-4 with .gx-4 gutters">Horario Termino</th>
+                                <th scope=".sm:col-4 with .gx-4 gutters">Data Inicio</th>
+                                <th scope=".sm:col-4 with .gx-4 gutters">Data Termino</th>
+                                <th scope=".sm:col-4 with .gx-4 gutters">Dia da Semana</th>
+                                <th scope=".sm:col-4 with .gx-4 gutters">Repetição</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Aqui você pode adicionar os dados da tabela dinamicamente -->
+                        </tbody>
+                    </table>
+            </div>
+        </main>
+   
+    <script type="module" src="../../js/bootstrap.min.js"></script>
+</body>
+</html>

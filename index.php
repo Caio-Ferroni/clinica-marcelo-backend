@@ -7,21 +7,13 @@
 </head>
 <body>
     <?php
-    include __DIR__ . "/Backend/Database.php";
-
-    $sql = 'SELECT * FROM Paciente';
-    $result = pg_query($connection, $sql);
-    if ($result === false) {
-    die('Erro na consulta: ' . pg_last_error($connection));
-}
-
-echo 'Registros encontrados: ' . pg_num_rows($result) . '<br>';
-
-while ($paciente = pg_fetch_assoc($result)) {
-    echo '<pre>';
-    print_r($paciente);
-    echo '</pre>';
-}
+    include __DIR__ .  "/Backend/Database.php";
+    $sql = 'SELECT * FROM paciente;';
+    $resultado = $conexao->query($sql)->fetch_assoc();
+    if(!isset($resultado)) {
+        echo "Ocorreu um Erro";
+    }
+    var_dump($resultado);
     ?>
     
 </body>

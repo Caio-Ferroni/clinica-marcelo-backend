@@ -1,21 +1,22 @@
 <?php
+$servidor = "localhost";
+$usuario = "root";
+$senha = "";
+$banco = "mydb";
 
-$connectionString = "host=db.sgydpinsexpnqrzvymvj.supabase.co
-port=5432
-dbname=postgres
-user=postgres
-password=FatecItaquera
-sslmode=require";
+$conexao = new mysqli(
+    $servidor,
+    $usuario,
+    $senha,
+    $banco
+);
 
-$connection = @pg_connect($connectionString);
+if ($conexao->connect_error) {
 
-if ($connection === false) {
-    echo 'Não foi possível conectar ao banco de dados do Supabase.';
-} else {
-    echo 'Conectado ao banco de dados com sucesso!';
+    die(
+        "Erro na conexão: " .
+        $conexao->connect_error
+    );
+
 }
-
-return $connection;
 ?>
-
-

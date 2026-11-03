@@ -1,20 +1,22 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste</title>
-</head>
-<body>
-    <?php
-    include __DIR__ .  "/Backend/Database.php";
-    $sql = 'SELECT * FROM paciente;';
-    $resultado = $conexao->query($sql)->fetch_assoc();
-    if(!isset($resultado)) {
-        echo "Ocorreu um Erro";
-    }
-    var_dump($resultado);
-    ?>
-    
-</body>
-</html>
+<?php
+// teste.php
+
+// 1. Liga a exibição de erros do PHP para facilitar o diagnóstico
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+// 2. Inclui o Controller
+require_once __DIR__ . '/Backend/Controllers/PacienteController.php';
+
+echo "<h2>Testando o PacienteController...</h2>";
+
+try {
+    // 3. Instancia o Controller (isso acionará o __construct do Controller e do Model)
+    $controller = new PacienteController();
+
+    // 4. Executa a ação index() que busca os dados e inclui a View
+    $controller->index();
+
+} catch (Exception $e) {
+    echo "<p style='color: red;'>Erro durante o teste: " . $e->getMessage() . "</p>";
+}

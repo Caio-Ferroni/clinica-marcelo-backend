@@ -13,5 +13,22 @@ require_once __DIR__ . '/../Models/Paciente.php';
             $pacientes = $this->paciente->listarTodos();          
             require_once __DIR__ . '/../../Views/Paciente/paciente.php';
         }
+
+        public function show($id){
+            $pacientes = $this->paciente->visualizarPaciente($id);
+            require_once __DIR__ . '/../../Views/Paciente/paciente.php';
+        }
+
+        public function create(){
+
+        }
+
+        public function update(){
+
+        }
+
+        public function updateStatus(){
+            
+        }
     }
 ?>

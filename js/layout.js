@@ -22,13 +22,13 @@
     function renderMenuItem(section, label, icon) {
         return `
             <li>
-                <button type="button" disabled title="Em breve"
-                    class="d-flex align-items-center gap-4 w-100 p-4 rounded-3 text-start"
+                <a href="#"
+                    class="d-flex align-items-center gap-4 w-100 p-4 rounded-3 text-start text-decoration-none"
                     data-section="${section}"
                     style="border: 0; background: transparent; color: inherit; font: inherit;">
                     <i class="bi bi-${icon} text-lg" aria-hidden="true"></i>
                     ${label}
-                </button>
+                </a>
             </li>`;
     }
 
@@ -51,14 +51,14 @@
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-5 mb-7">
-                        <button type="button" class="d-inline-flex align-items-center gap-2 p-0 text-xs" disabled title="Notificações em breve" style="border: 0; background: transparent; color: var(--color-light-blue);">
+                        <a href="#" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
                             <i class="bi bi-bell text-lg" aria-hidden="true"></i>
                             Notificações
-                        </button>
-                        <button type="button" class="d-inline-flex align-items-center gap-2 p-0 text-xs" disabled title="Ajuda em breve" style="border: 0; background: transparent; color: var(--color-light-blue);">
+                        </a>
+                        <a href="#" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
                             <i class="bi bi-play-circle text-lg" aria-hidden="true"></i>
                             Ajuda
-                        </button>
+                        </a>
                     </div>
                     <nav aria-label="Navegação principal" class="mb-7">
                         <p class="text-xs mb-4" style="color: var(--color-light-blue);">MENU PRINCIPAL</p>
@@ -88,17 +88,17 @@
         updateActive() {
             const activeSection = this.getAttribute('active');
 
-            this.querySelectorAll('[data-section]').forEach((button) => {
-                const isActive = button.dataset.section === activeSection;
+            this.querySelectorAll('[data-section]').forEach((link) => {
+                const isActive = link.dataset.section === activeSection;
 
-                button.style.background = isActive ? 'var(--color-light-blue)' : 'transparent';
-                button.style.color = isActive ? 'var(--color-dark-blue)' : 'inherit';
-                button.classList.toggle('fw-semibold', isActive);
+                link.style.background = isActive ? 'var(--color-light-blue)' : 'transparent';
+                link.style.color = isActive ? 'var(--color-dark-blue)' : 'inherit';
+                link.classList.toggle('fw-semibold', isActive);
 
                 if (isActive) {
-                    button.setAttribute('aria-current', 'page');
+                    link.setAttribute('aria-current', 'page');
                 } else {
-                    button.removeAttribute('aria-current');
+                    link.removeAttribute('aria-current');
                 }
             });
         }

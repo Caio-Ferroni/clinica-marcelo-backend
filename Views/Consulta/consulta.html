@@ -1,19 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="light">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas | Clínica</title>
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/style.css">
     <script src="../../js/layout.js" defer></script>
-    <title>Adicionar Paciente</title>
 </head>
-<body>
-    <clinic-sidebar active="patients"></clinic-sidebar>
-
-    <clinic-footer></clinic-footer>
-    <script type="module" src="../../js/bootstrap.min.js"></script>
+<body class="appointments-list">
+    <div class="d-flex flex-column md:flex-row min-vh-100">
+        <clinic-sidebar active="appointments"></clinic-sidebar>
+        <div class="d-flex flex-column flex-grow-1 min-w-0">
+            <main class="flex-grow-1 p-5 md:p-9">
+                <div class="mx-auto" style="max-width: 1000px;">
+                    <header class="text-center mb-8">
+                        <h1 class="text-2xl fw-semibold mb-0">Consultas</h1>
+                    </header>
+                    <div class="row g-5 mb-7">
+                        <div class="col-12 md:col-4">
+                            <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
+                                <p class="text-sm mb-2" style="color: var(--color-text-muted);">Consultas esse mês</p>
+                                <p class="text-lg fw-semibold mb-0" data-field="consultas_esse_mes">XXX Consultas</p>
+                            </div>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
+                                <p class="text-sm mb-2" style="color: var(--color-text-muted);">Consultas realizadas</p>
+                                <p class="text-lg fw-semibold mb-0" data-field="consultas_realizadas">XXX Consultas</p>
+                            </div>
+                        </div>
+                        <div class="col-12 md:col-4">
+                            <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
+                                <p class="text-sm mb-2" style="color: var(--color-text-muted);">Consultas canceladas</p>
+                                <p class="text-lg fw-semibold mb-0" data-field="consultas_canceladas">XX Consultas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <hr class="mb-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
+                    <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
+                        <table class="table table-borderless align-middle mb-0" id="tabela-consultas">
+                            <caption class="visually-hidden">Lista de consultas</caption>
+                            <thead style="border-bottom: 1px solid var(--color-border);"><tr><th scope="col" class="text-center text-sm fw-semibold">Paciente</th><th scope="col" class="text-center text-sm fw-semibold">Horário</th><th scope="col" class="text-center text-sm fw-semibold">Status</th><th scope="col" class="text-center text-sm fw-semibold">Nascimento</th><th scope="col" class="text-center text-sm fw-semibold">Ações</th></tr></thead>
+                            <tbody>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">João</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Concluído</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">Jonas</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Pendente</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">Madalena</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Cancelado</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">Aline</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Pendente</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">Joana</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Concluído</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                                <tr data-id="1"><td class="text-center text-sm align-middle" data-field="paciente">Renato</td><td class="text-center text-sm align-middle" data-field="horario">XX:XX</td><td class="text-center text-sm align-middle" data-field="status">Pendente</td><td class="text-center text-sm align-middle" data-field="nascimento">XX/XX/XXXX</td><td class="text-center align-middle"><div class="d-flex justify-content-center gap-3"><a class="btn btn-sm p-2" href="relatorio-view.html?consulta_id=1" aria-label="Ver relatório"><i class="bi bi-clipboard-fill" aria-hidden="true"></i></a></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+            <clinic-footer></clinic-footer>
+        </div>
+    </div>
 </body>
 </html>
-<!--Tem que fazer tudo ainda.-->

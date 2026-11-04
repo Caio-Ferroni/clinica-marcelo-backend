@@ -8,3 +8,71 @@
     --color-border: #dce6ed;
     --color-field-background: #f7fafc;
 }
+
+.patient-create {
+    --bs-theme-bg: var(--color-dark-blue);
+    --bs-theme-fg: var(--color-dark-blue);
+    --bs-theme-border: var(--color-dark-blue);
+    --bs-theme-contrast: var(--color-white);
+    --bs-theme-focus-ring: var(--color-light-blue);
+    --bs-border-color: var(--color-border);
+    background: var(--color-white);
+    color: var(--color-text);
+}
+
+.patient-create h1,
+.patient-create h2,
+.patient-create summary {
+    color: var(--color-dark-blue);
+}
+
+.patient-create .form-control {
+    background: var(--color-field-background);
+    border-color: var(--color-border);
+    color: var(--color-text);
+}
+
+.patient-create .form-control:focus {
+    border-color: var(--color-dark-blue);
+    outline-color: var(--color-light-blue);
+}
+
+.optional-section {
+    border-top: 1px dashed var(--color-border);
+}
+
+.optional-section>summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.optional-section>summary::-webkit-details-marker {
+    display: none;
+}
+
+.optional-section:not([open])>summary {
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.optional-section .section-heading {
+    display: none;
+}
+
+.optional-section[open] .section-heading {
+    display: flex;
+}
+
+.optional-section[open] .section-prompt {
+    display: none;
+}
+
+.optional-section[open]>summary {
+    margin-bottom: 1.5rem;
+}
+
+.optional-section>summary:focus-visible {
+    outline: 3px solid var(--color-light-blue);
+    outline-offset: 6px;
+    border-radius: 6px;
+}

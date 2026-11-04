@@ -15,7 +15,7 @@ try {
     $controller = new PacienteController();
 
     // 4. Executa a ação index() que busca os dados e inclui a View
-    $controller->index();
+    $controller->criar();
 
 } catch (Exception $e) {
     echo "<p style='color: red;'>Erro durante o teste: " . $e->getMessage() . "</p>";

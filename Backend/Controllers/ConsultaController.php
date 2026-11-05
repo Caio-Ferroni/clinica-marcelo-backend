@@ -9,5 +9,11 @@ require_once __DIR__ . '/../Models/Consulta.php';
             $this->consulta = new Consulta;
         }
 
+        public function gerarMesAtual(){
+            $consultasCriadas = $this->consulta->gerarConsultas();
+            echo 'Foram criadas ' . $consultasCriadas . ' Consultas!';
+            require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        }
+
     }
 ?>

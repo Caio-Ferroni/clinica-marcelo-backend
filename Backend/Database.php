@@ -3,12 +3,14 @@ $servidor = "localhost";
 $usuario = "root";
 $senha = "";
 $banco = "mydb";
+$port = "3307";
 
 $conexao = new mysqli(
     $servidor,
     $usuario,
     $senha,
-    $banco
+    $banco,
+    $port
 );
 
 if ($conexao->connect_error) {

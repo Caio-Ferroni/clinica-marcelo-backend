@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendamento</title>
+    <title>Agendamento | Clínica</title>
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/style.css">
@@ -19,69 +19,79 @@
                         <h1 class="text-2xl fw-semibold mb-3">Agendamento</h1>
                         <p class="text-sm mb-0" style="color: var(--color-text-muted);">Edite os dados do agendamento.</p>
                     </header>
-                      <div class="d-flex flex-wrap align-items-center justify-content-between gap-5 mt-7">
-                            <button class="btn-solid px-7 py-4 btn-outline-dark rounded-4 mb-4 px-4 py-2 d-inline-block" type="submit">
-                                <i class="bi bi-list" aria-hidden="true"></i>
-                              Adicionar agendamento
-                            </button>
+                    
+                    <div class="mb-5">
+                        <a class="btn-outline px-7 py-4 text-decoration-none d-inline-flex align-items-center gap-3" href="agendamento-create.html">
+                            <i class="bi bi-calendar-plus" aria-hidden="true"></i>
+                            Adicionar agendamento
+                        </a>
+                    </div>
+
+                    <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
+                        <table class="table table-striped table-hover table-borderless align-middle mb-0">
+                            <caption class="visually-hidden">Lista de agendamentos</caption>
+                            <thead style="border-bottom: 1px solid var(--color-border);">
+                                <tr>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Horário Início</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Horário Término</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Data Início</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Data Término</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Dia da Semana</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Repetição</th>
+                                    <th scope="col" class="text-center text-sm fw-semibold">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">Sexta</td>
+                                    <td class="text-center text-sm align-middle">Quinzenal</td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex justify-content-center gap-3">
+                                            <button class="btn btn-sm p-2" aria-label="Editar agendamento"><i class="bi bi-pencil-fill" aria-hidden="true"></i></button>
+                                            <button class="btn btn-sm p-2" aria-label="Ver agendamento"><i class="bi bi-eye-fill" aria-hidden="true"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">Sábado</td>
+                                    <td class="text-center text-sm align-middle">Mensal</td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex justify-content-center gap-3">
+                                            <button class="btn btn-sm p-2" aria-label="Editar agendamento"><i class="bi bi-pencil-fill" aria-hidden="true"></i></button>
+                                            <button class="btn btn-sm p-2" aria-label="Ver agendamento"><i class="bi bi-eye-fill" aria-hidden="true"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX:XX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">XX/XX/XXXX</td>
+                                    <td class="text-center text-sm align-middle">Terça</td>
+                                    <td class="text-center text-sm align-middle">Semanal</td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex justify-content-center gap-3">
+                                            <button class="btn btn-sm p-2" aria-label="Editar agendamento"><i class="bi bi-pencil-fill" aria-hidden="true"></i></button>
+                                            <button class="btn btn-sm p-2" aria-label="Ver agendamento"><i class="bi bi-eye-fill" aria-hidden="true"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th scope=".col">Horario Inicio</th>
-                                <th scope=".col">Horario Termino</th>
-                                <th scope=".col">Data Inicio</th>
-                                <th scope=".col">Data Termino</th>
-                                <th scope=".col">Dia da Semana</th>
-                                <th scope=".col">Repetição</th>
-                                <th scope=".col">Ações</th>
-                            </tr>
-                        </thead>
-                <tbody>
-                    <tr>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">Sexta</td>
-                        <td scope=".col">Quinzenal</td>
-                        <td>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-eye-fill"></i></button>
-                        </td>
-                    </tr>
-                    <!-- Linha 2 -->
-                    <tr>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">Sábado</td>
-                        <td scope=".col">Mensal</td>
-                        <td>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-eye-fill"></i></button>
-                        </td>
-                    </tr>
-                    <!-- Linha 3 -->
-                    <tr>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX:XX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">XX/XX/XXXX</td>
-                        <td scope=".col">Terça</td>
-                        <td scope=".col">Semanal</td>
-                        <td>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-pencil-fill"></i></button>
-                            <button class="btn btn-sm btn-link text-light p-1"><i class="bi bi-eye-fill"></i></button>
-                        </td>
-                    </tr>
-                        </tbody>
-                    </table>
-            </div>
-        </main>
-   
-    <script type="module" src="../../js/bootstrap.min.js"></script>
+            </main>
+            <clinic-footer></clinic-footer>
+        </div>
+    </div>
+    <script src="../../js/bootstrap.min.js" defer></script>
 </body>
 </html>

@@ -1,13 +1,4 @@
-:root {
-    --color-dark-blue: #102d5b;
-    --color-white: #f7fcff;
-    --color-light-blue: #a8ddf5;
-    --color-surface: #ffffff;
-    --color-text: #233852;
-    --color-text-muted: #61738a;
-    --color-border: #dce6ed;
-    --color-field-background: #f7fafc;
-}
+
 
 .patient-create {
     --bs-theme-bg: var(--color-dark-blue);
@@ -75,4 +66,23 @@
     outline: 3px solid var(--color-light-blue);
     outline-offset: 6px;
     border-radius: 6px;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  --bs-table-accent-bg: #e2e3e5;
+  background-color: var(--color-lighter-blue);
+}
+.table-striped{
+    --bs-table-hover-bg-factor: 4.5%;
+}
+
+:root {
+    --color-dark-blue: #102d5b;
+    --color-white: #f7fcff;
+    --color-light-blue: #a8ddf5;
+    --color-surface: #ffffff;
+    --color-text: #233852;
+    --color-text-muted: #61738a;
+    --color-border: #dce6ed;
+    --color-field-background: #f7fafc;
+    --color-lighter-blue:#bfebff;
 }

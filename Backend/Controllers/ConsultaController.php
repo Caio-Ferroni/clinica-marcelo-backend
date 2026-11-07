@@ -15,5 +15,11 @@ require_once __DIR__ . '/../Models/Consulta.php';
             require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
         }
 
+        public function mudarStatus($id, $status){
+            $mensagem = $this->consulta->altualizarStatus($id, $status);
+            echo $mensagem;
+            require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        }
+
     }
 ?>

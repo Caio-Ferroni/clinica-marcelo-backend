@@ -22,26 +22,43 @@
             return $stmt->fetchAll();
         }
 
-        public function criarPaciente($nome, $cpf, $telefone, $data_nascimento, $status){
-            $sql = "INSERT INTO paciente(nome, cpf, telefone, data_nascimento, status) VALUES (:nome, :cpf, :telefone, :data_nascimento, :status_paciente)";
+        public function criarPaciente($nome, $cpf, $telefone, $data_nascimento): int {
+            $sql = "INSERT INTO paciente(nome, cpf, telefone, data_nascimento) VALUES (:nome, :cpf, :telefone, :data_nascimento)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
-                ':nome' => $nome,
-                ':cpf' => $cpf,
-                ':telefone' => $telefone,
-                ':data_nascimento' => $data_nascimento,
-                ':status_paciente' => $status
+                ':nome'            => $nome,
+                ':cpf'             => $cpf,
+                ':telefone'        => $telefone,
+                ':data_nascimento' => $data_nascimento
             ]);
-            $mensagem = "paciente criado com sucesso";
+            // Retorna o ID do paciente recém-criado para associar as entidades dependentes
+            return (int) $this->db->lastInsertId();
+        }
+
+        public function atualizarPaciente($id, $nome, $cpf, $telefone, $data_nascimento){
+            $sql = "UPDATE paciente
+                    SET nome = :nome, cpf = :cpf, telefone = :telefone, data_nascimento = :data_nascimento
+                    WHERE id_paciente = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':nome'            => $nome,
+                ':cpf'             => $cpf,
+                ':telefone'        => $telefone,
+                ':data_nascimento' => $data_nascimento,
+                ':id'              => $id
+            ]);
+        }
+
+        public function atualizarStatus($id, $status){
+            $sql = "UPDATE paciente SET status = :status WHERE id_paciente = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':status' => $status,
+                ':id' => $id
+            ]);
+
+            $mensagem = "Status do paciente atualizado com sucesso!";
             return $mensagem;
-        }
-
-        public function atualizarPaciente($id){
-
-        }
-
-        public function alterarStatus($id){
-
         }
 
     }

@@ -23,7 +23,7 @@ require_once __DIR__ . '/../config/Database.php';
             foreach($agendamentos as $agendamento){
                 $diaDaSemana = $agendamento['dia_semana'];
                 $repeticao = $agendamento['repeticao'];
-                $datasConsultas = self::encontrarDatas($mes, $ano, $diaDaSemana, $repeticao);
+                $datasConsultas = self::encontrarDatas($ano, $mes, $diaDaSemana, $repeticao);
                 
 
                 foreach($datasConsultas as $data_consultada){
@@ -63,8 +63,16 @@ require_once __DIR__ . '/../config/Database.php';
             return $stmt->fetchAll();
         }
 
-        public function alterarStatus($id){
+        public function altualizarStatus($id, $status){
+            $sql = "UPDATE consulta SET status = :status WHERE id_consulta = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':status' => $status,
+                ':id' => $id
+            ]);
 
+            $mensagem = "Status da consulta atualizado com sucesso!";
+            return $mensagem;
         }
 
         public function enviarNotificação(){
@@ -74,9 +82,10 @@ require_once __DIR__ . '/../config/Database.php';
 
         }
 
-        public function encontrarDatas($ano, $mes, $diaAlvo, $repeticao){
+        public static function encontrarDatas($ano, $mes, $diaAlvo, $repeticao){
             $datas = [];
-            $primeiroDia = new Datetime("$mes-$ano-01"); 
+            $diaAlvo = (string) $diaAlvo;
+            $primeiroDia = new DateTime("$ano-$mes-01"); 
             $ultimoDia = (clone $primeiroDia)->modify('last day of this month');
             $cursor = (clone $primeiroDia);
             while ($cursor->format('w') !== $diaAlvo){

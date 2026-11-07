@@ -1,22 +1,32 @@
 <?php
-// teste.php
+session_start();
 
-// 1. Liga a exibição de erros do PHP para facilitar o diagnóstico
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Autoloader do Composer (bramus/router e futuras dependências)
+require_once __DIR__ . '/vendor/autoload.php';
 
-// 2. Inclui o Controller
+// Config
+require_once __DIR__ . '/Backend/Config/Database.php';
+
+// Models
+require_once __DIR__ . '/Backend/Models/Paciente.php';
+require_once __DIR__ . '/Backend/Models/Perfil.php';
+require_once __DIR__ . '/Backend/Models/Encaminhamento.php';
+require_once __DIR__ . '/Backend/Models/Agendamento.php';
+require_once __DIR__ . '/Backend/Models/Consulta.php';
+require_once __DIR__ . '/Backend/Models/Tarefa.php';
+require_once __DIR__ . '/Backend/Models/Psicologo.php';
+
+// Controllers
 require_once __DIR__ . '/Backend/Controllers/PacienteController.php';
+require_once __DIR__ . '/Backend/Controllers/ConsultaController.php';
+require_once __DIR__ . '/Backend/Controllers/TarefaController.php';
+require_once __DIR__ . '/Backend/Controllers/PsicologoController.php';
 
-echo "<h2>Testando o PacienteController...</h2>";
+// Auth
+require_once __DIR__ . '/Backend/Auth/Auth.php';
 
-try {
-    // 3. Instancia o Controller (isso acionará o __construct do Controller e do Model)
-    $controller = new PacienteController();
+// Instancia o router e carrega as rotas
+$router = new \Bramus\Router\Router();
+require_once __DIR__ . '/Backend/Routes/routes.php';
 
-    // 4. Executa a ação index() que busca os dados e inclui a View
-    $controller->criar();
-
-} catch (Exception $e) {
-    echo "<p style='color: red;'>Erro durante o teste: " . $e->getMessage() . "</p>";
-}
+$router->run();

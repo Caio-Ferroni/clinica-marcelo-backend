@@ -12,18 +12,19 @@
             return $stmt->fetchAll();
         }
 
-        public function criarTarefa($titulo, $descricao){
-            $sql = "INSERT INTO tarefa(titulo, descricao) VALUES (:titulo, :descricao)";
+        public function criarTarefa($titulo, $conteudo, $data_conclusao){
+            $sql = "INSERT INTO tarefa(titulo, conteudo, data_conclusao) VALUES (:titulo, :conteudo, :data_conclusao)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':titulo' => $titulo,
-                ':descricao' => $descricao
+                ':conteudo' => $conteudo,
+                ':data_conclusao' => $data_conclusao
             ]);
             $mensagem = "tarefa criada com sucesso";
             return $mensagem;
         }
 
-        public function atualizarTarefa($id, $titulo, $descricao){
+        public function atualizarTarefa($id, $titulo, $conteudo){
 
         }
         public function visualizarTarefa($id){

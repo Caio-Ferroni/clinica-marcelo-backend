@@ -24,8 +24,29 @@
             return $mensagem;
         }
 
-        public function atualizarEncaminhamento($id, $historico_paciente, $tipo_encaminhamento){
+        // Cria ou atualiza o encaminhamento do paciente (upsert por id_paciente)
+        public function atualizarEncaminhamento($id_paciente, $historico_paciente, $tipo_encaminhamento){
+            if(!self::encaminhamentoExiste($id_paciente)){
+                return $this->criarEncaminhamento($id_paciente, $historico_paciente, $tipo_encaminhamento);
+            }
 
+            $sql = "UPDATE encaminhamento
+                    SET historico_paciente = :historico_paciente, tipo_encaminhamento = :tipo_encaminhamento
+                    WHERE id_paciente = :id_paciente";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':historico_paciente'    => $historico_paciente,
+                ':tipo_encaminhamento'   => $tipo_encaminhamento,
+                ':id_paciente'           => $id_paciente
+            ]);
+            return "Encaminhamento atualizado";
+        }
+
+        private static function encaminhamentoExiste($id_paciente): bool {
+            $db = Database::getConnection();
+            $stmt = $db->prepare("SELECT COUNT(*) FROM encaminhamento WHERE id_paciente = :id_paciente");
+            $stmt->execute([':id_paciente' => $id_paciente]);
+            return $stmt->fetchColumn() > 0;
         }
 
         public function visualizarEncaminhamento($id){

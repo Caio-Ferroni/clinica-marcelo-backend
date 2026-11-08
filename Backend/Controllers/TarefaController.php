@@ -9,6 +9,11 @@ require_once __DIR__ . '/../Models/Tarefa.php';
             $this->tarefa = new Tarefa;
         }
 
+        public function index(){
+            $tarefas = $this->tarefa->listarTodos();          
+            require_once __DIR__ . '/../../Views/Tarefa/tarefa.php';
+        }
+
         public function criar(){
             if(!empty($_POST['titulo']) &&
                 !empty($_POST['conteudo']) &&

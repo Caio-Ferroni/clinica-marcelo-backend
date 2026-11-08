@@ -63,7 +63,7 @@ require_once __DIR__ . '/../config/Database.php';
             return $stmt->fetchAll();
         }
 
-        public function altualizarStatus($id, $status){
+        public function atualizarStatus($id, $status){
             $sql = "UPDATE consulta SET status = :status WHERE id_consulta = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -78,7 +78,15 @@ require_once __DIR__ . '/../config/Database.php';
         public function enviarNotificação(){
 
         }
-        public function gerarRelatorio(){
+        public function gerarRelatorio($id, $relatorio){
+            $sql = "INSERT INTO consulta(relatorio) VALUES(:relatorio) WHERE id_consulta = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':relatorio' => $relatorio,
+                ':id' => $id
+            ]);
+            $mensagem = "Relatorio criado com sucesso!";
+            return $mensagem;
 
         }
 

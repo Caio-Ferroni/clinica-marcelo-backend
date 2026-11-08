@@ -28,7 +28,6 @@
             if(!self::perfilExiste($id_paciente)){
                 return $this->criarPerfil($id_paciente, $quadro, $descricao);
             } 
-            
             $sql = "UPDATE perfil
                     SET quadro = :quadro, descricao = :descricao
                     WHERE id_paciente = :id_paciente";

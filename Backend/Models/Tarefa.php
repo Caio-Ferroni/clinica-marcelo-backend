@@ -25,6 +25,15 @@
         }
 
         public function atualizarTarefa($id, $titulo, $conteudo){
+             $sql = "UPDATE tarefa
+                    SET titulo = :titulo, conteudo = :conteudo
+                    WHERE id_tarefa = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id'       => $id,
+                ':titulo'    => $titulo,
+                ':conteudo'  => $conteudo
+            ]);
 
         }
         public function visualizarTarefa($id){
@@ -36,8 +45,15 @@
             return $stmt->fetchAll();
         }
 
-        public function atualizarStatus($id){
-
+        public function atualizarStatus($id, $status){
+            $sql = "UPDATE tarefa
+                    SET status = :status
+                    WHERE id_tarefa = :id";
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([
+                ':id'       => $id,
+                ':status' => $status
+            ]);
         }
     }
 ?>

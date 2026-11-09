@@ -1,19 +1,43 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="light">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar relatório | Clínica</title>
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/style.css">
     <script src="../../js/layout.js" defer></script>
-    <title>Adicionar Paciente</title>
 </head>
-<body>
-    <clinic-sidebar active="patients"></clinic-sidebar>
-
-    <clinic-footer></clinic-footer>
-    <script type="module" src="../../js/bootstrap.min.js"></script>
+<body class="report-view">
+    <div class="d-flex flex-column md:flex-row min-vh-100">
+        <clinic-sidebar active="reports"></clinic-sidebar>
+        <div class="d-flex flex-column flex-grow-1 min-w-0">
+            <main class="flex-grow-1 p-5 md:p-9">
+                <div class="mx-auto" style="max-width: 1000px;">
+                    <header class="text-center mb-8">
+                        <h1 class="text-2xl fw-semibold mb-0">Visualizar relatório</h1>
+                    </header>
+                    <div class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);" data-id="1">
+                        <div class="row g-5">
+                            <div class="col-12 md:col-6">
+                                <label class="form-label text-sm" for="v-data_consulta">Consulta</label>
+                                <input class="form-control" type="text" id="v-data_consulta" value="20/10/2026 - Futuro" readonly data-field="data_consulta">
+                            </div>
+                            <div class="col-12 md:col-12">
+                                <label class="form-label text-sm" for="v-texto">Relatório da consulta</label>
+                                <textarea class="form-control" id="v-texto" rows="10" readonly data-field="texto">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat.</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between gap-5 mt-7">
+                        <a class="btn-outline px-7 py-4 text-decoration-none" href="relatorios.html"><i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar</a>
+                        <a class="btn-solid px-7 py-4 text-decoration-none" href="relatorio-edit.html?id=1"><i class="bi bi-pencil" aria-hidden="true"></i> Editar</a>
+                    </div>
+                </div>
+            </main>
+            <clinic-footer></clinic-footer>
+        </div>
+    </div>
 </body>
 </html>
-<!--Tem que fazer tudo ainda.-->

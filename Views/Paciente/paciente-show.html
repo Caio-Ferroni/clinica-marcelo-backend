@@ -1,67 +1,125 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="light">
+<html lang="pt-BR" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar paciente | Clínica</title>
     <link rel="stylesheet" href="../../css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/style.css">
     <script src="../../js/layout.js" defer></script>
-    <title>Adicionar Paciente</title>
 </head>
-<body>
+<body class="patient-create">
     <div class="d-flex flex-column md:flex-row min-vh-100">
         <clinic-sidebar active="patients"></clinic-sidebar>
         <div class="d-flex flex-column flex-grow-1 min-w-0">
-            <main class="flex-grow-1 p-4 bg-light">
-                <div class="container-fluid">
-                    <h1 class="text-center mb-4">Adicionar Paciente</h1>
-
-                    <div class="bg-white p-4 rounded-4 shadow-sm mb-4">
-                        <h5 class="mb-4 text-secondary">Dados Pessoais</h5>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-8">
-                                <label class="form-label">Nome</label>
-                                <input type="text" class="form-control" placeholder="Mário">
+            <main class="flex-grow-1 p-5 md:p-9">
+                
+                <div class="mx-auto" style="max-width: 1000px;">
+                    <header class="text-center mb-8">
+                        <h1 class="text-2xl fw-semibold mb-3">Visualizar paciente</h1>
+                        <p class="text-sm mb-0" style="color: var(--color-text-muted);">Consulte os dados pessoais e as informações do atendimento.</p>
+                    </header>
+                    <div class="border rounded-4 shadow-sm" style="background: var(--color-surface);" data-id="1">
+                        <section class="p-7 md:p-9" id="personal-section" aria-labelledby="personal-section-heading">
+                            <h2 id="personal-section-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
+                                <i class="bi bi-person" aria-hidden="true"></i>
+                                Dados pessoais
+                            </h2>
+                            <div class="row g-5">
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-name">Nome completo</label>
+                                    <input class="form-control" type="text" id="view-name" value="João Silva" readonly data-field="full_name">
+                                </div>
+                                <div class="col-12 md:col-3">
+                                    <label class="form-label text-sm" for="view-birth">Data de nascimento</label>
+                                    <input class="form-control" type="text" id="view-birth" value="14/05/1990" readonly data-field="birth_date">
+                                </div>
+                                <div class="col-12 md:col-3">
+                                    <label class="form-label text-sm" for="view-status">Status</label>
+                                    <input class="form-control" type="text" id="view-status" value="Ativo" readonly data-field="status">
+                                </div>
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-cpf">CPF</label>
+                                    <input class="form-control" type="text" id="view-cpf" value="123.456.789-00" readonly data-field="cpf">
+                                </div>
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-phone">Telefone</label>
+                                    <input class="form-control" type="text" id="view-phone" value="(11) 91234-5678" readonly data-field="phone">
+                                </div>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Data de Nascimento</label>
-                                <input type="text" class="form-control" placeholder="xx/xx/xxxx">
+                        </section>
+
+                        
+                        <section class="optional-section p-7 md:p-9" id="schedule-section" aria-labelledby="schedule-section-heading">
+                            <h2 id="schedule-section-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
+                                <i class="bi bi-calendar-event" aria-hidden="true"></i>
+                                Dados de agendamento
+                            </h2>
+                            <div class="row g-5">
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-weekday">Dia da semana</label>
+                                    <input class="form-control" type="text" id="view-weekday" value="Segunda-feira" readonly data-field="week_day">
+                                </div>
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-repeat">Repetição</label>
+                                    <input class="form-control" type="text" id="view-repeat" value="Semanal" readonly data-field="repeat_interval">
+                                </div>
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-time">Horário de início</label>
+                                    <input class="form-control" type="text" id="view-time" value="14:00" readonly data-field="start_time">
+                                </div>
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-start">Data de início</label>
+                                    <input class="form-control" type="text" id="view-start" value="10/11/2026" readonly data-field="start_date">
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Cpf</label>
-                                <input type="text" class="form-control" placeholder="xxx.xxx.xxx-xx">
+                        </section>
+
+                        <section class="optional-section p-7 md:p-9" id="profile-section" aria-labelledby="profile-section-heading">
+                            <h2 id="profile-section-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
+                                <i class="bi bi-person-vcard" aria-hidden="true"></i>
+                                Perfil do paciente
+                            </h2>
+                            <div class="row g-5">
+                                <div class="col-12 md:col-12">
+                                    <label class="form-label text-sm" for="view-condition">Quadro</label>
+                                    <input class="form-control" type="text" id="view-condition" value="Quadro de exemplo" readonly data-field="clinical_condition">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-sm" for="view-description">Descrição</label>
+                                    <textarea class="form-control" id="view-description" rows="5" readonly data-field="description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat.</textarea>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Telefone</label>
-                                <input type="text" class="form-control" placeholder="(xx) xxxxx-xxxx">
+                        </section>
+
+                        <section class="optional-section p-7 md:p-9" id="referral-section" aria-labelledby="referral-section-heading">
+                            <h2 id="referral-section-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
+                                <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                                Encaminhamento
+                            </h2>
+                            <div class="row g-5">
+                                <div class="col-12 md:col-6">
+                                    <label class="form-label text-sm" for="view-referral">Tipo de encaminhamento</label>
+                                    <input class="form-control" type="text" id="view-referral" value="Recebimento" readonly data-field="referral_type">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label text-sm" for="view-history">Histórico do paciente</label>
+                                    <textarea class="form-control" id="view-history" rows="4" readonly data-field="history">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat.</textarea>
+                                </div>
                             </div>
-                        </div>
+                        </section>
+                    </div>
 
-                        <div class="border-top border-2 border-opacity-25 pt-4 text-center" >
-                            <button class="btn btn-outline-dark px-4 py-2 d-inline-block">Criar agendamento</button>
-                        </div>
-
-                        <div class="border-top border-2 border-opacity-25 pt-4 mt-4 text-center" >
-                            <button class="btn btn-outline-dark px-4 py-2 d-inline-block">Criar perfil</button>
-                        </div>
-
-                        <div class="border-top border-2 border-opacity-25 pt-4 mt-4 text-center" >
-                            <button class="btn btn-outline-dark px-4 py-2 d-inline-block">Criar Encaminhamento</button>
-                        </div>
-
-                        <div class="d-flex justify-content-end mt-4">
-                            <button class="btn btn-dark px-4 py-2">Adicionar Paciente</button>
-                        </div>
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-5 mt-7">
+                        <a class="btn-outline px-7 py-4 text-decoration-none" href="pacientes.html"><i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar</a>
+                        
+                        <a class="btn-solid px-7 py-4 text-decoration-none" href="paciente-edit.html?id=1"><i class="bi bi-pencil" aria-hidden="true"></i> Editar paciente</a>
                     </div>
                 </div>
             </main>
             <clinic-footer></clinic-footer>
         </div>
     </div>
-
-    <script type="module" src="../../js/bootstrap.min.js"></script>
 </body>
 </html>
-<!--MUDAR quase TUDO-->

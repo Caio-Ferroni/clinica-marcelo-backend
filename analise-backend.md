@@ -1,7 +1,7 @@
 # Análise do Backend — Clínica Marcelo
 
 > [!NOTE]
-> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após a correção dos bugs críticos B1–B5, B7, B9, B10 e B14–B19 da seção 4.1 (commit `9ea9e8b`). Os demais itens continuam pendentes.
+> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após as correções críticas (commit `9ea9e8b`) e dos demais itens autorizados da seção 4.1. B1–B20 e B25–B27 foram tratados; somente B21–B24 permanecem pendentes nessa tabela. A integração da seção 4.2 continua pendente.
 
 ---
 
@@ -30,7 +30,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 |---|---|---|
 | **Criação Centralizada de Pacientes** | O cadastro de paciente reúne Paciente, Perfil, Encaminhamento e Agendamento em um único formulário. Paciente é obrigatório; Perfil e Agendamento exigem todos os seus campos; Encaminhamento exige ao menos um. | ✅ Concluído |
 | **Atualização em Cascata (Upsert)** | Atualizar o paciente também atualiza ou cria (caso ainda não existam) seus registros de Perfil, Agendamento e Encaminhamento via relação 1-1 baseada no `id_paciente`. | ✅ Concluído |
-| **Preservação de Dados (Soft Delete / Status)** | Pacientes nunca são deletados fisicamente do banco de dados; são marcados como inativos e ocultados das listagens até eventual reativação. | ⏳ A implementar |
+| **Preservação de Dados (Soft Delete / Status)** | Pacientes nunca são deletados fisicamente do banco de dados; são marcados como inativos e ocultados das listagens até eventual reativação. | ⏳ Filtro de ativos no model pronto; troca de status e integração da listagem pendentes |
 | **Conta Única do Psicólogo** | Apenas um psicólogo atua na clínica. O registro de conta só é permitido uma única vez. Registros subsequentes são sumariamente bloqueados. | ✅ Concluído |
 | **Autenticação em Dois Fatores (2FA)** | O login exige e-mail + senha e, em seguida, validação de código numérico temporário de 6 dígitos gerado e conferido via memória de sessão (`$_SESSION`), disparado por e-mail. | ✅ Concluído |
 | **Notificação de Consulta a 10 Minutos** | Disparo de alerta ao psicólogo 10 minutos antes do início de uma consulta via Web Push (PWA / Browser) sem exigir aplicativo nativo. | ⏳ Arquivos criados |
@@ -76,12 +76,24 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - **Validação realizada**: Sintaxe dos 11 arquivos PHP alterados, existência e capitalização dos caminhos e 19 testes isolados com SQLite em memória passaram. A execução com MySQL real permanece pendente; o driver PDO MySQL não está carregado no PHP local.
 - **Limite desta entrega**: A seção 4.2 não foi implementada. O envio dos formulários, a busca geral de pacientes e as listagens dinâmicas permanecem pendentes; `login.php` e `register.php` continuam vazios. Notificações, inativação e os demais itens da tabela 4.1 também não foram implementados.
 
+### 3.6 Correção dos Demais Itens Autorizados da Seção 4.1 — 14/11/2026
+
+- **B6**: O controller de paciente usa `horario_termino`, aceita `horario_fim` como alias e preserva o valor zero de `dia_semana` para domingo, tanto na criação quanto na atualização.
+- **B8**: Cadastros com campos obrigatórios ausentes retornam HTTP 422 ao formulário de criação, com mensagem, valores preservados e escape HTML, sem gravar registros. No sucesso, o controller carrega a visualização do paciente criado.
+- **B11**: Criado `Views/Tarefa/tarefa-create.php` com título, conteúdo e data de conclusão. GET e POST `/tarefas/criar` usam o controller; erros retornam HTTP 422 e preservam valores. Sucesso redireciona para `/tarefas` com HTTP 303. A listagem de tarefas ainda usa dados estáticos.
+- **B12 e B13**: As rotas de relatórios carregam as views PHP existentes. A integração dos dados de relatórios permanece pendente na seção 4.2.
+- **B20**: Excluído apenas o arquivo vazio `Backend/Auth/2fa.php`; a tela `Views/Auth/2fa.php` e a lógica de `Auth.php` foram preservadas.
+- **B25**: O entry point inclui `NotificacaoController.php` com buffer local para descartar a quebra de linha do arquivo vazio e não antecipar o envio dos headers. O controller continua sem implementação, conforme a exclusão de B21 do escopo.
+- **B26 e B27**: Removida a abertura duplicada de `<html>` em agendamento; `Paciente::listarTodos()` passou a filtrar `status = 'Ativo'`, sem excluir ou alterar registros. A troca de status não foi conectada.
+- **Validação realizada**: Sintaxe PHP, caminhos e estrutura HTML verificados. Passaram 28 testes novos e os 19 testes anteriores, com SQLite em memória. Os arquivos de B21–B24 e a tela de 2FA foram conferidos por hash e permaneceram intactos. A validação com MySQL real segue pendente.
+- **Limite desta entrega**: Não foram implementados Web Push, inativação/reativação, listagens dinâmicas ou a integração geral dos formulários da seção 4.2.
+
 ---
 
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
-> Os bugs críticos B1–B5, B7, B9, B10 e B14–B19 foram corrigidos. A tabela mantém a severidade original e distingue as correções concluídas das pendências. Os testes isolados passaram; a integração completa e a validação com MySQL real ainda estão pendentes.
+> B1–B20 e B25–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 continuam pendentes por decisão de escopo. A severidade original é mantida como histórico. A integração da seção 4.2 e a validação com MySQL real ainda estão pendentes.
 
 ### 4.1 Bugs Críticos no Backend
 
@@ -92,28 +104,28 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | B3 | `ConsultaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
 | B4 | `TarefaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
 | B5 | `Consulta.php` | `gerarRelatorio()` agora usa `UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id`, com parâmetros preparados. | 🔴 Crítico | ✅ Corrigido |
-| B6 | `PacienteController.php` L71 | `Agendamento` no controller espera campo `horario_fim` do POST, mas o Model `Agendamento.php` define o parâmetro como `$horario_termino` e a coluna do BD é `horario_termino`. Existe inconsistência na nomenclatura que pode gerar confusão (embora funcione porque o valor do POST é passado posicionalmente). | 🟡 Média | ⏳ Pendente |
+| B6 | `PacienteController.php` | Padronizado `horario_termino`, com `horario_fim` como alias de compatibilidade na criação e atualização. Domingo (`dia_semana = 0`) é aceito. | 🟡 Média | ✅ Corrigido |
 | B7 | `PacienteController.php` | `visualizar($id)` carrega o paciente e suas associações e renderiza `paciente-show.php` com dados reais e escape HTML. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
-| B8 | `PacienteController.php` L39 | `criar()` ainda retorna a view de detalhe em falha de validação, sem devolver os dados e erros ao formulário de criação. A view já trata a ausência de dados sem avisos, mas o fluxo de validação continua pendente. | 🟡 Média | ⏳ Pendente |
+| B8 | `PacienteController.php` / `paciente-create.php` | Validação retorna HTTP 422 ao formulário de criação, com mensagem e valores preservados com escape HTML, sem gravação. Sucesso carrega a visualização do paciente criado. | 🟡 Média | ✅ Corrigido |
 | B9 | `routes.php` | `GET /pacientes/criar` agora carrega `paciente-create.php`. | 🔴 Crítico | ✅ Corrigido |
 | B10 | `routes.php` | `GET /pacientes/{id}/editar` chama `PacienteController::editar($id)`, carrega paciente, perfil, agendamento e encaminhamento e preenche os campos. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
-| B11 | `routes.php` L112 | Rota `GET /tarefas/criar` aponta para `tarefa-show.php` — esta view não existe na estrutura de Views/Tarefa; existe apenas `tarefa.php`. | 🟡 Média | ⏳ Pendente |
-| B12 | `routes.php` L131 | Rota `GET /relatorios` aponta para `relatorio.html`, mas o arquivo real é `relatorio.php`. | 🟡 Média | ⏳ Pendente |
-| B13 | `routes.php` L135 | Rota `GET /relatorios/{id}` aponta para `relatorio-show.html`, mas o arquivo real é `relatorio-show.php`. | 🟡 Média | ⏳ Pendente |
+| B11 | `routes.php` / `TarefaController.php` | GET e POST `/tarefas/criar` usam a nova view `tarefa-create.php`. O formulário valida dados obrigatórios e data, preserva valores nos erros e redireciona após salvar. | 🟡 Média | ✅ Corrigido |
+| B12 | `routes.php` | `GET /relatorios` agora carrega `relatorio.php`. A integração dos dados segue pendente na seção 4.2. | 🟡 Média | ✅ Corrigido |
+| B13 | `routes.php` | `GET /relatorios/{id}` agora carrega `relatorio-show.php`. O conteúdo da view continua incompleto. | 🟡 Média | ✅ Corrigido |
 | B14 | `PsicologoController.php` | `formLogin()` agora carrega `login.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
 | B15 | `PsicologoController.php` | Os retornos de erro de `login()` agora carregam `login.php`. | 🔴 Crítico | ✅ Corrigido |
 | B16 | `PsicologoController.php` | `form2fa()` agora carrega `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
 | B17 | `PsicologoController.php` | Os retornos de erro de `verificar2fa()` agora carregam `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
 | B18 | `PsicologoController.php` | `formRegistrar()` e `registrar()` agora carregam `register.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
 | B19 | `PsicologoController.php` | `perfil()` agora carrega `perfil-show.php`. | 🔴 Crítico | ✅ Corrigido |
-| B20 | `Backend/Auth/2fa.php` | Arquivo vazio, sem função. Se era para conter lógica de 2FA, esta já está em `Auth.php`. | 🟢 Limpeza | ⏳ Limpeza pendente |
+| B20 | `Backend/Auth/2fa.php` | Arquivo vazio e redundante excluído. A lógica em `Auth.php` e a tela `Views/Auth/2fa.php` foram preservadas. | 🟢 Limpeza | ✅ Removido |
 | B21 | `Backend/Controllers/NotificacaoController.php` | Arquivo vazio — rota POST de subscription não tem handler. | 🟢 Pendente | ⏳ Pendente |
 | B22 | `Backend/Notifications/WebPushService.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
 | B23 | `Backend/Cron/notificar_consultas.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
 | B24 | `sw.js` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
-| B25 | `index.php` | Não inclui `NotificacaoController.php` via `require_once`. Se futuramente a rota for mapeada, dará fatal error por classe não encontrada. | 🟡 Média | ⏳ Pendente |
-| B26 | `Agendamento.html` L3 | Tag `<html>` duplicada (duas aberturas `<html lang="pt-BR">`). | 🟡 Média | ⏳ Pendente |
-| B27 | `Paciente.php` L10-13 | `listarTodos()` retorna **todos** os pacientes sem filtrar por status. Se soft delete for implementado, continuará exibindo inativos. | 🟡 Futura | ⏳ Futuro |
+| B25 | `index.php` | Inclui `NotificacaoController.php`, descartando a saída vazia da inclusão com um buffer local. O handler de B21 não foi implementado. | 🟡 Média | ✅ Corrigido |
+| B26 | `Views/Agendamento/agendamento.html` | Removida a segunda abertura de `<html>`, mantendo uma única raiz HTML. | 🟡 Média | ✅ Corrigido |
+| B27 | `Paciente.php` | `listarTodos()` filtra `status = 'Ativo'`. Não altera nem exclui registros e não conecta a troca de status ou a listagem visual. | 🟡 Futura | ✅ Corrigido |
 
 ### 4.2 Incompatibilidades entre Views (Frontend) e Backend
 
@@ -131,12 +143,14 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | `week_day` | `dia_semana` | ❌ Incompatível |
 | `repeat_interval` | `repeticao` | ❌ Incompatível |
 | `start_time` | `horario_inicio` | ❌ Incompatível |
-| *(ausente — não existe horário fim)* | `horario_fim` | ❌ Campo ausente na view |
+| *(ausente — não existe horário de término)* | `horario_termino` (`horario_fim` aceito como alias) | ❌ Campo ausente na view |
 | `start_date` | `data_inicio` | ❌ Incompatível |
 | `clinical_condition` | `quadro` | ❌ Incompatível |
 | `description` | `descricao` | ❌ Incompatível |
 | `referral_type` | `tipo_encaminhamento` | ❌ Incompatível |
 | `history` | `historico_paciente` | ❌ Incompatível |
+
+A validação no controller já retorna o formulário com HTTP 422, mensagem e campos preservados quando recebe dados inválidos. A submissão pela interface ainda precisa das alterações abaixo.
 
 Além disso:
 - O `<form>` **não tem** `method="POST"` nem `action="/pacientes/criar"`.
@@ -185,18 +199,17 @@ clinica-marcelo-backend/
 │
 ├── Backend/
 │   ├── Auth/
-│   │   ├── Auth.php                             ✅ Completo
-│   │   └── 2fa.php                              ⚠️ Vazio (redundante)
+│   │   └── Auth.php                             ✅ Lógica de autenticação e 2FA
 │   ├── Config/
 │   │   └── Database.php                         ✅ Singleton PDO
 │   ├── Controllers/
-│   │   ├── PacienteController.php               ⚠️ B7/B10 corrigidos; B6/B8 pendentes
+│   │   ├── PacienteController.php               ✅ Leitura, validação e horário corrigidos
 │   │   ├── ConsultaController.php               ✅ B3 corrigido
-│   │   ├── TarefaController.php                 ✅ B4 corrigido
+│   │   ├── TarefaController.php                 ✅ Formulário e criação corrigidos
 │   │   ├── PsicologoController.php              ✅ B14–B19 corrigidos; views de auth pendentes
 │   │   └── NotificacaoController.php            ⏳ Vazio
 │   ├── Models/
-│   │   ├── Paciente.php                         ✅ CRUD completo
+│   │   ├── Paciente.php                         ✅ CRUD + filtro de ativos
 │   │   ├── Perfil.php                           ✅ CRUD + upsert
 │   │   ├── Encaminhamento.php                   ✅ CRUD + upsert
 │   │   ├── Agendamento.php                      ✅ CRUD + upsert
@@ -208,7 +221,7 @@ clinica-marcelo-backend/
 │   ├── Cron/
 │   │   └── notificar_consultas.php              ⏳ Vazio
 │   └── Routes/
-│       └── routes.php                           ⚠️ B9/B10 corrigidos; B11–B13 pendentes
+│       └── routes.php                           ✅ Referências às views corrigidas
 │
 ├── Views/
 │   ├── Auth/
@@ -224,7 +237,8 @@ clinica-marcelo-backend/
 │   │   ├── consulta.php                         ⚠️ Dados hardcoded
 │   │   └── consulta-show.php                    ⚠️ Incompleto
 │   ├── Tarefa/
-│   │   └── tarefa.php                           ⚠️ Dados hardcoded
+│   │   ├── tarefa.php                           ⚠️ Dados hardcoded
+│   │   └── tarefa-create.php                    ✅ Formulário conectado ao controller
 │   ├── Encaminhamento/
 │   │   └── encaminhamento.php                   ⚠️ Dados hardcoded
 │   ├── Perfil/
@@ -236,7 +250,7 @@ clinica-marcelo-backend/
 │   │   ├── relatorio.php                        ⚠️ Dados hardcoded
 │   │   └── relatorio-show.php                   ⚠️ Incompleto
 │   └── Agendamento/
-│       └── agendamento.html                     ⚠️ HTML duplicado
+│       └── agendamento.html                     ✅ HTML corrigido; dados estáticos
 │
 ├── css/
 │   ├── bootstrap.css / bootstrap.min.css        ✅
@@ -252,7 +266,7 @@ clinica-marcelo-backend/
 
 ```mermaid
 flowchart TD
-    F1["Fase 1: Correção de Bugs no Backend\n(críticos corrigidos; demais pendências abertas)"]
+    F1["Fase 1: Correção de Bugs no Backend\n(correções da seção 4.1 concluídas; Web Push pendente)"]
     F2["Fase 2: Integração Views de Auth\n(login.php, register.php, 2fa.php → backend)"]
     F3["Fase 3: Integração Views de Paciente\n(name attrs, form action/method, loop PHP)"]
     F4["Fase 4: Integração das demais Views\n(Consultas, Tarefas, Relatórios, Encaminhamento)"]
@@ -267,7 +281,7 @@ flowchart TD
 ### Fase 1: Correção de Bugs no Backend
 
 > [!IMPORTANT]
-> Os itens críticos desta fase foram corrigidos. A fase continua parcial porque as rotas de tarefas/relatórios e a inclusão do controller de notificações permanecem pendentes.
+> As correções desta fase foram aplicadas. A integração das views e as funcionalidades de Web Push permanecem nas etapas seguintes; a inclusão do controller vazio não implementa B21.
 
 | Tarefa | Arquivo(s) | Bugs | Status |
 |---|---|---|---|
@@ -276,8 +290,8 @@ flowchart TD
 | Renderizar a visualização individual com dados reais | `PacienteController.php`, `paciente-show.php` | B7 | ✅ Corrigido |
 | Corrigir referências às views de criação de paciente, autenticação e perfil | `PsicologoController.php`, `routes.php` | B9, B14–B19 | ✅ Corrigido |
 | Carregar os dados na rota `GET /pacientes/{id}/editar` | `routes.php`, `PacienteController.php`, `paciente-update.php` e models associados | B10 | ✅ Corrigido |
-| Corrigir as referências às views de tarefas e relatórios | `routes.php` | B11–B13 | ⏳ Pendente |
-| Incluir `NotificacaoController.php` no `index.php` | `index.php` | B25 | ⏳ Pendente |
+| Corrigir as referências às views de tarefas e relatórios | `routes.php` | B11–B13 | ✅ Corrigido |
+| Incluir `NotificacaoController.php` no `index.php` | `index.php` | B25 | ✅ Corrigido |
 
 ---
 
@@ -296,7 +310,7 @@ flowchart TD
 | Tarefa | Detalhes |
 |---|---|
 | **Alinhar `name` dos inputs com o backend** | Renomear: `full_name` → `nome`, `birth_date` → `data_nascimento`, `phone` → `telefone`, `week_day` → `dia_semana`, `repeat_interval` → `repeticao`, `start_time` → `horario_inicio`, `start_date` → `data_inicio`, `clinical_condition` → `quadro`, `description` → `descricao`, `referral_type` → `tipo_encaminhamento`, `history` → `historico_paciente`. |
-| **Adicionar campo `horario_fim`** | Input `type="time"` com `name="horario_fim"` na seção de agendamento. |
+| **Adicionar campo `horario_termino`** | Input `type="time"` com `name="horario_termino"` na seção de agendamento. O controller mantém `horario_fim` como alias de compatibilidade. |
 | **Configurar o `<form>`** | `method="POST" action="/pacientes/criar"` no create. `method="POST" action="/pacientes/<?= $paciente['id_paciente'] ?>/editar"` no update. |
 | **Remover `preventDefault()`** | Apagar o JavaScript que bloqueia o submit do formulário. |
 | **Alinhar `<option value>` com o backend** | `dia_semana`: usar `0`-`6` (conforme `date('w')`). `repeticao`: usar `Semanal`, `Quinzenal`, `Mensal`. |

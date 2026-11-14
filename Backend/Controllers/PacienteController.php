@@ -71,12 +71,14 @@ require_once __DIR__ . '/../Models/Agendamento.php';
         }
 
         public function criar(){
-            // Paciente é obrigatório — sem esses campos nada é criado
-            if(empty($_POST['nome']) || empty($_POST['cpf']) ||
-               empty($_POST['telefone']) || empty($_POST['data_nascimento'])){
-                // TODO: retornar mensagem de erro para a view
-                require_once __DIR__ . '/../../Views/Paciente/paciente-show.php';
-                return;
+            $valores = $_POST;
+            foreach (['nome', 'cpf', 'telefone', 'data_nascimento'] as $campo) {
+                if (!isset($_POST[$campo]) || !is_string($_POST[$campo]) || trim($_POST[$campo]) === '') {
+                    $erro = 'Preencha o nome, CPF, telefone e a data de nascimento do paciente.';
+                    http_response_code(422);
+                    require_once __DIR__ . '/../../Views/Paciente/paciente-create.php';
+                    return;
+                }
             }
 
             // Cria o paciente e obtém o ID gerado para associar as entidades dependentes
@@ -106,20 +108,21 @@ require_once __DIR__ . '/../Models/Agendamento.php';
             }
 
             // Agendamento — opcional: todos os campos são necessários para ter sentido
-            if(!empty($_POST['dia_semana'])    && !empty($_POST['repeticao']) &&
-               !empty($_POST['horario_inicio']) && !empty($_POST['horario_fim']) &&
+            $horario_termino = $_POST['horario_termino'] ?? $_POST['horario_fim'] ?? '';
+            if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
+               !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
                !empty($_POST['data_inicio'])){
                 $this->agendamento->criarAgendamento(
                     $id_paciente,
                     $_POST['dia_semana'],
                     $_POST['repeticao'],
                     $_POST['horario_inicio'],
-                    $_POST['horario_fim'],
+                    $horario_termino,
                     $_POST['data_inicio']
                 );
             }
 
-            require_once __DIR__ . '/../../Views/Paciente/paciente-show.php';
+            $this->visualizar($id_paciente);
         }
         
 
@@ -155,15 +158,16 @@ require_once __DIR__ . '/../Models/Agendamento.php';
             }
 
             // Agendamento — upsert se todos os campos necessários forem preenchidos
-            if(!empty($_POST['dia_semana']) && !empty($_POST['repeticao']) &&
-               !empty($_POST['horario_inicio']) && !empty($_POST['horario_fim']) &&
+            $horario_termino = $_POST['horario_termino'] ?? $_POST['horario_fim'] ?? '';
+            if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
+               !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
                !empty($_POST['data_inicio'])){
                 $this->agendamento->atualizarAgendamento(
                     $id,
                     $_POST['dia_semana'],
                     $_POST['repeticao'],
                     $_POST['horario_inicio'],
-                    $_POST['horario_fim'],
+                    $horario_termino,
                     $_POST['data_inicio']
                 );
             }

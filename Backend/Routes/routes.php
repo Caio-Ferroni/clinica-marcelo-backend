@@ -108,7 +108,7 @@ $router->mount('/tarefas', function () use ($router) {
 
     // Formulário de criação de tarefa (GET) + processamento (POST)
     $router->get('/criar', function () {
-        require_once __DIR__ . '/../../Views/Tarefa/tarefa-show.php';
+        (new TarefaController)->formCriar();
     });
     $router->post('/criar', function () {
         (new TarefaController)->criar();
@@ -127,11 +127,11 @@ $router->get('/perfil', function () {
 // =========================================================
 $router->mount('/relatorios', function () use ($router) {
     $router->get('/', function () {
-        require_once __DIR__ . '/../../Views/Relatorio/relatorio.html';
+        require_once __DIR__ . '/../../Views/Relatorio/relatorio.php';
     });
     $router->get('/(\d+)', function ($id) {
         // TODO: (new RelatorioController)->visualizar($id);
-        require_once __DIR__ . '/../../Views/Relatorio/relatorio-show.html';
+        require_once __DIR__ . '/../../Views/Relatorio/relatorio-show.php';
     });
 });
 

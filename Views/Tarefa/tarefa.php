@@ -20,7 +20,7 @@
                     </header>
                     <hr class="mb-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
                     <div class="mb-5">
-                        <a class="btn-outline px-7 py-4 text-decoration-none d-inline-flex align-items-center gap-3" href="tarefa-create.html">
+                        <a class="btn-outline px-7 py-4 text-decoration-none d-inline-flex align-items-center gap-3" href="/tarefas/criar">
                             <i class="bi bi-plus-circle" aria-hidden="true"></i>
                             Adicionar tarefa
                         </a>

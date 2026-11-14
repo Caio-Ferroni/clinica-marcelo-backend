@@ -8,8 +8,9 @@
         
 
         public function listarTodos(){
-            $sql = 'SELECT * FROM paciente;';
-            $stmt = $this->db->query($sql);
+            $sql = 'SELECT * FROM paciente WHERE status = :status';
+            $stmt = $this->db->prepare($sql);
+            $stmt->execute([':status' => 'Ativo']);
             return $stmt->fetchAll();
         }
 

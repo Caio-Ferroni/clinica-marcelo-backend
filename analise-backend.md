@@ -1,7 +1,7 @@
 # Análise do Backend — Clínica Marcelo
 
 > [!NOTE]
-> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após as correções críticas (commit `9ea9e8b`) e dos demais itens autorizados da seção 4.1. B1–B20 e B25–B27 foram tratados; somente B21–B24 permanecem pendentes nessa tabela. A integração da seção 4.2 continua pendente.
+> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após as correções críticas (commit `9ea9e8b`) e dos demais itens autorizados da seção 4.1. B1–B20 e B25–B27 foram tratados; somente B21–B24 permanecem pendentes nessa tabela. Os nomes e valores dos campos de paciente foram alinhados na seção 4.2; o envio pela interface e as demais integrações continuam pendentes.
 
 ---
 
@@ -78,7 +78,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 
 ### 3.6 Correção dos Demais Itens Autorizados da Seção 4.1 — 14/11/2026
 
-- **B6**: O controller de paciente usa `horario_termino`, aceita `horario_fim` como alias e preserva o valor zero de `dia_semana` para domingo, tanto na criação quanto na atualização.
+- **B6**: Nesta etapa, o controller passou a usar `horario_termino`, com `horario_fim` como alias, preservando domingo (`dia_semana = 0`). O alias foi removido na revisão da seção 3.7.
 - **B8**: Cadastros com campos obrigatórios ausentes retornam HTTP 422 ao formulário de criação, com mensagem, valores preservados e escape HTML, sem gravar registros. No sucesso, o controller carrega a visualização do paciente criado.
 - **B11**: Criado `Views/Tarefa/tarefa-create.php` com título, conteúdo e data de conclusão. GET e POST `/tarefas/criar` usam o controller; erros retornam HTTP 422 e preservam valores. Sucesso redireciona para `/tarefas` com HTTP 303. A listagem de tarefas ainda usa dados estáticos.
 - **B12 e B13**: As rotas de relatórios carregam as views PHP existentes. A integração dos dados de relatórios permanece pendente na seção 4.2.
@@ -87,6 +87,15 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - **B26 e B27**: Removida a abertura duplicada de `<html>` em agendamento; `Paciente::listarTodos()` passou a filtrar `status = 'Ativo'`, sem excluir ou alterar registros. A troca de status não foi conectada.
 - **Validação realizada**: Sintaxe PHP, caminhos e estrutura HTML verificados. Passaram 28 testes novos e os 19 testes anteriores, com SQLite em memória. Os arquivos de B21–B24 e a tela de 2FA foram conferidos por hash e permaneceram intactos. A validação com MySQL real segue pendente.
 - **Limite desta entrega**: Não foram implementados Web Push, inativação/reativação, listagens dinâmicas ou a integração geral dos formulários da seção 4.2.
+
+### 3.7 Alinhamento dos Campos de Paciente — 14/11/2026
+
+- Os formulários de cadastro e edição usam diretamente os nomes do backend nos atributos `name`, incluindo `id_paciente` na edição. Foram removidos os mapas de tradução e os aliases.
+- Os dois formulários incluem `horario_termino`. As opções usam dias de 0 a 6, `Semanal`/`Quinzenal`/`Mensal`, `Ativo`/`Inativo` e `Recebimento`/`Envio`.
+- O cadastro preserva os valores após erro, escapa a saída com `htmlspecialchars()` e reabre as seções preenchidas. O controller filtra valores não escalares antes de devolver os campos à view.
+- A pesquisa em `layout.js` lê `id_paciente`, `nome` e os demais campos diretamente, sem aceitar os nomes antigos.
+- **Validação realizada**: Sintaxe PHP/JavaScript, os 47 cenários locais anteriores com expectativas atualizadas, verificação dos campos/opções renderizados, sete dias da semana, seções parciais/vazias, escape HTML e pesquisa/preenchimento em JavaScript. Banco de testes SQLite em memória; sem validação em navegador ou MySQL real.
+- **Limite desta entrega**: O envio real continua pendente: os formulários permanecem sem `method`/`action`, com `preventDefault()`, e a edição mantém o botão inicialmente desabilitado. O JSON de pesquisa continua vazio; não foram adicionadas dependências, APIs ou dados fictícios à aplicação.
 
 ---
 
@@ -104,7 +113,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | B3 | `ConsultaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
 | B4 | `TarefaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
 | B5 | `Consulta.php` | `gerarRelatorio()` agora usa `UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id`, com parâmetros preparados. | 🔴 Crítico | ✅ Corrigido |
-| B6 | `PacienteController.php` | Padronizado `horario_termino`, com `horario_fim` como alias de compatibilidade na criação e atualização. Domingo (`dia_semana = 0`) é aceito. | 🟡 Média | ✅ Corrigido |
+| B6 | `PacienteController.php` | Padronizado apenas `horario_termino` na criação, atualização e nos formulários, sem alias `horario_fim`. Domingo (`dia_semana = 0`) é aceito. | 🟡 Média | ✅ Corrigido |
 | B7 | `PacienteController.php` | `visualizar($id)` carrega o paciente e suas associações e renderiza `paciente-show.php` com dados reais e escape HTML. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
 | B8 | `PacienteController.php` / `paciente-create.php` | Validação retorna HTTP 422 ao formulário de criação, com mensagem e valores preservados com escape HTML, sem gravação. Sucesso carrega a visualização do paciente criado. | 🟡 Média | ✅ Corrigido |
 | B9 | `routes.php` | `GET /pacientes/criar` agora carrega `paciente-create.php`. | 🔴 Crítico | ✅ Corrigido |
@@ -130,36 +139,36 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 ### 4.2 Incompatibilidades entre Views (Frontend) e Backend
 
 > [!WARNING]
-> O maior bloqueio atual: os nomes dos campos `name=""` nas Views **não coincidem** com os nomes esperados pelos Controllers via `$_POST`. Nenhum formulário irá funcionar sem essa correção.
+> Os nomes e valores dos campos de cadastro e edição de paciente já coincidem com o backend. O envio dos formulários pela interface continua bloqueado e as demais integrações abaixo permanecem pendentes.
 
 #### 4.2.1 Formulário de Cadastro de Paciente (`paciente-create.php`)
 
 | Campo da View (`name`) | Campo esperado pelo Controller (`$_POST`) | Status |
 |---|---|---|
-| `full_name` | `nome` | ❌ Incompatível |
-| `birth_date` | `data_nascimento` | ❌ Incompatível |
-| `cpf` | `cpf` | ✅ OK |
-| `phone` | `telefone` | ❌ Incompatível |
-| `week_day` | `dia_semana` | ❌ Incompatível |
-| `repeat_interval` | `repeticao` | ❌ Incompatível |
-| `start_time` | `horario_inicio` | ❌ Incompatível |
-| *(ausente — não existe horário de término)* | `horario_termino` (`horario_fim` aceito como alias) | ❌ Campo ausente na view |
-| `start_date` | `data_inicio` | ❌ Incompatível |
-| `clinical_condition` | `quadro` | ❌ Incompatível |
-| `description` | `descricao` | ❌ Incompatível |
-| `referral_type` | `tipo_encaminhamento` | ❌ Incompatível |
-| `history` | `historico_paciente` | ❌ Incompatível |
+| `nome` | `nome` | ✅ Alinhado |
+| `data_nascimento` | `data_nascimento` | ✅ Alinhado |
+| `cpf` | `cpf` | ✅ Alinhado |
+| `telefone` | `telefone` | ✅ Alinhado |
+| `dia_semana` | `dia_semana` | ✅ Alinhado |
+| `repeticao` | `repeticao` | ✅ Alinhado |
+| `horario_inicio` | `horario_inicio` | ✅ Alinhado |
+| `horario_termino` | `horario_termino` | ✅ Alinhado |
+| `data_inicio` | `data_inicio` | ✅ Alinhado |
+| `quadro` | `quadro` | ✅ Alinhado |
+| `descricao` | `descricao` | ✅ Alinhado |
+| `tipo_encaminhamento` | `tipo_encaminhamento` | ✅ Alinhado |
+| `historico_paciente` | `historico_paciente` | ✅ Alinhado |
 
 A validação no controller já retorna o formulário com HTTP 422, mensagem e campos preservados quando recebe dados inválidos. A submissão pela interface ainda precisa das alterações abaixo.
 
 Além disso:
 - O `<form>` **não tem** `method="POST"` nem `action="/pacientes/criar"`.
 - O JavaScript atual **impede o submit** (`event.preventDefault()`) e mostra uma mensagem de "não disponível".
-- Os `<option value>` do agendamento usam inglês (`monday`, `weekly`) mas o backend/Model espera valores numéricos para `dia_semana` (0-6 conforme `date('w')` do PHP) e strings em português para `repeticao` (`Semanal`, `Quinzenal`, `Mensal`).
+Os `<option value>` já usam `dia_semana` de 0 a 6, `repeticao` com `Semanal`, `Quinzenal` ou `Mensal`, e `tipo_encaminhamento` com `Recebimento` ou `Envio`. O campo `horario_termino` foi adicionado.
 
 #### 4.2.2 Formulário de Edição (`paciente-update.php`)
 
-O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os campos exibem o paciente e suas associações, com escape HTML. A integração de envio continua com os mesmos problemas de `paciente-create.php`, além dos itens abaixo:
+O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os campos exibem o paciente e suas associações, com escape HTML. Os nomes agora seguem o backend, com `id_paciente` no campo oculto, `horario_termino` e status `Ativo`/`Inativo`. A pesquisa usa os mesmos nomes para buscar e preencher os campos. O envio continua pendente:
 
 - Também **não tem** `method="POST"` nem `action="/pacientes/{id}/editar"`.
 - O JavaScript também bloqueia o submit.
@@ -230,7 +239,7 @@ clinica-marcelo-backend/
 │   │   └── 2fa.php                              ⚠️ Action errado
 │   ├── Paciente/
 │   │   ├── paciente.php                         ⚠️ Dados hardcoded
-│   │   ├── paciente-create.php                  ⚠️ Names incompatíveis
+│   │   ├── paciente-create.php                  ⚠️ Campos alinhados; envio pendente
 │   │   ├── paciente-show.php                    ✅ Visualização com dados reais
 │   │   └── paciente-update.php                  ⚠️ Dados carregados; envio pendente
 │   ├── Consulta/
@@ -309,13 +318,13 @@ flowchart TD
 
 | Tarefa | Detalhes |
 |---|---|
-| **Alinhar `name` dos inputs com o backend** | Renomear: `full_name` → `nome`, `birth_date` → `data_nascimento`, `phone` → `telefone`, `week_day` → `dia_semana`, `repeat_interval` → `repeticao`, `start_time` → `horario_inicio`, `start_date` → `data_inicio`, `clinical_condition` → `quadro`, `description` → `descricao`, `referral_type` → `tipo_encaminhamento`, `history` → `historico_paciente`. |
-| **Adicionar campo `horario_termino`** | Input `type="time"` com `name="horario_termino"` na seção de agendamento. O controller mantém `horario_fim` como alias de compatibilidade. |
+| **Alinhar `name` dos inputs com o backend** | ✅ Concluído no cadastro, edição e pesquisa JavaScript, sem mapas ou aliases. |
+| **Adicionar campo `horario_termino`** | ✅ Concluído nos dois formulários. O controller aceita somente esse nome. |
 | **Configurar o `<form>`** | `method="POST" action="/pacientes/criar"` no create. `method="POST" action="/pacientes/<?= $paciente['id_paciente'] ?>/editar"` no update. |
 | **Remover `preventDefault()`** | Apagar o JavaScript que bloqueia o submit do formulário. |
-| **Alinhar `<option value>` com o backend** | `dia_semana`: usar `0`-`6` (conforme `date('w')`). `repeticao`: usar `Semanal`, `Quinzenal`, `Mensal`. |
+| **Alinhar `<option value>` com o backend** | ✅ Concluído: dias de 0 a 6, repetição em português, status `Ativo`/`Inativo` e encaminhamento `Recebimento`/`Envio`. |
 | **Implementar listagem dinâmica em `paciente.php`** | Usar `foreach ($pacientes as $p)` para gerar as `<tr>` com dados reais. Links de edição e visualização apontando para `/pacientes/{id}/editar` e `/pacientes/{id}`. |
-| **Injetar dados JSON em `paciente-update.php`** | O Controller deve popular o `<script id="patients-data">` com `json_encode($pacientes)`. |
+| **Injetar dados JSON em `paciente-update.php`** | Pendente: popular o `<script id="patients-data">` com registros de chaves `id_paciente`, `nome` e os demais nomes do formulário, mantendo o escape adequado no JSON. |
 
 ---
 

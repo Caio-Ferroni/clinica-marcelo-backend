@@ -1,30 +1,12 @@
 <?php
 $valores = $valores ?? [];
-$valor = static function ($campo, $alias = '') use ($valores) {
-    $conteudo = $valores[$campo] ?? $valores[$alias] ?? '';
-    return is_scalar($conteudo) ? (string) $conteudo : '';
-};
-$escape = static fn($conteudo) => htmlspecialchars((string) $conteudo, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-$dias = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-$repeticoes = ['semanal' => 'weekly', 'quinzenal' => 'fortnightly', 'mensal' => 'monthly'];
-$tipos = ['recebimento' => 'received', 'envio' => 'sent', 'received' => 'received', 'sent' => 'sent'];
-$dados = [
-    'full_name' => $valor('nome', 'full_name'),
-    'birth_date' => $valor('data_nascimento', 'birth_date'),
-    'cpf' => $valor('cpf'),
-    'phone' => $valor('telefone', 'phone'),
-    'week_day' => $dias[$valor('dia_semana')] ?? $valor('week_day'),
-    'repeat_interval' => $repeticoes[strtolower($valor('repeticao'))] ?? $valor('repeat_interval'),
-    'start_time' => $valor('horario_inicio', 'start_time'),
-    'start_date' => $valor('data_inicio', 'start_date'),
-    'clinical_condition' => $valor('quadro', 'clinical_condition'),
-    'description' => $valor('descricao', 'description'),
-    'referral_type' => $tipos[strtolower($valor('tipo_encaminhamento'))] ?? $valor('referral_type'),
-    'history' => $valor('historico_paciente', 'history')
-];
-$abrirAgendamento = $dados['week_day'] !== '' || $dados['repeat_interval'] !== '' || $dados['start_time'] !== '' || $dados['start_date'] !== '' || $valor('horario_termino', 'horario_fim') !== '';
-$abrirPerfil = $dados['clinical_condition'] !== '' || $dados['description'] !== '';
-$abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '';
+$abrirAgendamento = ($valores['dia_semana'] ?? '') !== ''
+    || ($valores['repeticao'] ?? '') !== ''
+    || ($valores['horario_inicio'] ?? '') !== ''
+    || ($valores['horario_termino'] ?? '') !== ''
+    || ($valores['data_inicio'] ?? '') !== '';
+$abrirPerfil = ($valores['quadro'] ?? '') !== '' || ($valores['descricao'] ?? '') !== '';
+$abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valores['historico_paciente'] ?? '') !== '';
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -49,7 +31,7 @@ $abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '
                     </header>
 
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
                     <?php endif; ?>
 
                     <form id="patient-form">
@@ -62,19 +44,19 @@ $abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '
                                 <div class="row g-5">
                                     <div class="col-12 md:col-8">
                                         <label class="form-label text-sm" for="patient-name">Nome completo <span aria-hidden="true">*</span></label>
-                                        <input class="form-control" type="text" id="patient-name" name="full_name" value="<?= $escape($dados['full_name']) ?>" placeholder="Digite o nome do paciente" autocomplete="name" required>
+                                        <input class="form-control" type="text" id="patient-name" name="nome" value="<?= htmlspecialchars(($valores['nome'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Digite o nome do paciente" autocomplete="name" required>
                                     </div>
                                     <div class="col-12 md:col-4">
                                         <label class="form-label text-sm" for="birth-date">Data de nascimento</label>
-                                        <input class="form-control" type="date" id="birth-date" name="birth_date" value="<?= $escape($dados['birth_date']) ?>" autocomplete="bday">
+                                        <input class="form-control" type="date" id="birth-date" name="data_nascimento" value="<?= htmlspecialchars(($valores['data_nascimento'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" autocomplete="bday">
                                     </div>
                                     <div class="col-12 md:col-6">
                                         <label class="form-label text-sm" for="patient-cpf">CPF</label>
-                                        <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= $escape($dados['cpf']) ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+                                        <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= htmlspecialchars(($valores['cpf'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
                                     </div>
                                     <div class="col-12 md:col-6">
                                         <label class="form-label text-sm" for="patient-phone">Telefone</label>
-                                        <input class="form-control" type="tel" id="patient-phone" name="phone" value="<?= $escape($dados['phone']) ?>" placeholder="(00) 00000-0000" autocomplete="tel">
+                                        <input class="form-control" type="tel" id="patient-phone" name="telefone" value="<?= htmlspecialchars(($valores['telefone'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="(00) 00000-0000" autocomplete="tel">
                                     </div>
                                 </div>
                             </section>
@@ -95,33 +77,37 @@ $abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '
                                     <div class="row g-5">
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="week-day">Dia da semana</label>
-                                            <select class="form-control" id="week-day" name="week_day">
+                                            <select class="form-control" id="week-day" name="dia_semana">
                                                 <option value="">Selecione o dia</option>
-                                                <option value="monday" <?= $dados['week_day'] === 'monday' ? 'selected' : '' ?>>Segunda-feira</option>
-                                                <option value="tuesday" <?= $dados['week_day'] === 'tuesday' ? 'selected' : '' ?>>Terça-feira</option>
-                                                <option value="wednesday" <?= $dados['week_day'] === 'wednesday' ? 'selected' : '' ?>>Quarta-feira</option>
-                                                <option value="thursday" <?= $dados['week_day'] === 'thursday' ? 'selected' : '' ?>>Quinta-feira</option>
-                                                <option value="friday" <?= $dados['week_day'] === 'friday' ? 'selected' : '' ?>>Sexta-feira</option>
-                                                <option value="saturday" <?= $dados['week_day'] === 'saturday' ? 'selected' : '' ?>>Sábado</option>
-                                                <option value="sunday" <?= $dados['week_day'] === 'sunday' ? 'selected' : '' ?>>Domingo</option>
+                                                <option value="1" <?= (string) ($valores['dia_semana'] ?? '') === '1' ? 'selected' : '' ?>>Segunda-feira</option>
+                                                <option value="2" <?= (string) ($valores['dia_semana'] ?? '') === '2' ? 'selected' : '' ?>>Terça-feira</option>
+                                                <option value="3" <?= (string) ($valores['dia_semana'] ?? '') === '3' ? 'selected' : '' ?>>Quarta-feira</option>
+                                                <option value="4" <?= (string) ($valores['dia_semana'] ?? '') === '4' ? 'selected' : '' ?>>Quinta-feira</option>
+                                                <option value="5" <?= (string) ($valores['dia_semana'] ?? '') === '5' ? 'selected' : '' ?>>Sexta-feira</option>
+                                                <option value="6" <?= (string) ($valores['dia_semana'] ?? '') === '6' ? 'selected' : '' ?>>Sábado</option>
+                                                <option value="0" <?= (string) ($valores['dia_semana'] ?? '') === '0' ? 'selected' : '' ?>>Domingo</option>
                                             </select>
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="repeat-interval">Repetição</label>
-                                            <select class="form-control" id="repeat-interval" name="repeat_interval">
+                                            <select class="form-control" id="repeat-interval" name="repeticao">
                                                 <option value="">Selecione a frequência</option>
-                                                <option value="weekly" <?= $dados['repeat_interval'] === 'weekly' ? 'selected' : '' ?>>Semanal</option>
-                                                <option value="fortnightly" <?= $dados['repeat_interval'] === 'fortnightly' ? 'selected' : '' ?>>Quinzenal</option>
-                                                <option value="monthly" <?= $dados['repeat_interval'] === 'monthly' ? 'selected' : '' ?>>Mensal</option>
+                                                <option value="Semanal" <?= ($valores['repeticao'] ?? '') === 'Semanal' ? 'selected' : '' ?>>Semanal</option>
+                                                <option value="Quinzenal" <?= ($valores['repeticao'] ?? '') === 'Quinzenal' ? 'selected' : '' ?>>Quinzenal</option>
+                                                <option value="Mensal" <?= ($valores['repeticao'] ?? '') === 'Mensal' ? 'selected' : '' ?>>Mensal</option>
                                             </select>
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="start-time">Horário de início</label>
-                                            <input class="form-control" type="time" id="start-time" name="start_time" value="<?= $escape($dados['start_time']) ?>">
+                                            <input class="form-control" type="time" id="start-time" name="horario_inicio" value="<?= htmlspecialchars(($valores['horario_inicio'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
+                                        </div>
+                                        <div class="col-12 md:col-6">
+                                            <label class="form-label text-sm" for="end-time">Horário de término</label>
+                                            <input class="form-control" type="time" id="end-time" name="horario_termino" value="<?= htmlspecialchars(($valores['horario_termino'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="start-date">Data de início</label>
-                                            <input class="form-control" type="date" id="start-date" name="start_date" value="<?= $escape($dados['start_date']) ?>">
+                                            <input class="form-control" type="date" id="start-date" name="data_inicio" value="<?= htmlspecialchars(($valores['data_inicio'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                                         </div>
                                     </div>
                                 </fieldset>
@@ -142,11 +128,11 @@ $abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '
                                     <legend class="visually-hidden">Perfil do paciente</legend>
                                     <div class="mb-5">
                                         <label class="form-label text-sm" for="patient-condition">Quadro</label>
-                                        <input class="form-control" type="text" id="patient-condition" name="clinical_condition" value="<?= $escape($dados['clinical_condition']) ?>" placeholder="Informe o quadro do paciente">
+                                        <input class="form-control" type="text" id="patient-condition" name="quadro" value="<?= htmlspecialchars(($valores['quadro'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Informe o quadro do paciente">
                                     </div>
                                     <div>
                                         <label class="form-label text-sm" for="patient-description">Descrição</label>
-                                        <textarea class="form-control" id="patient-description" name="description" rows="5" placeholder="Descreva as informações relevantes para o acompanhamento."><?= $escape($dados['description']) ?></textarea>
+                                        <textarea class="form-control" id="patient-description" name="descricao" rows="5" placeholder="Descreva as informações relevantes para o acompanhamento."><?= htmlspecialchars(($valores['descricao'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
                                     </div>
                                 </fieldset>
                             </details>
@@ -167,15 +153,15 @@ $abrirEncaminhamento = $dados['referral_type'] !== '' || $dados['history'] !== '
                                     <div class="row g-5">
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="referral-type">Tipo de encaminhamento</label>
-                                            <select class="form-control" id="referral-type" name="referral_type">
+                                            <select class="form-control" id="referral-type" name="tipo_encaminhamento">
                                                 <option value="">Selecione o tipo</option>
-                                                <option value="received" <?= $dados['referral_type'] === 'received' ? 'selected' : '' ?>>Recebimento</option>
-                                                <option value="sent" <?= $dados['referral_type'] === 'sent' ? 'selected' : '' ?>>Envio</option>
+                                                <option value="Recebimento" <?= ($valores['tipo_encaminhamento'] ?? '') === 'Recebimento' ? 'selected' : '' ?>>Recebimento</option>
+                                                <option value="Envio" <?= ($valores['tipo_encaminhamento'] ?? '') === 'Envio' ? 'selected' : '' ?>>Envio</option>
                                             </select>
                                         </div>
                                         <div class="col-12">
                                             <label class="form-label text-sm" for="patient-history">Histórico do paciente</label>
-                                            <textarea class="form-control" id="patient-history" name="history" rows="4" placeholder="Registre as informações do histórico do paciente."><?= $escape($dados['history']) ?></textarea>
+                                            <textarea class="form-control" id="patient-history" name="historico_paciente" rows="4" placeholder="Registre as informações do histórico do paciente."><?= htmlspecialchars(($valores['historico_paciente'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></textarea>
                                         </div>
                                     </div>
                                 </fieldset>

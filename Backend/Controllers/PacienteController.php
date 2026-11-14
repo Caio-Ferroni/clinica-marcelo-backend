@@ -71,7 +71,7 @@ require_once __DIR__ . '/../Models/Agendamento.php';
         }
 
         public function criar(){
-            $valores = $_POST;
+            $valores = array_filter($_POST, 'is_scalar');
             foreach (['nome', 'cpf', 'telefone', 'data_nascimento'] as $campo) {
                 if (!isset($_POST[$campo]) || !is_string($_POST[$campo]) || trim($_POST[$campo]) === '') {
                     $erro = 'Preencha o nome, CPF, telefone e a data de nascimento do paciente.';
@@ -108,7 +108,7 @@ require_once __DIR__ . '/../Models/Agendamento.php';
             }
 
             // Agendamento — opcional: todos os campos são necessários para ter sentido
-            $horario_termino = $_POST['horario_termino'] ?? $_POST['horario_fim'] ?? '';
+            $horario_termino = $_POST['horario_termino'] ?? '';
             if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
                !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
                !empty($_POST['data_inicio'])){
@@ -158,7 +158,7 @@ require_once __DIR__ . '/../Models/Agendamento.php';
             }
 
             // Agendamento — upsert se todos os campos necessários forem preenchidos
-            $horario_termino = $_POST['horario_termino'] ?? $_POST['horario_fim'] ?? '';
+            $horario_termino = $_POST['horario_termino'] ?? '';
             if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
                !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
                !empty($_POST['data_inicio'])){

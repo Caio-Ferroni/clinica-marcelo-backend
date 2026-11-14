@@ -21,7 +21,7 @@
                     <h2 class="text-md fw-semibold mb-5">Cadastrar usuário</h2>
 
                     
-                    <form id="auth-form" action="cadastro.html" method="post" novalidate>
+                    <form id="auth-form" action="/login" method="post" novalidate>
                         <div class="mb-5">
                             <label class="form-label text-sm" for="email">E-mail</label>
                             <input class="form-control" type="email" id="email" name="email" placeholder="voce@exemplo.com.br" autocomplete="email" required>

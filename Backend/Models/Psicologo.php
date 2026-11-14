@@ -20,19 +20,18 @@
         }
         
         // Criação permitida apenas se ainda não houver nenhum psicólogo cadastrado
-        public function criarPsicologo($email, $senha, $telefone): bool {
+        public function criarPsicologo($email, $senha): bool {
             if ($this->existePsicologo()) {
                 return false; // Bloqueia a criação de mais de uma conta
             }
 
             $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO psicologo (email, senha, telefone) VALUES (:email, :senha, :telefone)";
+            $sql = "INSERT INTO psicologo (email, senha) VALUES (:email, :senha)";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 ':email'    => $email,
-                ':senha'    => $senhaHash,
-                ':telefone' => $telefone
+                ':senha'    => $senhaHash
             ]);
         }
 

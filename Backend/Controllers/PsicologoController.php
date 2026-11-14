@@ -94,11 +94,10 @@ class PsicologoController {
             exit;
         }
 
-        if (!empty($_POST['email']) && !empty($_POST['senha']) && !empty($_POST['telefone'])) {
+        if (!empty($_POST['email']) && !empty($_POST['senha'])) {
             $sucesso = $this->psicologo->criarPsicologo(
                 $_POST['email'],
-                $_POST['senha'],
-                $_POST['telefone']
+                $_POST['senha']
             );
 
             if ($sucesso) {

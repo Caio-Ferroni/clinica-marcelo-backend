@@ -21,7 +21,7 @@
                     <h2 class="text-md fw-semibold mb-5">Acesse sua conta</h2>
 
                     
-                    <form id="auth-form" action="autenticacao.html" method="post" novalidate>
+                    <form id="auth-form" action="" method="post" novalidate>
                         <div class="mb-5">
                             <label class="form-label text-sm" for="email">E-mail</label>
                             <input class="form-control" type="email" id="email" name="email" placeholder="voce@exemplo.com.br" autocomplete="username" required>

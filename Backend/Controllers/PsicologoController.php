@@ -31,8 +31,13 @@ class PsicologoController {
         $usuario = $this->psicologo->fazerLogin($_POST['email'], $_POST['senha']);
 
         if ($usuario) {
-            // Credenciais corretas! Gera o 2FA e redireciona para a tela do código
-            Auth::gerarCodigo2FA($usuario);
+            if (!Auth::gerarCodigo2FA($usuario)) {
+                $erro = 'Não foi possível enviar o código de verificação. Tente entrar novamente em instantes.';
+                http_response_code(503);
+                require_once __DIR__ . '/../../Views/Auth/login.php';
+                return;
+            }
+
             header('Location: /2fa');
             exit;
         } else {

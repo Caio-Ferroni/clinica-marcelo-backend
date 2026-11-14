@@ -1,5 +1,6 @@
 <?php
-// Backend/Auth/Auth.php
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
 class Auth {
 
@@ -10,22 +11,22 @@ class Auth {
         }
     }
 
-    // Gera o código 2FA de 6 dígitos, salva na sessão (memória) e dispara por e-mail
-    public static function gerarCodigo2FA(array $psicologo): string {
+    public static function gerarCodigo2FA(array $psicologo): bool {
         self::iniciarSessao();
+        self::limpar2FA();
 
         $codigo = (string) random_int(100000, 999999);
 
-        // Armazena temporariamente na sessão por 10 minutos
+        if (!self::enviarEmailCodigo($psicologo['email'], $codigo)) {
+            return false;
+        }
+
         $_SESSION['2fa_codigo']          = $codigo;
         $_SESSION['2fa_expira']          = time() + (10 * 60);
         $_SESSION['2fa_psicologo_id']    = $psicologo['id_psicologo'];
         $_SESSION['2fa_psicologo_email'] = $psicologo['email'];
 
-        // Envia por e-mail
-        self::enviarEmailCodigo($psicologo['email'], $codigo);
-
-        return $codigo;
+        return true;
     }
 
     // Valida o código 2FA digitado contra o que está na memória da sessão
@@ -66,20 +67,49 @@ class Auth {
         );
     }
 
-    // Envia o e-mail contendo o código de confirmação
     public static function enviarEmailCodigo(string $para, string $codigo): bool {
-        $assunto = "Código de Verificação - Clínica Psicológica";
-        $mensagem = "Olá,\n\nSeu código de verificação para acesso ao dashboard é: {$codigo}\n\n";
-        $mensagem .= "Este código é válido por 10 minutos.\nSe você não solicitou este acesso, ignore este e-mail.";
-        
-        $headers = "From: no-reply@clinicamarcelo.com\r\n";
-        $headers .= "Reply-To: no-reply@clinicamarcelo.com\r\n";
-        $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+        $config = $_ENV + $_SERVER;
+        foreach (['SMTP_HOST', 'SMTP_USERNAME', 'SMTP_PASSWORD', 'MAIL_FROM_ADDRESS'] as $campo) {
+            if (!isset($config[$campo]) || !is_string($config[$campo]) || trim($config[$campo]) === '') {
+                error_log('[2FA] Configuração de e-mail ausente: ' . $campo);
+                return false;
+            }
+        }
 
-        // Salva também no log de erro do servidor para facilitar testes em ambiente de desenvolvimento local
-        error_log("[2FA Clínica Marcelo] Código para {$para}: {$codigo}");
+        $porta = filter_var($config['SMTP_PORT'] ?? '587', FILTER_VALIDATE_INT);
+        $criptografia = strtolower(trim($config['SMTP_ENCRYPTION'] ?? 'tls'));
+        if (!in_array([$porta, $criptografia], [[587, 'tls'], [465, 'ssl']], true)) {
+            error_log('[2FA] Use SMTP_PORT=587 com tls ou SMTP_PORT=465 com ssl.');
+            return false;
+        }
 
-        return @mail($para, $assunto, $mensagem, $headers);
+        if (!extension_loaded('openssl')) {
+            error_log('[2FA] A extensão OpenSSL precisa estar habilitada no PHP.');
+            return false;
+        }
+
+        try {
+            $mail = new PHPMailer(true);
+            $mail->isSMTP();
+            $mail->Host = trim($config['SMTP_HOST']);
+            $mail->Port = $porta;
+            $mail->SMTPAuth = true;
+            $mail->Username = trim($config['SMTP_USERNAME']);
+            $mail->Password = $config['SMTP_PASSWORD'];
+            $mail->SMTPSecure = $criptografia === 'tls' ? PHPMailer::ENCRYPTION_STARTTLS : PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Timeout = 15;
+            $mail->getSMTPInstance()->Timelimit = 15;
+            $mail->CharSet = PHPMailer::CHARSET_UTF8;
+            $mail->setFrom(trim($config['MAIL_FROM_ADDRESS']), $config['MAIL_FROM_NAME'] ?? 'Clínica');
+            $mail->addAddress($para);
+            $mail->Subject = 'Código de Verificação - Clínica Psicológica';
+            $mail->Body = "Olá,\n\nSeu código de verificação é: {$codigo}\n\nEste código é válido por 10 minutos.\nSe você não solicitou este acesso, ignore este e-mail.";
+
+            return $mail->send();
+        } catch (Exception $erro) {
+            error_log('[2FA] Não foi possível concluir o envio SMTP.');
+            return false;
+        }
     }
 
     // Verifica se o psicólogo está completamente autenticado

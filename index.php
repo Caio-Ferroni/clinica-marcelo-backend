@@ -4,6 +4,12 @@ session_start();
 // Autoloader do Composer (bramus/router e futuras dependências)
 require_once __DIR__ . '/vendor/autoload.php';
 
+try {
+    Dotenv\Dotenv::createImmutable(__DIR__)->safeLoad();
+} catch (Dotenv\Exception\InvalidFileException $erro) {
+    error_log('[Config] O arquivo .env contém uma configuração inválida.');
+}
+
 // Config
 require_once __DIR__ . '/Backend/Config/Database.php';
 

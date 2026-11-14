@@ -20,17 +20,18 @@
                     <h2 class="text-md fw-semibold mb-5">Verifique seu e-mail</h2>
                     <p class="text-sm text-center mb-7" style="color: var(--color-text-muted);">Um código de verificação de 6 dígitos foi enviado ao seu e-mail.<br>Digite o código na caixa abaixo para acessar sua conta.</p>
                     
-                    <form id="auth-form" action="../Dashboard/dashboard.html" method="post" novalidate>
+                    <form id="auth-form" action="/2fa" method="post" novalidate>
                         <div class="mb-7 mx-auto" style="max-width: 240px;">
                             <label class="form-label text-sm" for="codigo">Código de verificação</label>
                             <input class="form-control text-center" type="text" id="codigo" name="codigo" placeholder="000000" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
                         </div>
                         <div class="text-center"><button class="btn-solid px-7 py-4" type="submit">Avançar</button></div>
                     </form>
-                    <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert" hidden></p>
+                    <?php if (!empty($erro)): ?>
+                        <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+                    <?php endif; ?>
 
                 </div>
-            </div>
         </main>
         <clinic-footer></clinic-footer>
     </div>

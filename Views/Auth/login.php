@@ -21,7 +21,7 @@
                     <h2 class="text-md fw-semibold mb-5">Acesse sua conta</h2>
 
                     
-                    <form id="auth-form" action="" method="post" novalidate>
+                    <form id="auth-form" action="/login" method="post" novalidate>
                         <div class="mb-5">
                             <label class="form-label text-sm" for="email">E-mail</label>
                             <input class="form-control" type="email" id="email" name="email" placeholder="voce@exemplo.com.br" autocomplete="username" required>
@@ -32,7 +32,9 @@
                         </div>
                         <div class="text-center mt-7"><button class="btn-solid px-7 py-4" type="submit">Entrar</button></div>
                     </form>
-                    <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert" hidden></p>
+                    <?php if (!empty($erro)): ?>
+                        <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+                    <?php endif; ?>
                     <!-- <p class="text-sm text-center mt-5 mb-0">Ainda não tem conta? <a href="cadastro.html">Cadastrar</a></p> -->
                 </div>
             </div>

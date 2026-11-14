@@ -1,5 +1,9 @@
 Options -MultiViews -Indexes
 
+<FilesMatch "^\.env(?:\..*)?$">
+    Require all denied
+</FilesMatch>
+
 RewriteEngine On
 
 # Redireciona tudo para o index.php, exceto arquivos e diretórios que realmente existem

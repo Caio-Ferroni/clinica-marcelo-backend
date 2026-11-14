@@ -1,7 +1,7 @@
 # Análise do Backend — Clínica Marcelo
 
 > [!NOTE]
-> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 com auditoria completa de bugs, incompatibilidades entre Views e Backend, e plano de ação para integração.
+> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após a correção dos bugs críticos B1–B5, B7, B9, B10 e B14–B19 da seção 4.1 (commit `9ea9e8b`). Os demais itens continuam pendentes.
 
 ---
 
@@ -19,7 +19,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | **Servidor Web** | `.htaccess` | Regras de rewrite para encaminhar URLs amigáveis ao `index.php` | ✅ Criado |
 | **Auth** | `Backend/Auth/Auth.php` | Sessões, proteção de rotas e verificação de 2FA em memória | ✅ Concluído |
 | **Notificações** | `Backend/Notifications/`, `Backend/Cron/`, `sw.js` | Estrutura para alertas Web Push aos 10 minutos da consulta | ⏳ Estruturado (vazio) |
-| **Views** | `Views/**/*.php` / `.html` | Telas do sistema (gerenciadas por outra frente) | 🔴 Desconectadas do backend |
+| **Views** | `Views/**/*.php` / `.html` | Telas do sistema (gerenciadas por outra frente) | ⏳ Visualização e carregamento da edição de paciente conectados; demais integrações pendentes |
 | **Layout (Web Components)** | `js/layout.js` | Sidebar, footer e paginação de tabelas via Custom Elements | ✅ Funcional |
 
 ---
@@ -66,44 +66,54 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - **`Backend/Controllers/PsicologoController.php`**: Métodos `formLogin()`, `login()`, `form2fa()`, `verificar2fa()`, `formRegistrar()`, `registrar()`, `logout()` e `perfil()`.
 - **`Backend/Routes/routes.php`**: Ativado o middleware `Auth::verificar()` protegendo todas as rotas privadas.
 
+### 3.5 Correção dos Bugs Críticos da Seção 4.1 — 14/11/2026
+
+- **B1–B4**: Corrigida a capitalização de `Config/Database.php` nos quatro includes apontados.
+- **B5**: `Consulta::gerarRelatorio()` passou a executar `UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id`, mantendo os parâmetros preparados.
+- **B7 e B10**: `PacienteController` carrega o paciente individual e suas associações por `id_paciente`; a visualização usa `paciente-show.php` e a rota de edição chama `editar($id)`. Pacientes inexistentes retornam HTTP 404.
+- **Views de paciente**: A visualização exibe os dados carregados com escape HTML; a edição recebe os valores existentes e seleciona as opções correspondentes. Associações ausentes são tratadas como vazias.
+- **B9 e B14–B19**: Corrigidas as referências às views PHP na criação de paciente e nos fluxos de login, registro, 2FA e perfil.
+- **Validação realizada**: Sintaxe dos 11 arquivos PHP alterados, existência e capitalização dos caminhos e 19 testes isolados com SQLite em memória passaram. A execução com MySQL real permanece pendente; o driver PDO MySQL não está carregado no PHP local.
+- **Limite desta entrega**: A seção 4.2 não foi implementada. O envio dos formulários, a busca geral de pacientes e as listagens dinâmicas permanecem pendentes; `login.php` e `register.php` continuam vazios. Notificações, inativação e os demais itens da tabela 4.1 também não foram implementados.
+
 ---
 
-## 4. 🔴 Bugs Encontrados e Problemas de Integração
+## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
-> Os itens abaixo são problemas reais identificados na análise do código atual que impedem o funcionamento correto do sistema. Devem ser corrigidos antes de qualquer teste.
+> Os bugs críticos B1–B5, B7, B9, B10 e B14–B19 foram corrigidos. A tabela mantém a severidade original e distingue as correções concluídas das pendências. Os testes isolados passaram; a integração completa e a validação com MySQL real ainda estão pendentes.
 
 ### 4.1 Bugs Críticos no Backend
 
-| # | Arquivo | Bug | Severidade |
-|---|---|---|---|
-| B1 | `Consulta.php` L2 | `require_once __DIR__ . '/../config/Database.php'` — caminho `config` em minúsculo, mas a pasta real é `Config` (maiúsculo). Em Linux/deploy, dá **fatal error**. | 🔴 Crítico |
-| B2 | `PacienteController.php` L2 | Mesmo problema: `/../config/Database.php` em vez de `/../Config/Database.php`. | 🔴 Crítico |
-| B3 | `ConsultaController.php` L2 | Mesmo problema: `/../config/Database.php`. | 🔴 Crítico |
-| B4 | `TarefaController.php` L2 | Mesmo problema: `/../config/Database.php`. | 🔴 Crítico |
-| B5 | `Consulta.php` L82 | `gerarRelatorio()` usa `INSERT INTO consulta(relatorio) VALUES(:relatorio) WHERE id_consulta = :id` — **SQL inválido**: `INSERT` não aceita `WHERE`. Deveria ser `UPDATE`. | 🔴 Crítico |
-| B6 | `PacienteController.php` L71 | `Agendamento` no controller espera campo `horario_fim` do POST, mas o Model `Agendamento.php` define o parâmetro como `$horario_termino` e a coluna do BD é `horario_termino`. Existe inconsistência na nomenclatura que pode gerar confusão (embora funcione porque o valor do POST é passado posicionalmente). | 🟡 Média |
-| B7 | `PacienteController.php` L31 | `visualizar($id)` carrega os dados mas renderiza `paciente.php` (listagem) em vez de uma view de detalhe (`paciente-show.php`). O paciente individual nunca é exibido. | 🔴 Crítico |
-| B8 | `PacienteController.php` L39 | `criar()` em caso de erro de validação faz `require_once paciente-show.php` mas a variável `$pacientes` nunca é definida — qualquer uso da variável na view causa notice/warning. | 🟡 Média |
-| B9 | `routes.php` L58 | Rota `GET /pacientes/criar` aponta para `paciente-create.html` — arquivo `.html` que não existe; o arquivo real é `paciente-create.php`. | 🔴 Crítico |
-| B10 | `routes.php` L70-72 | Rota `GET /pacientes/{id}/editar` faz `require_once` da view diretamente mas **não carrega os dados do paciente** (`$paciente`, `$perfil`, `$agendamento`, `$encaminhamento`). Os campos do formulário estariam vazios. | 🔴 Crítico |
-| B11 | `routes.php` L112 | Rota `GET /tarefas/criar` aponta para `tarefa-show.php` — esta view não existe na estrutura de Views/Tarefa; existe apenas `tarefa.php`. | 🟡 Média |
-| B12 | `routes.php` L131 | Rota `GET /relatorios` aponta para `relatorio.html`, mas o arquivo real é `relatorio.php`. | 🟡 Média |
-| B13 | `routes.php` L135 | Rota `GET /relatorios/{id}` aponta para `relatorio-show.html`, mas o arquivo real é `relatorio-show.php`. | 🟡 Média |
-| B14 | `PsicologoController.php` L20 | `formLogin()` aponta para `login.html` — arquivo não existe; o real é `login.php`. | 🔴 Crítico |
-| B15 | `PsicologoController.php` L27, L40 | `login()` em erro aponta para `login.html`. | 🔴 Crítico |
-| B16 | `PsicologoController.php` L57 | `form2fa()` aponta para `2fa.html` — arquivo não existe; o real é `2fa.php`. | 🔴 Crítico |
-| B17 | `PsicologoController.php` L64, L74 | `verificar2fa()` em erro aponta para `2fa.html`. | 🔴 Crítico |
-| B18 | `PsicologoController.php` L86, L114 | `formRegistrar()` e `registrar()` apontam para `register.html` — arquivo não existe; o real é `register.php`. | 🔴 Crítico |
-| B19 | `PsicologoController.php` L122 | `perfil()` aponta para `perfil-show.html` — não existe; o real é `perfil-show.php`. | 🔴 Crítico |
-| B20 | `Backend/Auth/2fa.php` | Arquivo vazio, sem função. Se era para conter lógica de 2FA, esta já está em `Auth.php`. | 🟢 Limpeza |
-| B21 | `Backend/Controllers/NotificacaoController.php` | Arquivo vazio — rota POST de subscription não tem handler. | 🟢 Pendente |
-| B22 | `Backend/Notifications/WebPushService.php` | Arquivo vazio. | 🟢 Pendente |
-| B23 | `Backend/Cron/notificar_consultas.php` | Arquivo vazio. | 🟢 Pendente |
-| B24 | `sw.js` | Arquivo vazio. | 🟢 Pendente |
-| B25 | `index.php` | Não inclui `NotificacaoController.php` via `require_once`. Se futuramente a rota for mapeada, dará fatal error por classe não encontrada. | 🟡 Média |
-| B26 | `Agendamento.html` L3 | Tag `<html>` duplicada (duas aberturas `<html lang="pt-BR">`). | 🟡 Média |
-| B27 | `Paciente.php` L10-13 | `listarTodos()` retorna **todos** os pacientes sem filtrar por status. Se soft delete for implementado, continuará exibindo inativos. | 🟡 Futura |
+| # | Arquivo | Problema identificado / correção | Severidade original | Status atual |
+|---|---|---|---|---|
+| B1 | `Consulta.php` | Corrigido o include para `../Config/Database.php`, respeitando a capitalização da pasta. | 🔴 Crítico | ✅ Corrigido |
+| B2 | `PacienteController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
+| B3 | `ConsultaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
+| B4 | `TarefaController.php` | Corrigido o include para `../Config/Database.php`. | 🔴 Crítico | ✅ Corrigido |
+| B5 | `Consulta.php` | `gerarRelatorio()` agora usa `UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id`, com parâmetros preparados. | 🔴 Crítico | ✅ Corrigido |
+| B6 | `PacienteController.php` L71 | `Agendamento` no controller espera campo `horario_fim` do POST, mas o Model `Agendamento.php` define o parâmetro como `$horario_termino` e a coluna do BD é `horario_termino`. Existe inconsistência na nomenclatura que pode gerar confusão (embora funcione porque o valor do POST é passado posicionalmente). | 🟡 Média | ⏳ Pendente |
+| B7 | `PacienteController.php` | `visualizar($id)` carrega o paciente e suas associações e renderiza `paciente-show.php` com dados reais e escape HTML. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
+| B8 | `PacienteController.php` L39 | `criar()` ainda retorna a view de detalhe em falha de validação, sem devolver os dados e erros ao formulário de criação. A view já trata a ausência de dados sem avisos, mas o fluxo de validação continua pendente. | 🟡 Média | ⏳ Pendente |
+| B9 | `routes.php` | `GET /pacientes/criar` agora carrega `paciente-create.php`. | 🔴 Crítico | ✅ Corrigido |
+| B10 | `routes.php` | `GET /pacientes/{id}/editar` chama `PacienteController::editar($id)`, carrega paciente, perfil, agendamento e encaminhamento e preenche os campos. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
+| B11 | `routes.php` L112 | Rota `GET /tarefas/criar` aponta para `tarefa-show.php` — esta view não existe na estrutura de Views/Tarefa; existe apenas `tarefa.php`. | 🟡 Média | ⏳ Pendente |
+| B12 | `routes.php` L131 | Rota `GET /relatorios` aponta para `relatorio.html`, mas o arquivo real é `relatorio.php`. | 🟡 Média | ⏳ Pendente |
+| B13 | `routes.php` L135 | Rota `GET /relatorios/{id}` aponta para `relatorio-show.html`, mas o arquivo real é `relatorio-show.php`. | 🟡 Média | ⏳ Pendente |
+| B14 | `PsicologoController.php` | `formLogin()` agora carrega `login.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
+| B15 | `PsicologoController.php` | Os retornos de erro de `login()` agora carregam `login.php`. | 🔴 Crítico | ✅ Corrigido |
+| B16 | `PsicologoController.php` | `form2fa()` agora carrega `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
+| B17 | `PsicologoController.php` | Os retornos de erro de `verificar2fa()` agora carregam `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
+| B18 | `PsicologoController.php` | `formRegistrar()` e `registrar()` agora carregam `register.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
+| B19 | `PsicologoController.php` | `perfil()` agora carrega `perfil-show.php`. | 🔴 Crítico | ✅ Corrigido |
+| B20 | `Backend/Auth/2fa.php` | Arquivo vazio, sem função. Se era para conter lógica de 2FA, esta já está em `Auth.php`. | 🟢 Limpeza | ⏳ Limpeza pendente |
+| B21 | `Backend/Controllers/NotificacaoController.php` | Arquivo vazio — rota POST de subscription não tem handler. | 🟢 Pendente | ⏳ Pendente |
+| B22 | `Backend/Notifications/WebPushService.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
+| B23 | `Backend/Cron/notificar_consultas.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
+| B24 | `sw.js` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
+| B25 | `index.php` | Não inclui `NotificacaoController.php` via `require_once`. Se futuramente a rota for mapeada, dará fatal error por classe não encontrada. | 🟡 Média | ⏳ Pendente |
+| B26 | `Agendamento.html` L3 | Tag `<html>` duplicada (duas aberturas `<html lang="pt-BR">`). | 🟡 Média | ⏳ Pendente |
+| B27 | `Paciente.php` L10-13 | `listarTodos()` retorna **todos** os pacientes sem filtrar por status. Se soft delete for implementado, continuará exibindo inativos. | 🟡 Futura | ⏳ Futuro |
 
 ### 4.2 Incompatibilidades entre Views (Frontend) e Backend
 
@@ -135,7 +145,8 @@ Além disso:
 
 #### 4.2.2 Formulário de Edição (`paciente-update.php`)
 
-Mesmos problemas de `paciente-create.php` mais:
+O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os campos exibem o paciente e suas associações, com escape HTML. A integração de envio continua com os mesmos problemas de `paciente-create.php`, além dos itens abaixo:
+
 - Também **não tem** `method="POST"` nem `action="/pacientes/{id}/editar"`.
 - O JavaScript também bloqueia o submit.
 - O modal de busca de pacientes lê de um JSON embutido vazio (`[]`). O backend não injeta dados nele.
@@ -143,7 +154,7 @@ Mesmos problemas de `paciente-create.php` mais:
 #### 4.2.3 Formulário de 2FA (`2fa.php`)
 
 - `action` aponta para `../Dashboard/dashboard.html` em vez de `/2fa` (rota correta do backend).
-- Falta `method="POST"`.
+- O formulário já possui `method="post"`; falta corrigir o destino do `action`.
 
 #### 4.2.4 Formulários de Login e Registro
 
@@ -179,17 +190,17 @@ clinica-marcelo-backend/
 │   ├── Config/
 │   │   └── Database.php                         ✅ Singleton PDO
 │   ├── Controllers/
-│   │   ├── PacienteController.php               ⚠️ Bugs B7, B8
-│   │   ├── ConsultaController.php               ⚠️ Bug B3
-│   │   ├── TarefaController.php                 ⚠️ Bug B4
-│   │   ├── PsicologoController.php              🔴 Bugs B14-B19 (refs a .html)
+│   │   ├── PacienteController.php               ⚠️ B7/B10 corrigidos; B6/B8 pendentes
+│   │   ├── ConsultaController.php               ✅ B3 corrigido
+│   │   ├── TarefaController.php                 ✅ B4 corrigido
+│   │   ├── PsicologoController.php              ✅ B14–B19 corrigidos; views de auth pendentes
 │   │   └── NotificacaoController.php            ⏳ Vazio
 │   ├── Models/
 │   │   ├── Paciente.php                         ✅ CRUD completo
 │   │   ├── Perfil.php                           ✅ CRUD + upsert
 │   │   ├── Encaminhamento.php                   ✅ CRUD + upsert
 │   │   ├── Agendamento.php                      ✅ CRUD + upsert
-│   │   ├── Consulta.php                         ⚠️ Bugs B1, B5
+│   │   ├── Consulta.php                         ✅ B1/B5 corrigidos
 │   │   ├── Tarefa.php                           ✅ CRUD
 │   │   └── Psicologo.php                        ✅ CRUD + conta única
 │   ├── Notifications/
@@ -197,7 +208,7 @@ clinica-marcelo-backend/
 │   ├── Cron/
 │   │   └── notificar_consultas.php              ⏳ Vazio
 │   └── Routes/
-│       └── routes.php                           ⚠️ Bugs B9-B13, B10
+│       └── routes.php                           ⚠️ B9/B10 corrigidos; B11–B13 pendentes
 │
 ├── Views/
 │   ├── Auth/
@@ -207,8 +218,8 @@ clinica-marcelo-backend/
 │   ├── Paciente/
 │   │   ├── paciente.php                         ⚠️ Dados hardcoded
 │   │   ├── paciente-create.php                  ⚠️ Names incompatíveis
-│   │   ├── paciente-show.php                    ⚠️ Incompleto
-│   │   └── paciente-update.php                  ⚠️ Names incompatíveis
+│   │   ├── paciente-show.php                    ✅ Visualização com dados reais
+│   │   └── paciente-update.php                  ⚠️ Dados carregados; envio pendente
 │   ├── Consulta/
 │   │   ├── consulta.php                         ⚠️ Dados hardcoded
 │   │   └── consulta-show.php                    ⚠️ Incompleto
@@ -241,7 +252,7 @@ clinica-marcelo-backend/
 
 ```mermaid
 flowchart TD
-    F1["Fase 1: Correção de Bugs no Backend\n(refs .html → .php, SQL inválido, caminhos Config)"]
+    F1["Fase 1: Correção de Bugs no Backend\n(críticos corrigidos; demais pendências abertas)"]
     F2["Fase 2: Integração Views de Auth\n(login.php, register.php, 2fa.php → backend)"]
     F3["Fase 3: Integração Views de Paciente\n(name attrs, form action/method, loop PHP)"]
     F4["Fase 4: Integração das demais Views\n(Consultas, Tarefas, Relatórios, Encaminhamento)"]
@@ -256,16 +267,17 @@ flowchart TD
 ### Fase 1: Correção de Bugs no Backend
 
 > [!IMPORTANT]
-> Estas correções devem ser aplicadas **antes** de qualquer teste de integração.
+> Os itens críticos desta fase foram corrigidos. A fase continua parcial porque as rotas de tarefas/relatórios e a inclusão do controller de notificações permanecem pendentes.
 
-| Tarefa | Arquivo(s) | Bugs resolvidos |
-|---|---|---|
-| Corrigir caminhos `config` → `Config` (case-sensitive) | `Consulta.php`, `PacienteController.php`, `ConsultaController.php`, `TarefaController.php` | B1, B2, B3, B4 |
-| Corrigir `gerarRelatorio()`: trocar `INSERT ... WHERE` por `UPDATE` | `Consulta.php` | B5 |
-| Corrigir `visualizar($id)`: renderizar `paciente-show.php` com dados do paciente individual | `PacienteController.php` | B7 |
-| Corrigir todas as referências `.html` → `.php` nos controllers e rotas | `PsicologoController.php`, `routes.php` | B9, B11-B19 |
-| Criar rota `GET /pacientes/{id}/editar` com carregamento de dados | `routes.php`, `PacienteController.php` | B10 |
-| Incluir `NotificacaoController.php` no `index.php` | `index.php` | B25 |
+| Tarefa | Arquivo(s) | Bugs | Status |
+|---|---|---|---|
+| Corrigir caminhos `config` → `Config` (case-sensitive) | `Consulta.php`, `PacienteController.php`, `ConsultaController.php`, `TarefaController.php` | B1–B4 | ✅ Corrigido |
+| Corrigir `gerarRelatorio()`: trocar `INSERT ... WHERE` por `UPDATE` | `Consulta.php` | B5 | ✅ Corrigido |
+| Renderizar a visualização individual com dados reais | `PacienteController.php`, `paciente-show.php` | B7 | ✅ Corrigido |
+| Corrigir referências às views de criação de paciente, autenticação e perfil | `PsicologoController.php`, `routes.php` | B9, B14–B19 | ✅ Corrigido |
+| Carregar os dados na rota `GET /pacientes/{id}/editar` | `routes.php`, `PacienteController.php`, `paciente-update.php` e models associados | B10 | ✅ Corrigido |
+| Corrigir as referências às views de tarefas e relatórios | `routes.php` | B11–B13 | ⏳ Pendente |
+| Incluir `NotificacaoController.php` no `index.php` | `index.php` | B25 | ⏳ Pendente |
 
 ---
 
@@ -275,7 +287,7 @@ flowchart TD
 |---|---|
 | **Criar conteúdo de `login.php`** | Formulário com `method="POST" action="/login"`, campos `name="email"` e `name="senha"`, exibição de `$erro` se definido. |
 | **Criar conteúdo de `register.php`** | Formulário com `method="POST" action="/registrar"`, campos `name="email"`, `name="senha"`, `name="telefone"`, exibição de `$erro`. |
-| **Corrigir `2fa.php`** | Mudar `action` de `../Dashboard/dashboard.html` para `/2fa`, adicionar `method="POST"`, manter `name="codigo"`. |
+| **Corrigir `2fa.php`** | Mudar `action` de `../Dashboard/dashboard.html` para `/2fa`, manter `method="post"` e `name="codigo"`. |
 
 ---
 

@@ -76,3 +76,33 @@
     outline-offset: 6px;
     border-radius: 6px;
 }
+
+.clinic-modal {
+    --bs-theme-bg: var(--color-dark-blue);
+    --bs-theme-fg: var(--color-dark-blue);
+    --bs-theme-border: var(--color-dark-blue);
+    --bs-theme-contrast: var(--color-white);
+    --bs-theme-focus-ring: var(--color-light-blue);
+    width: min(720px, calc(100% - 2rem));
+    max-height: 90vh;
+    margin: auto;
+    padding: 0;
+    overflow-y: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    color: var(--color-dark-blue);
+}
+
+.clinic-modal::backdrop {
+    background: rgb(16 45 91 / 45%);
+}
+
+.patient-search-modal {
+    max-width: 420px;
+}
+
+.patient-search-results {
+    max-height: 20rem;
+    overflow-y: auto;
+}

@@ -1,28 +1,32 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste</title>
-</head>
-<body>
-    <?php
-    include __DIR__ . "/Backend/Database.php";
+<?php
+session_start();
 
-    $sql = 'SELECT * FROM Paciente';
-    $result = pg_query($connection, $sql);
-    if ($result === false) {
-    die('Erro na consulta: ' . pg_last_error($connection));
-}
+// Autoloader do Composer (bramus/router e futuras dependências)
+require_once __DIR__ . '/vendor/autoload.php';
 
-echo 'Registros encontrados: ' . pg_num_rows($result) . '<br>';
+// Config
+require_once __DIR__ . '/Backend/Config/Database.php';
 
-while ($paciente = pg_fetch_assoc($result)) {
-    echo '<pre>';
-    print_r($paciente);
-    echo '</pre>';
-}
-    ?>
-    
-</body>
-</html>
+// Models
+require_once __DIR__ . '/Backend/Models/Paciente.php';
+require_once __DIR__ . '/Backend/Models/Perfil.php';
+require_once __DIR__ . '/Backend/Models/Encaminhamento.php';
+require_once __DIR__ . '/Backend/Models/Agendamento.php';
+require_once __DIR__ . '/Backend/Models/Consulta.php';
+require_once __DIR__ . '/Backend/Models/Tarefa.php';
+require_once __DIR__ . '/Backend/Models/Psicologo.php';
+
+// Controllers
+require_once __DIR__ . '/Backend/Controllers/PacienteController.php';
+require_once __DIR__ . '/Backend/Controllers/ConsultaController.php';
+require_once __DIR__ . '/Backend/Controllers/TarefaController.php';
+require_once __DIR__ . '/Backend/Controllers/PsicologoController.php';
+
+// Auth
+require_once __DIR__ . '/Backend/Auth/Auth.php';
+
+// Instancia o router e carrega as rotas
+$router = new \Bramus\Router\Router();
+require_once __DIR__ . '/Backend/Routes/routes.php';
+
+$router->run();

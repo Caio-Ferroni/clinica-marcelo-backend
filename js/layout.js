@@ -182,12 +182,12 @@
         function selectPatient(patient) {
             editForm.querySelector('[data-patient-fields]').disabled = false;
             editForm.querySelectorAll('[name]').forEach((field) => {
-                field.value = field.name === 'patient_id' ? patient.id : (patient[field.name] ?? '');
+                field.value = patient[field.name] ?? '';
             });
             editForm.querySelector('[type="submit"]').disabled = false;
             document.getElementById('save-message').hidden = true;
             searchModal.close();
-            editForm.querySelector('[name="full_name"]').focus();
+            editForm.querySelector('[name="nome"]').focus();
         }
 
         function searchPatients() {
@@ -205,8 +205,8 @@
             const term = normalizeText(searchInput.value);
             const cpf = searchInput.value.replace(/\D/g, '');
             const matches = patients.filter((patient) => {
-                return patient && patient.id != null && patient.full_name && (
-                    normalizeText(patient.full_name).includes(term) ||
+                return patient && patient.id_paciente != null && patient.nome && (
+                    normalizeText(patient.nome).includes(term) ||
                     (cpf && String(patient.cpf || '').replace(/\D/g, '').includes(cpf))
                 );
             });
@@ -220,7 +220,7 @@
                 const button = document.createElement('button');
                 button.type = 'button';
                 button.className = 'btn-text w-100 justify-content-start text-start border-bottom rounded-0 p-5';
-                button.textContent = patient.full_name;
+                button.textContent = patient.nome;
                 button.addEventListener('click', () => selectPatient(patient));
                 item.appendChild(button);
                 results.appendChild(item);

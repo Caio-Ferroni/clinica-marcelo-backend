@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../Config/Database.php';
     class Consulta{
         protected PDO $db;
 
@@ -79,7 +79,7 @@ require_once __DIR__ . '/../config/Database.php';
 
         }
         public function gerarRelatorio($id, $relatorio){
-            $sql = "INSERT INTO consulta(relatorio) VALUES(:relatorio) WHERE id_consulta = :id";
+            $sql = "UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':relatorio' => $relatorio,

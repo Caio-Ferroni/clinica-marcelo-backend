@@ -12,6 +12,12 @@
             return $stmt->fetchAll();
         }
 
+        public function buscarPorPaciente($id_paciente): array {
+            $stmt = $this->db->prepare('SELECT * FROM agendamento WHERE id_paciente = :id_paciente LIMIT 1');
+            $stmt->execute([':id_paciente' => $id_paciente]);
+            return $stmt->fetch() ?: [];
+        }
+
         public function criarAgendamento($id_paciente, $dia_semana, $repeticao, $horario_inicio, $horario_termino, $data_inicio){
             $sql = "INSERT INTO agendamento(id_paciente, dia_semana, repeticao, horario_inicio, horario_termino, data_inicio) VALUES (:id_paciente, :dia_semana, :repeticao, :horario_inicio, :horario_termino, :data_inicio)";
             $stmt = $this->db->prepare($sql);

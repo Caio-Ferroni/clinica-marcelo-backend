@@ -1,3 +1,18 @@
+<?php
+$paciente = $paciente ?? [];
+$perfil = $perfil ?? [];
+$agendamento = $agendamento ?? [];
+$encaminhamento = $encaminhamento ?? [];
+$escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$dias = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+$diaSelecionado = $dias[(string) ($agendamento['dia_semana'] ?? '')] ?? '';
+$repeticoes = ['semanal' => 'weekly', 'quinzenal' => 'fortnightly', 'mensal' => 'monthly'];
+$repeticaoSelecionada = $repeticoes[strtolower($agendamento['repeticao'] ?? '')] ?? '';
+$status = ['ativo' => 'active', 'inativo' => 'inactive', 'active' => 'active', 'inactive' => 'inactive'];
+$statusSelecionado = $status[strtolower($paciente['status'] ?? '')] ?? '';
+$tipos = ['recebimento' => 'received', 'envio' => 'sent', 'received' => 'received', 'sent' => 'sent'];
+$tipoSelecionado = $tipos[strtolower($encaminhamento['tipo_encaminhamento'] ?? '')] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
 <head>
@@ -25,8 +40,8 @@
                     </header>
 
                     <form id="patient-form" data-patient-edit>
-                        <input type="hidden" name="patient_id">
-                        <fieldset class="border-0 p-0 m-0" data-patient-fields disabled>
+                        <input type="hidden" name="patient_id" value="<?= $escape($paciente['id_paciente'] ?? '') ?>">
+                        <fieldset class="border-0 p-0 m-0" data-patient-fields <?= empty($paciente) ? 'disabled' : '' ?>>
                             <legend class="visually-hidden">Informações do paciente</legend>
                             <div class="border rounded-4 shadow-sm" style="background: var(--color-surface);">
                                 <section class="p-7 md:p-9" aria-labelledby="personal-heading">
@@ -37,27 +52,27 @@
                                     <div class="row g-5">
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-name">Nome completo <span aria-hidden="true">*</span></label>
-                                            <input class="form-control" type="text" id="patient-name" name="full_name" placeholder="Selecione um paciente" autocomplete="name" required>
+                                            <input class="form-control" type="text" id="patient-name" name="full_name" value="<?= $escape($paciente['nome'] ?? '') ?>" placeholder="Selecione um paciente" autocomplete="name" required>
                                         </div>
                                         <div class="col-12 md:col-3">
                                             <label class="form-label text-sm" for="birth-date">Data de nascimento</label>
-                                            <input class="form-control" type="date" id="birth-date" name="birth_date" autocomplete="bday">
+                                            <input class="form-control" type="date" id="birth-date" name="birth_date" value="<?= $escape(substr($paciente['data_nascimento'] ?? '', 0, 10)) ?>" autocomplete="bday">
                                         </div>
                                         <div class="col-12 md:col-3">
                                             <label class="form-label text-sm" for="patient-status">Status</label>
                                             <select class="form-control" id="patient-status" name="status">
                                                 <option value="">Selecione</option>
-                                                <option value="active">Ativo</option>
-                                                <option value="inactive">Inativo</option>
+                                                <option value="active" <?= $statusSelecionado === 'active' ? 'selected' : '' ?>>Ativo</option>
+                                                <option value="inactive" <?= $statusSelecionado === 'inactive' ? 'selected' : '' ?>>Inativo</option>
                                             </select>
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-cpf">CPF</label>
-                                            <input class="form-control" type="text" id="patient-cpf" name="cpf" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+                                            <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= $escape($paciente['cpf'] ?? '') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-phone">Telefone</label>
-                                            <input class="form-control" type="tel" id="patient-phone" name="phone" placeholder="(00) 00000-0000" autocomplete="tel">
+                                            <input class="form-control" type="tel" id="patient-phone" name="phone" value="<?= $escape($paciente['telefone'] ?? '') ?>" placeholder="(00) 00000-0000" autocomplete="tel">
                                         </div>
                                     </div>
                                 </section>
@@ -80,31 +95,31 @@
                                                 <label class="form-label text-sm" for="week-day">Dia da semana</label>
                                                 <select class="form-control" id="week-day" name="week_day">
                                                     <option value="">Selecione o dia</option>
-                                                    <option value="monday">Segunda-feira</option>
-                                                    <option value="tuesday">Terça-feira</option>
-                                                    <option value="wednesday">Quarta-feira</option>
-                                                    <option value="thursday">Quinta-feira</option>
-                                                    <option value="friday">Sexta-feira</option>
-                                                    <option value="saturday">Sábado</option>
-                                                    <option value="sunday">Domingo</option>
+                                                    <option value="monday" <?= $diaSelecionado === 'monday' ? 'selected' : '' ?>>Segunda-feira</option>
+                                                    <option value="tuesday" <?= $diaSelecionado === 'tuesday' ? 'selected' : '' ?>>Terça-feira</option>
+                                                    <option value="wednesday" <?= $diaSelecionado === 'wednesday' ? 'selected' : '' ?>>Quarta-feira</option>
+                                                    <option value="thursday" <?= $diaSelecionado === 'thursday' ? 'selected' : '' ?>>Quinta-feira</option>
+                                                    <option value="friday" <?= $diaSelecionado === 'friday' ? 'selected' : '' ?>>Sexta-feira</option>
+                                                    <option value="saturday" <?= $diaSelecionado === 'saturday' ? 'selected' : '' ?>>Sábado</option>
+                                                    <option value="sunday" <?= $diaSelecionado === 'sunday' ? 'selected' : '' ?>>Domingo</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 md:col-6">
                                                 <label class="form-label text-sm" for="repeat-interval">Repetição</label>
                                                 <select class="form-control" id="repeat-interval" name="repeat_interval">
                                                     <option value="">Selecione a frequência</option>
-                                                    <option value="weekly">Semanal</option>
-                                                    <option value="fortnightly">Quinzenal</option>
-                                                    <option value="monthly">Mensal</option>
+                                                    <option value="weekly" <?= $repeticaoSelecionada === 'weekly' ? 'selected' : '' ?>>Semanal</option>
+                                                    <option value="fortnightly" <?= $repeticaoSelecionada === 'fortnightly' ? 'selected' : '' ?>>Quinzenal</option>
+                                                    <option value="monthly" <?= $repeticaoSelecionada === 'monthly' ? 'selected' : '' ?>>Mensal</option>
                                                 </select>
                                             </div>
                                             <div class="col-12 md:col-6">
                                                 <label class="form-label text-sm" for="start-time">Horário de início</label>
-                                                <input class="form-control" type="time" id="start-time" name="start_time">
+                                                <input class="form-control" type="time" id="start-time" name="start_time" value="<?= $escape(substr($agendamento['horario_inicio'] ?? '', 0, 5)) ?>">
                                             </div>
                                             <div class="col-12 md:col-6">
                                                 <label class="form-label text-sm" for="start-date">Data de início</label>
-                                                <input class="form-control" type="date" id="start-date" name="start_date">
+                                                <input class="form-control" type="date" id="start-date" name="start_date" value="<?= $escape(substr($agendamento['data_inicio'] ?? '', 0, 10)) ?>">
                                             </div>
                                         </div>
                                     </fieldset>
@@ -125,11 +140,11 @@
                                         <legend class="visually-hidden">Perfil do paciente</legend>
                                         <div class="mb-5">
                                             <label class="form-label text-sm" for="patient-condition">Quadro</label>
-                                            <input class="form-control" type="text" id="patient-condition" name="clinical_condition" placeholder="Informe o quadro do paciente">
+                                            <input class="form-control" type="text" id="patient-condition" name="clinical_condition" value="<?= $escape($perfil['quadro'] ?? '') ?>" placeholder="Informe o quadro do paciente">
                                         </div>
                                         <div>
                                             <label class="form-label text-sm" for="patient-description">Descrição</label>
-                                            <textarea class="form-control" id="patient-description" name="description" rows="5" placeholder="Descreva as informações relevantes para o acompanhamento."></textarea>
+                                            <textarea class="form-control" id="patient-description" name="description" rows="5" placeholder="Descreva as informações relevantes para o acompanhamento."><?= $escape($perfil['descricao'] ?? '') ?></textarea>
                                         </div>
                                     </fieldset>
                                 </details>
@@ -152,13 +167,13 @@
                                                 <label class="form-label text-sm" for="referral-type">Tipo de encaminhamento</label>
                                                 <select class="form-control" id="referral-type" name="referral_type">
                                                     <option value="">Selecione o tipo</option>
-                                                    <option value="received">Recebimento</option>
-                                                    <option value="sent">Envio</option>
+                                                    <option value="received" <?= $tipoSelecionado === 'received' ? 'selected' : '' ?>>Recebimento</option>
+                                                    <option value="sent" <?= $tipoSelecionado === 'sent' ? 'selected' : '' ?>>Envio</option>
                                                 </select>
                                             </div>
                                             <div class="col-12">
                                                 <label class="form-label text-sm" for="patient-history">Histórico do paciente</label>
-                                                <textarea class="form-control" id="patient-history" name="history" rows="4" placeholder="Registre as informações do histórico do paciente."></textarea>
+                                                <textarea class="form-control" id="patient-history" name="history" rows="4" placeholder="Registre as informações do histórico do paciente."><?= $escape($encaminhamento['historico_paciente'] ?? '') ?></textarea>
                                             </div>
                                         </div>
                                     </fieldset>

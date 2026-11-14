@@ -17,14 +17,14 @@ class PsicologoController {
             exit;
         }
 
-        require_once __DIR__ . '/../../Views/Auth/login.html';
+        require_once __DIR__ . '/../../Views/Auth/login.php';
     }
 
     // Processa a primeira etapa do login (e-mail + senha)
     public function login(): void {
         if (empty($_POST['email']) || empty($_POST['senha'])) {
             $erro = "Por favor, preencha o e-mail e a senha.";
-            require_once __DIR__ . '/../../Views/Auth/login.html';
+            require_once __DIR__ . '/../../Views/Auth/login.php';
             return;
         }
 
@@ -37,7 +37,7 @@ class PsicologoController {
             exit;
         } else {
             $erro = "E-mail ou senha incorretos.";
-            require_once __DIR__ . '/../../Views/Auth/login.html';
+            require_once __DIR__ . '/../../Views/Auth/login.php';
         }
     }
 
@@ -54,14 +54,14 @@ class PsicologoController {
             exit;
         }
 
-        require_once __DIR__ . '/../../Views/Auth/2fa.html';
+        require_once __DIR__ . '/../../Views/Auth/2fa.php';
     }
 
     // Processa a segunda etapa do login (validação do código 2FA)
     public function verificar2fa(): void {
         if (empty($_POST['codigo'])) {
             $erro = "Informe o código de verificação recebido por e-mail.";
-            require_once __DIR__ . '/../../Views/Auth/2fa.html';
+            require_once __DIR__ . '/../../Views/Auth/2fa.php';
             return;
         }
 
@@ -71,7 +71,7 @@ class PsicologoController {
             exit;
         } else {
             $erro = "Código inválido ou expirado. Tente novamente.";
-            require_once __DIR__ . '/../../Views/Auth/2fa.html';
+            require_once __DIR__ . '/../../Views/Auth/2fa.php';
         }
     }
 
@@ -83,7 +83,7 @@ class PsicologoController {
             exit;
         }
 
-        require_once __DIR__ . '/../../Views/Auth/register.html';
+        require_once __DIR__ . '/../../Views/Auth/register.php';
     }
 
     // Processa o primeiro cadastro do psicólogo
@@ -111,7 +111,7 @@ class PsicologoController {
             $erro = "Todos os campos são obrigatórios.";
         }
 
-        require_once __DIR__ . '/../../Views/Auth/register.html';
+        require_once __DIR__ . '/../../Views/Auth/register.php';
     }
 
     // Visualizar perfil do psicólogo logado
@@ -119,7 +119,7 @@ class PsicologoController {
         Auth::verificar();
         $id = $_SESSION['psicologo_id'] ?? null;
         $perfil = $id ? $this->psicologo->visualizarPsicologo($id) : null;
-        require_once __DIR__ . '/../../Views/Perfil/perfil-show.html';
+        require_once __DIR__ . '/../../Views/Perfil/perfil-show.php';
     }
 
     // Encerra a sessão

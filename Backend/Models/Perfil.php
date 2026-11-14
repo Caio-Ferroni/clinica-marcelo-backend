@@ -11,6 +11,12 @@
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }
+        public function buscarPorPaciente($id_paciente): array {
+            $stmt = $this->db->prepare('SELECT * FROM perfil WHERE id_paciente = :id_paciente LIMIT 1');
+            $stmt->execute([':id_paciente' => $id_paciente]);
+            return $stmt->fetch() ?: [];
+        }
+
         public function criarPerfil($id_paciente, $quadro, $descricao){
             $sql = "INSERT INTO perfil(id_paciente, quadro, descricao) VALUES (:id_paciente, :quadro, :descricao)";
             $stmt = $this->db->prepare($sql);

@@ -55,7 +55,7 @@ $router->mount('/pacientes', function () use ($router) {
 
     // Formulário de criação de paciente (GET) + processamento (POST)
     $router->get('/criar', function () {
-        require_once __DIR__ . '/../../Views/Paciente/paciente-create.html';
+        require_once __DIR__ . '/../../Views/Paciente/paciente-create.php';
     });
     $router->post('/criar', function () {
         (new PacienteController)->criar();
@@ -68,8 +68,7 @@ $router->mount('/pacientes', function () use ($router) {
 
     // Formulário de edição de paciente (GET) + processamento (POST)
     $router->get('/(\d+)/editar', function ($id) {
-        // TODO: carregar dados do paciente e passar para a view
-        require_once __DIR__ . '/../../Views/Paciente/paciente-update.php';
+        (new PacienteController)->editar($id);
     });
     $router->post('/(\d+)/editar', function ($id) {
         (new PacienteController)->atualizar($id);

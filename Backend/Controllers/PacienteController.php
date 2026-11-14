@@ -1,5 +1,5 @@
 <?php 
-require_once __DIR__ . '/../config/Database.php';
+require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Models/Paciente.php';
 require_once __DIR__ . '/../Models/Perfil.php';
 require_once __DIR__ . '/../Models/Encaminhamento.php';
@@ -27,8 +27,47 @@ require_once __DIR__ . '/../Models/Agendamento.php';
         }
 
         public function visualizar($id){
-            $pacientes = $this->paciente->visualizarPaciente($id);
-            require_once __DIR__ . '/../../Views/Paciente/paciente.php';
+            $dados = $this->carregarPaciente($id);
+            if ($dados === null) {
+                http_response_code(404);
+                echo 'Paciente não encontrado.';
+                return;
+            }
+
+            $paciente = $dados['paciente'];
+            $perfil = $dados['perfil'];
+            $agendamento = $dados['agendamento'];
+            $encaminhamento = $dados['encaminhamento'];
+            require_once __DIR__ . '/../../Views/Paciente/paciente-show.php';
+        }
+
+        public function editar($id){
+            $dados = $this->carregarPaciente($id);
+            if ($dados === null) {
+                http_response_code(404);
+                echo 'Paciente não encontrado.';
+                return;
+            }
+
+            $paciente = $dados['paciente'];
+            $perfil = $dados['perfil'];
+            $agendamento = $dados['agendamento'];
+            $encaminhamento = $dados['encaminhamento'];
+            require_once __DIR__ . '/../../Views/Paciente/paciente-update.php';
+        }
+
+        private function carregarPaciente($id): ?array {
+            $paciente = $this->paciente->visualizarPaciente($id)[0] ?? null;
+            if ($paciente === null) {
+                return null;
+            }
+
+            return [
+                'paciente' => $paciente,
+                'perfil' => $this->perfil->buscarPorPaciente($id),
+                'agendamento' => $this->agendamento->buscarPorPaciente($id),
+                'encaminhamento' => $this->encaminhamento->buscarPorPaciente($id)
+            ];
         }
 
         public function criar(){

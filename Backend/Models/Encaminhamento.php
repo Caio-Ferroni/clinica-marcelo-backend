@@ -12,6 +12,12 @@
             return $stmt->fetchAll();
         }
 
+        public function buscarPorPaciente($id_paciente): array {
+            $stmt = $this->db->prepare('SELECT * FROM encaminhamento WHERE id_paciente = :id_paciente LIMIT 1');
+            $stmt->execute([':id_paciente' => $id_paciente]);
+            return $stmt->fetch() ?: [];
+        }
+
         public function criarEncaminhamento($id_paciente, $historico_paciente, $tipo_encaminhamento){
             $sql = "INSERT INTO encaminhamento(id_paciente, historico_paciente, tipo_encaminhamento) VALUES (:id_paciente, :historico_paciente, :tipo_encaminhamento)";
             $stmt = $this->db->prepare($sql);

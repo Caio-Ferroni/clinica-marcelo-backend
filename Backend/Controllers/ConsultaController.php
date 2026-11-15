@@ -26,5 +26,10 @@ require_once __DIR__ . '/../Models/Consulta.php';
             require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
         }
 
+        public function criarRelatorio($id, $relatorio){
+            $relatorio = $this->consulta->gerarRelatorio($id, $relatorio);
+            require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        }
+
     }
 ?>

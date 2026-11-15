@@ -7,7 +7,7 @@
         }
 
         public function listarTodos(){
-            $sql = 'SELECT * FROM tarefa;';
+            $sql = 'SELECT * FROM tarefa ORDER BY data_conclusao ASC, id_tarefa DESC;';
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }
@@ -24,17 +24,41 @@
             return $mensagem;
         }
 
-        public function atualizarTarefa($id, $titulo, $conteudo){
-             $sql = "UPDATE tarefa
-                    SET titulo = :titulo, conteudo = :conteudo
-                    WHERE id_tarefa = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':id'       => $id,
-                ':titulo'    => $titulo,
-                ':conteudo'  => $conteudo
-            ]);
-
+        public function atualizarTarefa($id, $titulo, $conteudo, $data_conclusao = null, $status = null){
+            if ($data_conclusao !== null && $status !== null) {
+                $sql = "UPDATE tarefa
+                        SET titulo = :titulo, conteudo = :conteudo, data_conclusao = :data_conclusao, status = :status
+                        WHERE id_tarefa = :id";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    ':id'             => $id,
+                    ':titulo'         => $titulo,
+                    ':conteudo'       => $conteudo,
+                    ':data_conclusao' => $data_conclusao,
+                    ':status'         => $status
+                ]);
+            } elseif ($data_conclusao !== null) {
+                $sql = "UPDATE tarefa
+                        SET titulo = :titulo, conteudo = :conteudo, data_conclusao = :data_conclusao
+                        WHERE id_tarefa = :id";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    ':id'             => $id,
+                    ':titulo'         => $titulo,
+                    ':conteudo'       => $conteudo,
+                    ':data_conclusao' => $data_conclusao
+                ]);
+            } else {
+                $sql = "UPDATE tarefa
+                        SET titulo = :titulo, conteudo = :conteudo
+                        WHERE id_tarefa = :id";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([
+                    ':id'       => $id,
+                    ':titulo'   => $titulo,
+                    ':conteudo' => $conteudo
+                ]);
+            }
         }
         public function visualizarTarefa($id){
             $sql = "SELECT * FROM tarefa WHERE id_tarefa = :id";

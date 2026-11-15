@@ -30,7 +30,7 @@ $encaminhamento = $encaminhamento ?? [];
                         </button>
                     </header>
 
-                    <form id="patient-form" data-patient-edit>
+                    <form id="patient-form" data-patient-edit method="POST" action="/pacientes/<?= htmlspecialchars($paciente['id_paciente'])?>/editar">
                         <input type="hidden" name="id_paciente" value="<?= htmlspecialchars($paciente['id_paciente'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <fieldset class="border-0 p-0 m-0" data-patient-fields <?= empty($paciente) ? 'disabled' : '' ?>>
                             <legend class="visually-hidden">Informações do paciente</legend>
@@ -179,12 +179,11 @@ $encaminhamento = $encaminhamento ?? [];
 
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-5 mt-7">
                             <small style="color: var(--color-text-muted);">* Campo obrigatório</small>
-                            <button class="btn-solid px-7 py-4" type="submit" disabled>
+                            <button class="btn-solid px-7 py-4" type="submit">
                                 <i class="bi bi-person-check" aria-hidden="true"></i>
                                 Salvar alterações
                             </button>
                         </div>
-                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">O salvamento ainda não está disponível. Nenhuma alteração foi salva.</p>
                     </form>
                 </div>
             </main>
@@ -198,11 +197,6 @@ $encaminhamento = $encaminhamento ?? [];
             section.addEventListener('toggle', () => {
                 section.querySelector('fieldset').disabled = !section.open;
             });
-        });
-
-        document.getElementById('patient-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            document.getElementById('save-message').hidden = false;
         });
     </script>
 </body>

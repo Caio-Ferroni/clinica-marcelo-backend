@@ -86,8 +86,7 @@ $router->mount('/pacientes', function () use ($router) {
 $router->mount('/consultas', function () use ($router) {
     // Visualizar calendário/lista de consultas
     $router->get('/', function () {
-        // TODO: (new ConsultaController)->index();
-        require_once __DIR__ . '/../../Views/Consulta/consulta.php';
+        (new ConsultaController)->index();
     });
 
     // Gerar consultas do mês atual a partir dos agendamentos
@@ -102,8 +101,7 @@ $router->mount('/consultas', function () use ($router) {
 $router->mount('/tarefas', function () use ($router) {
     // Lista de tarefas
     $router->get('/', function () {
-        // TODO: (new TarefaController)->index();
-        require_once __DIR__ . '/../../Views/Tarefa/tarefa.php';
+        (new TarefaController)->index();
     });
 
     // Formulário de criação de tarefa (GET) + processamento (POST)
@@ -112,6 +110,14 @@ $router->mount('/tarefas', function () use ($router) {
     });
     $router->post('/criar', function () {
         (new TarefaController)->criar();
+    });
+
+    // Formulário de edição de tarefa (GET) + processamento (POST)
+    $router->get('/(\d+)/editar', function ($id) {
+        (new TarefaController)->editar($id);
+    });
+    $router->post('/(\d+)/editar', function ($id) {
+        (new TarefaController)->atualizar($id);
     });
 });
 
@@ -136,10 +142,17 @@ $router->mount('/relatorios', function () use ($router) {
 });
 
 // =========================================================
-// ROTA PADRÃO — redireciona a raiz para /pacientes
+// DASHBOARD
+// =========================================================
+$router->get('/dashboard', function () {
+    (new DashboardController)->index();
+});
+
+// =========================================================
+// ROTA PADRÃO — redireciona a raiz para /dashboard
 // =========================================================
 $router->get('/', function () {
-    header('Location: /pacientes');
+    header('Location: /dashboard');
     exit;
 });
 

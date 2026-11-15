@@ -8,7 +8,17 @@ require_once __DIR__ . '/../Config/Database.php';
         }
 
         public function listarTodos(){
-            $sql = 'SELECT * FROM consulta;';
+            $sql = 'SELECT 
+                        c.*,
+                        a.id_paciente,
+                        p.nome AS paciente_nome,
+                        p.data_nascimento,
+                        p.telefone,
+                        p.cpf
+                    FROM consulta c
+                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
+                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
+                    ORDER BY c.data DESC, c.horario_inicio ASC;';
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }

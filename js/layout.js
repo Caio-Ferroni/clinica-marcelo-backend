@@ -19,10 +19,10 @@
         document.head.appendChild(stylesheet);
     }
 
-    function renderMenuItem(section, label, icon) {
+    function renderMenuItem(section, label, icon, link) {
         return `
             <li>
-                <a href="#"
+                <a href="${link}"
                     class="d-flex align-items-center gap-4 w-100 p-4 rounded-3 text-start text-decoration-none"
                     data-section="${section}"
                     style="border: 0; background: transparent; color: inherit; font: inherit;">
@@ -63,18 +63,17 @@
                     <nav aria-label="Navegação principal" class="mb-7">
                         <p class="text-xs mb-4" style="color: var(--color-light-blue);">MENU PRINCIPAL</p>
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('home', 'Início', 'house-door')}
-                            ${renderMenuItem('patients', 'Pacientes', 'people')}
-                            ${renderMenuItem('appointments', 'Consultas', 'calendar-event')}
-                            ${renderMenuItem('reports', 'Relatórios', 'file-earmark-text')}
-                            ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check')}
+                            ${renderMenuItem('home', 'Início', 'house-door', '/dashboard')}
+                            ${renderMenuItem('patients', 'Pacientes', 'people', '/pacientes')}
+                            ${renderMenuItem('appointments', 'Consultas', 'calendar-event', '/consultas')}
+                            ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check', '/tarefas')}
                         </ul>
                     </nav>
                     <nav aria-label="Conta" class="mt-auto pt-5 border-top" style="--bs-border-color: var(--color-light-blue);">
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('profile', 'Meu perfil', 'person')}
-                            ${renderMenuItem('website', 'Home', 'house-door')}
-                            ${renderMenuItem('logout', 'Sair', 'box-arrow-right')}
+                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/psicologo')}
+                            ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
+                            ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
                         </ul>
                     </nav>
                 </aside>`;

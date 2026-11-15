@@ -28,7 +28,9 @@ foreach ($consultas as $c) {
             $consultasMes++;
         }
     }
-    $status = mb_strtolower(trim((string) ($c['status'] ?? '')));
+    $status = function_exists('mb_strtolower')
+        ? mb_strtolower(trim((string) ($c['status'] ?? '')))
+        : strtolower(trim((string) ($c['status'] ?? '')));
     if (in_array($status, ['realizada', 'realizado', 'concluída', 'concluído'])) {
         $consultasRealizadas++;
     } elseif (in_array($status, ['cancelada', 'cancelado'])) {
@@ -115,8 +117,11 @@ foreach ($consultas as $c) {
                                             <td class="text-center text-sm align-middle" data-field="nascimento"><?= $escape($nascimento !== '' ? $nascimento : '-') ?></td>
                                             <td class="text-center align-middle">
                                                 <div class="d-flex justify-content-center gap-3">
-                                                    <a class="btn btn-sm p-2" href="/relatorios/<?= $escape($c['id_consulta'] ?? '') ?>" aria-label="Ver relatório">
-                                                        <i class="bi bi-clipboard-fill" aria-hidden="true"></i>
+                                                    <a class="btn btn-sm p-2" href="/consultas/<?= $escape($c['id_consulta'] ?? '') ?>/editar" aria-label="Atualizar relatório da consulta" title="Atualizar relatório">
+                                                        <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                                                    </a>
+                                                    <a class="btn btn-sm p-2" href="/consultas/<?= $escape($c['id_consulta'] ?? '') ?>" aria-label="Visualizar consulta" title="Visualizar consulta">
+                                                        <i class="bi bi-eye-fill" aria-hidden="true"></i>
                                                     </a>
                                                 </div>
                                             </td>

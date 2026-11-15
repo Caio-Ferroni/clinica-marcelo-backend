@@ -31,5 +31,42 @@ require_once __DIR__ . '/../Models/Consulta.php';
             require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
         }
 
+        public function visualizar($id){
+            $consultas = $this->consulta->visualizarConsulta($id);
+            $consulta = $consultas[0] ?? null;
+            if ($consulta === null) {
+                http_response_code(404);
+                echo 'Consulta não encontrada.';
+                return;
+            }
+            require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        }
+
+        public function editar($id){
+            $consultas = $this->consulta->visualizarConsulta($id);
+            $consulta = $consultas[0] ?? null;
+            if ($consulta === null) {
+                http_response_code(404);
+                echo 'Consulta não encontrada.';
+                return;
+            }
+            require_once __DIR__ . '/../../Views/Consulta/consulta-update.php';
+        }
+
+        public function atualizar($id){
+            $consultas = $this->consulta->visualizarConsulta($id);
+            $consulta = $consultas[0] ?? null;
+            if ($consulta === null) {
+                http_response_code(404);
+                echo 'Consulta não encontrada.';
+                return;
+            }
+
+            $relatorio = is_string($_POST['relatorio'] ?? null) ? trim($_POST['relatorio']) : '';
+            $this->consulta->gerarRelatorio($id, $relatorio);
+            header('Location: /consultas', true, 303);
+            exit;
+        }
+
     }
 ?>

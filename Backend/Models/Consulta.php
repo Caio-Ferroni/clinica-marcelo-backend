@@ -65,7 +65,18 @@ require_once __DIR__ . '/../Config/Database.php';
         }
 
         public function visualizarConsulta($id){
-            $sql = "SELECT * FROM consulta WHERE id_consulta = :id";
+            $sql = "SELECT 
+                        c.*,
+                        a.id_paciente,
+                        p.nome AS paciente_nome,
+                        p.data_nascimento,
+                        p.telefone,
+                        p.cpf
+                    FROM consulta c
+                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
+                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
+                    WHERE c.id_consulta = :id
+                    LIMIT 1;";
             $stmt = $this->db->prepare($sql); 
             $stmt->execute([
                 ':id' => $id

@@ -93,6 +93,19 @@ $router->mount('/consultas', function () use ($router) {
     $router->post('/gerar', function () {
         (new ConsultaController)->gerarMesAtual();
     });
+
+    // Visualizar uma consulta específica
+    $router->get('/(\d+)', function ($id) {
+        (new ConsultaController)->visualizar($id);
+    });
+
+    // Formulário de edição de consulta (apenas relatório) (GET) + processamento (POST)
+    $router->get('/(\d+)/editar', function ($id) {
+        (new ConsultaController)->editar($id);
+    });
+    $router->post('/(\d+)/editar', function ($id) {
+        (new ConsultaController)->atualizar($id);
+    });
 });
 
 // =========================================================
@@ -163,4 +176,3 @@ $router->set404(function () {
     http_response_code(404);
     echo '404 — Página não encontrada';
 });
-

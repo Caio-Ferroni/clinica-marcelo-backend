@@ -1,7 +1,7 @@
 # Análise do Backend — Clínica Marcelo
 
 > [!NOTE]
-> Esta análise cobre todos os arquivos PHP do backend: Config, Models, Controllers, Auth, Routes e Views. Atualizado em 14/11/2026 após as correções críticas (commit `9ea9e8b`) e dos demais itens autorizados da seção 4.1. B1–B20 e B25–B27 foram tratados; somente B21–B24 permanecem pendentes nessa tabela. Os nomes e valores dos campos de paciente foram alinhados na seção 4.2; o envio pela interface e as demais integrações continuam pendentes.
+> Esta análise cobre Config, Models, Controllers, Auth, Routes e Views. Atualizado em 15/11/2026 com a implementação do módulo Web Push (B21–B24), mantendo os disparos desativados. Os demais itens da seção 4.1 já foram tratados nas etapas anteriores. A integração visual, a configuração do servidor e a homologação real das notificações permanecem pendentes. Guia: [docs/webpush.md](docs/webpush.md).
 
 ---
 
@@ -18,7 +18,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | **Entry point** | `index.php` | Carrega autoload, models, controllers e executa o router | ✅ Estruturado |
 | **Servidor Web** | `.htaccess` | Regras de rewrite para encaminhar URLs amigáveis ao `index.php` | ✅ Criado |
 | **Auth** | `Backend/Auth/Auth.php` | Sessões, proteção de rotas e verificação de 2FA em memória | ✅ Concluído |
-| **Notificações** | `Backend/Notifications/`, `Backend/Cron/`, `sw.js` | Estrutura para alertas Web Push aos 10 minutos da consulta | ⏳ Estruturado (vazio) |
+| **Notificações** | `Backend/Notifications/`, `Backend/Cron/`, `sw.js` | Módulo reutilizável para lembretes, API, persistência e integração JavaScript | ✅ Implementado; integração visual e ativação pendentes |
 | **Views** | `Views/**/*.php` / `.html` | Telas do sistema (gerenciadas por outra frente) | ⏳ Visualização e carregamento da edição de paciente conectados; demais integrações pendentes |
 | **Layout (Web Components)** | `js/layout.js` | Sidebar, footer e paginação de tabelas via Custom Elements | ✅ Funcional |
 
@@ -33,7 +33,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | **Preservação de Dados (Soft Delete / Status)** | Pacientes nunca são deletados fisicamente do banco de dados; são marcados como inativos e ocultados das listagens até eventual reativação. | ⏳ Filtro de ativos no model pronto; troca de status e integração da listagem pendentes |
 | **Conta Única do Psicólogo** | Apenas um psicólogo atua na clínica. O registro de conta só é permitido uma única vez. Registros subsequentes são sumariamente bloqueados. | ✅ Concluído |
 | **Autenticação em Dois Fatores (2FA)** | O login exige e-mail + senha e, em seguida, validação de código numérico temporário de 6 dígitos gerado e conferido via memória de sessão (`$_SESSION`), disparado por e-mail. | ✅ Concluído |
-| **Notificação de Consulta a 10 Minutos** | Disparo de alerta ao psicólogo 10 minutos antes do início de uma consulta via Web Push (PWA / Browser) sem exigir aplicativo nativo. | ⏳ Arquivos criados |
+| **Notificação de Consulta a 10 Minutos** | Nome e horário para todos os dispositivos inscritos, inclusive após logout; recuperar atrasos somente até o início. | ✅ Módulo pronto; desativado por padrão |
 
 ---
 
@@ -99,10 +99,18 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 
 ---
 
+### 3.8 Módulo Web Push — 15/11/2026
+
+- **B21–B24**: Implementados controller JSON autenticado com CSRF, cadastro/desativação de inscrições, remetente com VAPID, seleção de lembretes via CLI e service worker. A API está registrada; as telas não carregam o novo `js/webpush.js` automaticamente.
+- Adicionadas migração e reversão manuais para duas tabelas, variáveis de ambiente e gerador CLI de chaves. A conexão PDO aceita opcionalmente lançar erros para o módulo tratar indisponibilidade sem encerrar uma resposta JSON; chamadas existentes preservam seu comportamento.
+- Datas interpretadas em São Paulo, consultas `Pendente` de pacientes `Ativo`, recuperação até o início, revalidação antes do envio, histórico por dispositivo/horário, trava MySQL e tratamento de falhas/inscrições expiradas. Mais de uma conta de psicólogo interrompe o agendador até existir vínculo de responsabilidade por consulta.
+- A estrutura do MySQL local foi consultada sem alterar registros. A validação usa banco temporário separado, biblioteca real com transporte HTTP simulado e simulação JavaScript do navegador/service worker. Comandos e limites em [docs/webpush.md](docs/webpush.md).
+- **Pendente por escopo**: botões e integração nas telas, instalação PWA, aplicação da migração no banco da clínica, chaves do ambiente, agendamento no SO e homologação com dispositivos reais. Nenhuma notificação real foi enviada.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
-> B1–B20 e B25–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 continuam pendentes por decisão de escopo. A severidade original é mantida como histórico. A integração da seção 4.2 e a validação com MySQL real ainda estão pendentes.
+> Os itens B1–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 têm módulo implementado, sem ativação no servidor ou integração nas telas. A severidade original é mantida como histórico. A seção 4.2 continua pendente; a validação MySQL desta etapa cobre somente o módulo Web Push em banco isolado.
 
 ### 4.1 Bugs Críticos no Backend
 
@@ -128,11 +136,11 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | B18 | `PsicologoController.php` | `formRegistrar()` e `registrar()` agora carregam `register.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
 | B19 | `PsicologoController.php` | `perfil()` agora carrega `perfil-show.php`. | 🔴 Crítico | ✅ Corrigido |
 | B20 | `Backend/Auth/2fa.php` | Arquivo vazio e redundante excluído. A lógica em `Auth.php` e a tela `Views/Auth/2fa.php` foram preservadas. | 🟢 Limpeza | ✅ Removido |
-| B21 | `Backend/Controllers/NotificacaoController.php` | Arquivo vazio — rota POST de subscription não tem handler. | 🟢 Pendente | ⏳ Pendente |
-| B22 | `Backend/Notifications/WebPushService.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
-| B23 | `Backend/Cron/notificar_consultas.php` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
-| B24 | `sw.js` | Arquivo vazio. | 🟢 Pendente | ⏳ Pendente |
-| B25 | `index.php` | Inclui `NotificacaoController.php`, descartando a saída vazia da inclusão com um buffer local. O handler de B21 não foi implementado. | 🟡 Média | ✅ Corrigido |
+| B21 | `Backend/Controllers/NotificacaoController.php` | API de configuração, cadastro e remoção com sessão/2FA e CSRF. | 🟢 Pendente | ✅ Implementado; integração visual pendente |
+| B22 | `Backend/Notifications/WebPushService.php` | Envio criptografado/VAPID, validação de destino e classificação de resultados. | 🟢 Pendente | ✅ Implementado; configuração pendente |
+| B23 | `Backend/Cron/notificar_consultas.php` | CLI com janela de dez minutos, recuperação, deduplicação, trava e simulação. | 🟢 Pendente | ✅ Implementado; tarefa do SO pendente |
+| B24 | `sw.js` | Exibição da mensagem e abertura de consultas; descarta payloads vencidos. | 🟢 Pendente | ✅ Implementado; registro nas telas pendente |
+| B25 | `index.php` | Inclui o controller de notificações sem emitir conteúdo; o buffer do antigo arquivo vazio foi removido. | 🟡 Média | ✅ Corrigido |
 | B26 | `Views/Agendamento/agendamento.html` | Removida a segunda abertura de `<html>`, mantendo uma única raiz HTML. | 🟡 Média | ✅ Corrigido |
 | B27 | `Paciente.php` | `listarTodos()` filtra `status = 'Ativo'`. Não altera nem exclui registros e não conecta a troca de status ou a listagem visual. | 🟡 Futura | ✅ Corrigido |
 
@@ -203,8 +211,8 @@ Os links do `layout.js` usam `href="#"` com `data-section` mas **não navegam pa
 clinica-marcelo-backend/
 ├── index.php                                    ✅ Front controller funcional
 ├── .htaccess                                    ✅ Rewrite configurado
-├── composer.json                                ✅ bramus/router
-├── sw.js                                        ⏳ Vazio
+├── composer.json                                ✅ Router, e-mail, dotenv, Web Push e Guzzle
+├── sw.js                                        ✅ Push e clique; integração visual pendente
 │
 ├── Backend/
 │   ├── Auth/
@@ -216,7 +224,7 @@ clinica-marcelo-backend/
 │   │   ├── ConsultaController.php               ✅ B3 corrigido
 │   │   ├── TarefaController.php                 ✅ Formulário e criação corrigidos
 │   │   ├── PsicologoController.php              ✅ B14–B19 corrigidos; views de auth pendentes
-│   │   └── NotificacaoController.php            ⏳ Vazio
+│   │   └── NotificacaoController.php            ✅ API autenticada com CSRF
 │   ├── Models/
 │   │   ├── Paciente.php                         ✅ CRUD + filtro de ativos
 │   │   ├── Perfil.php                           ✅ CRUD + upsert
@@ -226,9 +234,11 @@ clinica-marcelo-backend/
 │   │   ├── Tarefa.php                           ✅ CRUD
 │   │   └── Psicologo.php                        ✅ CRUD + conta única
 │   ├── Notifications/
-│   │   └── WebPushService.php                   ⏳ Vazio
+│   │   ├── WebPushService.php                   ✅ Transporte criptografado/VAPID
+│   │   └── demais componentes                  ✅ Configuração, validação, repositório e lembretes
+│   ├── Migrations/                              ✅ Instalação/reversão manuais do Web Push
 │   ├── Cron/
-│   │   └── notificar_consultas.php              ⏳ Vazio
+│   │   └── notificar_consultas.php              ✅ CLI pronto; agendamento pendente
 │   └── Routes/
 │       └── routes.php                           ✅ Referências às views corrigidas
 │
@@ -275,12 +285,12 @@ clinica-marcelo-backend/
 
 ```mermaid
 flowchart TD
-    F1["Fase 1: Correção de Bugs no Backend\n(correções da seção 4.1 concluídas; Web Push pendente)"]
+    F1["Fase 1: Correção de Bugs no Backend\n(correções da seção 4.1 e módulo Web Push concluídos)"]
     F2["Fase 2: Integração Views de Auth\n(login.php, register.php, 2fa.php → backend)"]
     F3["Fase 3: Integração Views de Paciente\n(name attrs, form action/method, loop PHP)"]
     F4["Fase 4: Integração das demais Views\n(Consultas, Tarefas, Relatórios, Encaminhamento)"]
     F5["Fase 5: Navegação e UX\n(Sidebar links, caminhos absolutos CSS/JS, flash messages)"]
-    F6["Fase 6: Notificações Web Push\n(VAPID, Service Worker, Cron)"]
+    F6["Fase 6: Integração e ativação Web Push\n(telas, migração, VAPID, cron e homologação)"]
 
     F1 --> F2 --> F3 --> F4 --> F5 --> F6
 ```
@@ -290,7 +300,7 @@ flowchart TD
 ### Fase 1: Correção de Bugs no Backend
 
 > [!IMPORTANT]
-> As correções desta fase foram aplicadas. A integração das views e as funcionalidades de Web Push permanecem nas etapas seguintes; a inclusão do controller vazio não implementa B21.
+> As correções desta fase e o módulo Web Push foram implementados. A integração das views e a ativação dos lembretes permanecem nas etapas seguintes.
 
 | Tarefa | Arquivo(s) | Bugs | Status |
 |---|---|---|---|
@@ -351,18 +361,18 @@ flowchart TD
 
 ---
 
-### Fase 6: Implementação das Notificações Web Push
+### Fase 6: Integração e Ativação das Notificações Web Push
 
 | Arquivo | Função no Sistema |
 |---|---|
-| `sw.js` *(raiz)* | Service Worker que escuta o evento `push` e exibe o alerta nativo no navegador/celular. |
-| `Backend/Notifications/WebPushService.php` | Classe PHP responsável por carregar as chaves VAPID e despachar a notificação via biblioteca `minishlink/web-push`. |
-| `Backend/Controllers/NotificacaoController.php` | Controller com rota `POST /notificacoes/salvar-subscription` para armazenar a inscrição. |
-| `Backend/Cron/notificar_consultas.php` | Script CLI para rodar a cada minuto, buscando consultas agendadas para os próximos 10 minutos. |
+| `sw.js` *(raiz)* | Implementado: recebe push, valida vencimento e abre `/consultas`. |
+| `Backend/Notifications/WebPushService.php` | Implementado: envio com VAPID e tratamento de resultados. |
+| `Backend/Controllers/NotificacaoController.php` | Implementado: três rotas JSON registradas, com autenticação e CSRF. |
+| `Backend/Cron/notificar_consultas.php` | Implementado: executar a cada minuto após configurar o servidor. |
 
 **Tarefas a executar nesta etapa**:
-1. Instalar `minishlink/web-push` via Composer: `composer require minishlink/web-push`.
-2. Gerar o par de chaves VAPID (pública e privada).
-3. Preencher a lógica dos arquivos criados.
-4. Mapear as rotas de notificação em `routes.php`.
-5. Configurar o agendador de tarefas do SO para executar `notificar_consultas.php` periodicamente.
+1. Seguir [docs/webpush.md](docs/webpush.md) para instalar dependências no PHP do servidor e aplicar a migração manual no banco correto.
+2. Gerar as chaves VAPID e configurar o `.env`; habilitar apenas após preparar o ambiente.
+3. Conectar os controles de ativação/desativação nas telas autenticadas usando `js/webpush.js`; preparar instalação PWA quando necessária.
+4. Homologar com dados fictícios e dispositivos reais, incluindo permissão negada, logout e múltiplos dispositivos.
+5. Configurar o agendador do SO a cada minuto e acompanhar suas contagens de resultado.

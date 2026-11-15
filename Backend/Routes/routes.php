@@ -6,8 +6,19 @@
 // MIDDLEWARE DE AUTENTICAÇÃO
 // Protege todas as rotas privadas, exceto as telas de autenticação
 // =========================================================
-$router->before('GET|POST', '/(?!login|registrar|2fa).*', function () {
+$router->before('GET|POST', '/(?!login|registrar|2fa|notificacoes(?:/|$)).*', function () {
     Auth::verificar();
+});
+
+// As rotas de notificações retornam 401 JSON pelo controller, sem redirecionar para HTML.
+$router->get('/notificacoes/config', function () {
+    (new NotificacaoController)->handle('config');
+});
+$router->post('/notificacoes/salvar-subscription', function () {
+    (new NotificacaoController)->handle('save');
+});
+$router->post('/notificacoes/remover-subscription', function () {
+    (new NotificacaoController)->handle('remove');
 });
 
 // =========================================================

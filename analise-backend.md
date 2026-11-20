@@ -107,10 +107,20 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - A estrutura do MySQL local foi consultada sem alterar registros. A validação usa banco temporário separado, biblioteca real com transporte HTTP simulado e simulação JavaScript do navegador/service worker. Comandos e limites em [docs/webpush.md](docs/webpush.md).
 - **Pendente por escopo**: botões e integração nas telas, instalação PWA, aplicação da migração no banco da clínica, chaves do ambiente, agendamento no SO e homologação com dispositivos reais. Nenhuma notificação real foi enviada.
 
+### 3.9 Máscaras, Relatórios e Status de Consultas — 20/11/2026
+
+- O cadastro aplica máscaras de CPF e telefone fixo/celular com JavaScript local, incluindo digitação, colagem, exclusão e preservação do cursor. Os nomes dos campos e o fluxo atual de envio de pacientes foram preservados.
+- `GET /consultas` carrega todas as consultas reais, inclusive de pacientes inativos, com data, horário, nome, paginação e contadores. O cartão do mês considera São Paulo; os cartões de realizadas e canceladas consideram toda a lista. Associações ausentes exibem paciente indisponível.
+- A coluna Nascimento foi substituída por Relatório. `GET /relatorios/{id}` usa o identificador da consulta e apresenta o texto salvo com escape HTML e quebras de linha preservadas. Relatórios vazios e consultas inexistentes têm respostas próprias. A leitura não cria nem edita relatórios.
+- `POST /consultas/{id}/status` recebe `status` e `csrf_token`, exige autenticação e valida o token da sessão. Aceita `Pendente`, `Concluído` e `Cancelado`, incluindo a manutenção do valor atual. O model retorna um booleano; o controller confirma somente depois da gravação e redireciona com HTTP 303. Entradas inválidas, registros inexistentes e falhas do banco não apresentam confirmação de sucesso.
+- O MySQL local foi consultado: `consulta.status` é `varchar(45)`, compatível com os três valores. Não foi necessária migração. Falhas de leitura retornam HTTP 503 com mensagem genérica e sem totais inventados; falhas de atualização com leitura disponível retornam HTTP 500.
+- **Validação realizada**: 50 verificações HTTP em SQLite isolado, 31 de máscaras/cursor, 11 do model e 29 em tabelas temporárias no MySQL usando cópias da estrutura real. Os registros reais foram preservados. Passaram também as verificações existentes de contrato dos formulários, pesquisa de pacientes e gravação de relatório, além da sintaxe PHP/JavaScript. No navegador foram conferidos máscaras, colagem, exclusão, paginação, lista vazia, troca de status e leitura do relatório, com dados isolados de teste.
+- **Pendências preservadas**: envio do cadastro/edição de pacientes, listagem geral de relatórios, criação/edição de relatórios e publicação no servidor. Os artefatos de validação ficam em `.local`, ignorado pelo Git.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
-> Os itens B1–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 têm módulo implementado, sem ativação no servidor ou integração nas telas. A severidade original é mantida como histórico. A seção 4.2 continua pendente; a validação MySQL desta etapa cobre somente o módulo Web Push em banco isolado.
+> Os itens B1–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 têm módulo implementado, sem ativação no servidor ou integração nas telas. A severidade original é mantida como histórico. A seção 4.2 tem pendências, com a lista de consultas e a leitura de relatório integradas em 20/11/2026. A validação MySQL da seção 3.9 cobre consultas em tabelas temporárias, sem alterar registros reais.
 
 ### 4.1 Bugs Críticos no Backend
 
@@ -128,7 +138,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | B10 | `routes.php` | `GET /pacientes/{id}/editar` chama `PacienteController::editar($id)`, carrega paciente, perfil, agendamento e encaminhamento e preenche os campos. ID inexistente retorna HTTP 404. | 🔴 Crítico | ✅ Corrigido |
 | B11 | `routes.php` / `TarefaController.php` | GET e POST `/tarefas/criar` usam a nova view `tarefa-create.php`. O formulário valida dados obrigatórios e data, preserva valores nos erros e redireciona após salvar. | 🟡 Média | ✅ Corrigido |
 | B12 | `routes.php` | `GET /relatorios` agora carrega `relatorio.php`. A integração dos dados segue pendente na seção 4.2. | 🟡 Média | ✅ Corrigido |
-| B13 | `routes.php` | `GET /relatorios/{id}` agora carrega `relatorio-show.php`. O conteúdo da view continua incompleto. | 🟡 Média | ✅ Corrigido |
+| B13 | `routes.php` | `GET /relatorios/{id}` usa o identificador da consulta, carrega os dados pelo `ConsultaController` e apresenta o texto salvo em `relatorio-show.php`. | 🟡 Média | ✅ Corrigido |
 | B14 | `PsicologoController.php` | `formLogin()` agora carrega `login.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
 | B15 | `PsicologoController.php` | Os retornos de erro de `login()` agora carregam `login.php`. | 🔴 Crítico | ✅ Corrigido |
 | B16 | `PsicologoController.php` | `form2fa()` agora carrega `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
@@ -193,7 +203,7 @@ O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os
 
 #### 4.2.5 Views de Listagem (Todas)
 
-Todas as views de listagem (`paciente.php`, `consulta.php`, `tarefa.php`, `encaminhamento.php`, `perfil.php`, `relatorio.php`) possuem **dados estáticos hardcoded** (nomes fictícios, placeholders "XXXX"). Nenhuma faz loop PHP sobre dados do banco.
+`consulta.php` usa dados reais, com contadores, paginação, alteração de status e acesso ao relatório. As listagens `paciente.php`, `tarefa.php`, `encaminhamento.php`, `perfil.php` e `relatorio.php` ainda possuem dados estáticos.
 
 #### 4.2.6 Caminhos de CSS/JS nas Views
 
@@ -253,7 +263,7 @@ clinica-marcelo-backend/
 │   │   ├── paciente-show.php                    ✅ Visualização com dados reais
 │   │   └── paciente-update.php                  ⚠️ Dados carregados; envio pendente
 │   ├── Consulta/
-│   │   ├── consulta.php                         ⚠️ Dados hardcoded
+│   │   ├── consulta.php                         ✅ Dados reais, status e relatório
 │   │   └── consulta-show.php                    ⚠️ Incompleto
 │   ├── Tarefa/
 │   │   ├── tarefa.php                           ⚠️ Dados hardcoded
@@ -267,7 +277,7 @@ clinica-marcelo-backend/
 │   │   └── psicologo.php                        ⚠️ Incompleto
 │   ├── Relatorio/
 │   │   ├── relatorio.php                        ⚠️ Dados hardcoded
-│   │   └── relatorio-show.php                   ⚠️ Incompleto
+│   │   └── relatorio-show.php                   ✅ Leitura do relatório da consulta
 │   └── Agendamento/
 │       └── agendamento.html                     ✅ HTML corrigido; dados estáticos
 │
@@ -342,11 +352,12 @@ flowchart TD
 
 | View | Ação necessária |
 |---|---|
-| `consulta.php` | Loop PHP sobre `$consultas`, calcular contadores de status, links reais. |
+| `consulta.php` | ✅ Integrada: dados reais, contadores, paginação, alteração de status e relatório. |
 | `tarefa.php` | Loop PHP sobre `$tarefas`, links de edição. |
 | `encaminhamento.php` | Loop PHP sobre dados de encaminhamentos, contadores de tipo. |
 | `perfil.php` | Loop PHP sobre perfis de pacientes. |
-| `relatorio.php` / `relatorio-show.php` | Loop PHP, implementar `RelatorioController`. |
+| `relatorio.php` | Listagem geral de relatórios ainda pendente. |
+| `relatorio-show.php` | ✅ Leitura do texto salvo na consulta pelo `ConsultaController`. |
 | `agendamento.html` → `.php` | Converter para PHP, loop sobre agendamentos. |
 
 ---

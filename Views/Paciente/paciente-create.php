@@ -18,6 +18,7 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../../css/style.css">
     <script src="../../js/layout.js" defer></script>
+    <script src="../../js/patient-masks.js" defer></script>
 </head>
 <body class="patient-create">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -52,11 +53,11 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
                                     </div>
                                     <div class="col-12 md:col-6">
                                         <label class="form-label text-sm" for="patient-cpf">CPF</label>
-                                        <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= htmlspecialchars(($valores['cpf'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+                                        <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= htmlspecialchars(($valores['cpf'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14" data-mask="cpf">
                                     </div>
                                     <div class="col-12 md:col-6">
                                         <label class="form-label text-sm" for="patient-phone">Telefone</label>
-                                        <input class="form-control" type="tel" id="patient-phone" name="telefone" value="<?= htmlspecialchars(($valores['telefone'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="(00) 00000-0000" autocomplete="tel">
+                                        <input class="form-control" type="tel" id="patient-phone" name="telefone" value="<?= htmlspecialchars(($valores['telefone'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="(00) 00000-0000" autocomplete="tel" inputmode="numeric" maxlength="15" data-mask="telefone">
                                     </div>
                                 </div>
                             </section>

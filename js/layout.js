@@ -258,12 +258,12 @@
 
         const pageSize = Math.max(1, parseInt(table.dataset.pageSize, 10) || 10);
         let currentPage = 1;
-        const emptyRow = body.insertRow();
+        const emptyRow = body.querySelector('[data-empty-row]') || body.insertRow();
         emptyRow.dataset.emptyRow = '';
-        const emptyCell = emptyRow.insertCell();
+        const emptyCell = emptyRow.cells[0] || emptyRow.insertCell();
         emptyCell.colSpan = table.tHead?.rows[0]?.cells.length || 1;
         emptyCell.className = 'text-center p-7';
-        emptyCell.textContent = 'Nenhum resultado disponível.';
+        emptyCell.textContent ||= 'Nenhum resultado disponível.';
 
         const navigation = document.createElement('nav');
         navigation.className = 'd-flex flex-wrap align-items-center justify-content-between gap-4 mt-5';

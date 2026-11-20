@@ -97,8 +97,11 @@ $router->mount('/pacientes', function () use ($router) {
 $router->mount('/consultas', function () use ($router) {
     // Visualizar calendário/lista de consultas
     $router->get('/', function () {
-        // TODO: (new ConsultaController)->index();
-        require_once __DIR__ . '/../../Views/Consulta/consulta.php';
+        (new ConsultaController)->index();
+    });
+
+    $router->post('/(\d+)/status', function ($id) {
+        (new ConsultaController)->mudarStatus($id);
     });
 
     // Gerar consultas do mês atual a partir dos agendamentos
@@ -141,8 +144,7 @@ $router->mount('/relatorios', function () use ($router) {
         require_once __DIR__ . '/../../Views/Relatorio/relatorio.php';
     });
     $router->get('/(\d+)', function ($id) {
-        // TODO: (new RelatorioController)->visualizar($id);
-        require_once __DIR__ . '/../../Views/Relatorio/relatorio-show.php';
+        (new ConsultaController)->visualizarRelatorio($id);
     });
 });
 

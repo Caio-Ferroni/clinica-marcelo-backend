@@ -21,9 +21,9 @@ $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | EN
                 <div class="mx-auto" style="max-width: 800px;">
                     <h1 class="text-2xl fw-semibold text-center mb-7">Adicionar tarefa</h1>
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="<?= $toastType ?? 'error' ?>" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
                     <?php endif; ?>
-                    <form method="post" action="/tarefas/criar" class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
+                    <form method="post" action="/tarefas/criar" data-toast-validate class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
                         <div class="mb-5">
                             <label class="form-label" for="task-title">Título</label>
                             <input class="form-control" type="text" id="task-title" name="titulo" value="<?= $escape($valores['titulo'] ?? '') ?>" required>
@@ -49,5 +49,6 @@ $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | EN
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

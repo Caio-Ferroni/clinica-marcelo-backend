@@ -14,6 +14,7 @@
 
     <clinic-footer></clinic-footer>
     <script type="module" src="../../js/bootstrap.min.js"></script>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>
 <!--Tem que fazer tudo ainda.-->

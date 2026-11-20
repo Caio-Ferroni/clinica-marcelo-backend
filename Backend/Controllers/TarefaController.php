@@ -1,16 +1,16 @@
 <?php
 require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Models/Tarefa.php';
+require_once __DIR__ . '/../Support/Toast.php';
 
     class TarefaController{
         public Tarefa $tarefa;
-        public function __construct()
-        {
-            $this->tarefa = new Tarefa;
+        private function obterTarefa(): Tarefa {
+            return $this->tarefa ??= new Tarefa;
         }
 
         public function index(){
-            $tarefas = $this->tarefa->listarTodos();          
+            $tarefas = $this->obterTarefa()->listarTodos();
             require_once __DIR__ . '/../../Views/Tarefa/tarefa.php';
         }
 
@@ -25,22 +25,33 @@ require_once __DIR__ . '/../Models/Tarefa.php';
             }
 
             if (in_array('', $valores, true)) {
-                $erro = 'Preencha o título, o conteúdo e a data de conclusão da tarefa.';
+                $erro = Toast::message('task.required');
             } else {
                 $data = preg_match('/^\d{4}-\d{2}-\d{2}$/', $valores['data_conclusao'])
                     ? DateTime::createFromFormat('!Y-m-d', $valores['data_conclusao']) : false;
                 if (!$data || $data->format('Y-m-d') !== $valores['data_conclusao']) {
-                    $erro = 'Informe uma data de conclusão válida.';
+                    $erro = Toast::message('task.date');
                 }
             }
 
             if (isset($erro)) {
+                $toastType = 'warning';
+                Toast::discardSuccess();
                 http_response_code(422);
                 require_once __DIR__ . '/../../Views/Tarefa/tarefa-create.php';
                 return;
             }
 
-            $this->tarefa->criarTarefa($valores['titulo'], $valores['conteudo'], $valores['data_conclusao']);
+            try {
+                $this->obterTarefa()->criarTarefa($valores['titulo'], $valores['conteudo'], $valores['data_conclusao']);
+            } catch (PDOException $e) {
+                $erro = Toast::message('operation.failed');
+                Toast::discardSuccess();
+                http_response_code(500);
+                require __DIR__ . '/../../Views/Tarefa/tarefa-create.php';
+                return;
+            }
+            Toast::add('task.created');
             header('Location: /tarefas', true, 303);
             exit;
         }

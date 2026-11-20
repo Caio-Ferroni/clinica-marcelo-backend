@@ -1,24 +1,20 @@
 <?php
 require_once __DIR__ . '/../Config/Database.php';
     class Consulta{
+        public const STATUS = ['Pendente', 'Concluído', 'Cancelado'];
+
         protected PDO $db;
 
         public function __construct() {
-            $this->db = Database::getConnection();
+            $this->db = Database::getConnection(true);
         }
 
         public function listarTodos(){
-            $sql = 'SELECT 
-                        c.*,
-                        a.id_paciente,
-                        p.nome AS paciente_nome,
-                        p.data_nascimento,
-                        p.telefone,
-                        p.cpf
+            $sql = 'SELECT c.*, p.nome AS paciente_nome
                     FROM consulta c
-                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
-                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
-                    ORDER BY c.data DESC, c.horario_inicio ASC;';
+                    LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
+                    LEFT JOIN paciente p ON p.id_paciente = a.id_paciente
+                    ORDER BY c.data DESC, c.horario_inicio ASC, c.id_consulta DESC';
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }
@@ -65,18 +61,11 @@ require_once __DIR__ . '/../Config/Database.php';
         }
 
         public function visualizarConsulta($id){
-            $sql = "SELECT 
-                        c.*,
-                        a.id_paciente,
-                        p.nome AS paciente_nome,
-                        p.data_nascimento,
-                        p.telefone,
-                        p.cpf
+            $sql = 'SELECT c.*, p.nome AS paciente_nome
                     FROM consulta c
-                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
-                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
-                    WHERE c.id_consulta = :id
-                    LIMIT 1;";
+                    LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
+                    LEFT JOIN paciente p ON p.id_paciente = a.id_paciente
+                    WHERE c.id_consulta = :id';
             $stmt = $this->db->prepare($sql); 
             $stmt->execute([
                 ':id' => $id
@@ -84,7 +73,11 @@ require_once __DIR__ . '/../Config/Database.php';
             return $stmt->fetchAll();
         }
 
-        public function atualizarStatus($id, $status){
+        public function atualizarStatus($id, $status): bool {
+            if (!is_string($status) || !in_array($status, self::STATUS, true)) {
+                throw new InvalidArgumentException('Status de consulta inválido.');
+            }
+
             $sql = "UPDATE consulta SET status = :status WHERE id_consulta = :id";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
@@ -92,8 +85,7 @@ require_once __DIR__ . '/../Config/Database.php';
                 ':id' => $id
             ]);
 
-            $mensagem = "Status da consulta atualizado com sucesso!";
-            return $mensagem;
+            return $stmt->rowCount() > 0 || $this->visualizarConsulta($id) !== [];
         }
 
         public function enviarNotificação(){

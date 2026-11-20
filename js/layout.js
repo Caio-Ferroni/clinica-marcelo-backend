@@ -173,6 +173,7 @@
         const searchInput = document.getElementById('patient-search');
         const results = document.getElementById('patient-search-results');
         const message = document.getElementById('patient-search-message');
+        let searchLoadFailed = false;
 
         function normalizeText(value) {
             return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -202,9 +203,14 @@
                 if (!Array.isArray(patients)) throw new Error();
             } catch {
                 message.textContent = 'Não foi possível carregar os pacientes.';
+                if (!searchLoadFailed) {
+                    window.ClinicToast?.show('patient.load_failed', message);
+                    searchLoadFailed = true;
+                }
                 return;
             }
 
+            message.hidden = false;
             const term = normalizeText(searchInput.value);
             const cpf = searchInput.value.replace(/\D/g, '');
             const matches = patients.filter((patient) => {
@@ -242,8 +248,10 @@
                 e.preventDefault();
                 if (searchModalJustClosed) return;
                 searchInput.value = '';
-                searchPatients();
+                searchLoadFailed = false;
+                message.hidden = false;
                 searchModal.showModal();
+                searchPatients();
                 searchInput.focus();
             });
             if (el.tagName === 'INPUT') {
@@ -279,12 +287,12 @@
 
         const pageSize = Math.max(1, parseInt(table.dataset.pageSize, 10) || 10);
         let currentPage = 1;
-        const emptyRow = body.insertRow();
+        const emptyRow = body.querySelector('[data-empty-row]') || body.insertRow();
         emptyRow.dataset.emptyRow = '';
-        const emptyCell = emptyRow.insertCell();
+        const emptyCell = emptyRow.cells[0] || emptyRow.insertCell();
         emptyCell.colSpan = table.tHead?.rows[0]?.cells.length || 1;
         emptyCell.className = 'text-center p-7';
-        emptyCell.textContent = 'Nenhum resultado disponível.';
+        emptyCell.textContent ||= 'Nenhum resultado disponível.';
 
         const navigation = document.createElement('nav');
         navigation.className = 'd-flex flex-wrap align-items-center justify-content-between gap-4 mt-5';

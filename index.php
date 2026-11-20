@@ -12,6 +12,7 @@ try {
 
 // Config
 require_once __DIR__ . '/Backend/Config/Database.php';
+require_once __DIR__ . '/Backend/Support/Toast.php';
 
 // Models
 require_once __DIR__ . '/Backend/Models/Paciente.php';
@@ -30,7 +31,6 @@ require_once __DIR__ . '/Backend/Controllers/PsicologoController.php';
 require_once __DIR__ . '/Backend/Controllers/DashboardController.php';
 ob_start();
 require_once __DIR__ . '/Backend/Controllers/NotificacaoController.php';
-ob_end_clean();
 
 // Auth
 require_once __DIR__ . '/Backend/Auth/Auth.php';

@@ -6,8 +6,19 @@
 // MIDDLEWARE DE AUTENTICAÇÃO
 // Protege todas as rotas privadas, exceto as telas de autenticação
 // =========================================================
-$router->before('GET|POST', '/(?!login|registrar|2fa).*', function () {
+$router->before('GET|POST', '/(?!login|registrar|2fa|notificacoes(?:/|$)).*', function () {
     Auth::verificar();
+});
+
+// As rotas de notificações retornam 401 JSON pelo controller, sem redirecionar para HTML.
+$router->get('/notificacoes/config', function () {
+    (new NotificacaoController)->handle('config');
+});
+$router->post('/notificacoes/salvar-subscription', function () {
+    (new NotificacaoController)->handle('save');
+});
+$router->post('/notificacoes/remover-subscription', function () {
+    (new NotificacaoController)->handle('remove');
 });
 
 // =========================================================
@@ -89,6 +100,10 @@ $router->mount('/consultas', function () use ($router) {
         (new ConsultaController)->index();
     });
 
+    $router->post('/(\d+)/status', function ($id) {
+        (new ConsultaController)->mudarStatus($id);
+    });
+
     // Gerar consultas do mês atual a partir dos agendamentos
     $router->post('/gerar', function () {
         (new ConsultaController)->gerarMesAtual();
@@ -154,8 +169,7 @@ $router->mount('/relatorios', function () use ($router) {
         require_once __DIR__ . '/../../Views/Relatorio/relatorio.php';
     });
     $router->get('/(\d+)', function ($id) {
-        // TODO: (new RelatorioController)->visualizar($id);
-        require_once __DIR__ . '/../../Views/Relatorio/relatorio-show.php';
+        (new ConsultaController)->visualizarRelatorio($id);
     });
 });
 

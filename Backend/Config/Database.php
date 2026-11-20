@@ -4,7 +4,7 @@
 class Database {
     private static ?PDO $instance = null;
 
-    public static function getConnection(): PDO {
+    public static function getConnection(bool $throwOnError = false): PDO {
         if (self::$instance === null) {
             $host = 'localhost';
             $db   = 'mydb';
@@ -22,6 +22,9 @@ class Database {
                     ]
                 );
             } catch (PDOException $e) {
+                if ($throwOnError) {
+                    throw $e;
+                }
                 die("Erro de conexão: " . $e->getMessage());
             }
         }

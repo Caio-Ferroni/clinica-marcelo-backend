@@ -1,7 +1,10 @@
 {
+  "scripts": {
+    "vendor:toastify": "node scripts/sync-toastify.cjs"
+  },
   "dependencies": {
     "@supabase/server": "^1.9.2",
     "chart.js": "^4.6.1",
-    "react-toastify": "^11.2.0"
+    "toastify-js": "1.12.0"
   }
 }

@@ -21,10 +21,10 @@
                     <h2 class="text-md fw-semibold mb-5">Acesse sua conta</h2>
 
                     
-                    <form id="auth-form" action="/login" method="post" novalidate>
+                    <form id="auth-form" action="/login" method="post" data-toast-validate>
                         <div class="mb-5">
                             <label class="form-label text-sm" for="email">E-mail</label>
-                            <input class="form-control" type="email" id="email" name="email" placeholder="voce@exemplo.com.br" autocomplete="username" required>
+                            <input class="form-control" type="email" id="email" name="email" value="<?= htmlspecialchars(is_string($_POST['email'] ?? null) ? $_POST['email'] : '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="voce@exemplo.com.br" autocomplete="username" required>
                         </div>
                         <div class="mb-5">
                             <label class="form-label text-sm" for="senha">Senha</label>
@@ -33,7 +33,7 @@
                         <div class="text-center mt-7"><button class="btn-solid px-7 py-4" type="submit">Entrar</button></div>
                     </form>
                     <?php if (!empty($erro)): ?>
-                        <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+                        <p id="form-message" class="border rounded-3 p-5 mt-5 mb-0 text-sm" role="alert" data-toast-type="<?= $toastType ?? 'error' ?>"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
                     <?php endif; ?>
                     <!-- <p class="text-sm text-center mt-5 mb-0">Ainda não tem conta? <a href="cadastro.html">Cadastrar</a></p> -->
                 </div>
@@ -41,5 +41,6 @@
         </main>
         <clinic-footer></clinic-footer>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

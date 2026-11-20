@@ -1,4 +1,25 @@
 (() => {
+    const generationForm = document.querySelector('[data-generate-consultations]');
+    if (generationForm) {
+        const button = generationForm.querySelector('button[type="submit"]');
+        const label = button.querySelector('span');
+        const initialLabel = label.textContent;
+        generationForm.addEventListener('submit', event => {
+            if (event.defaultPrevented) return;
+            if (button.disabled) {
+                event.preventDefault();
+                return;
+            }
+            button.disabled = true;
+            generationForm.setAttribute('aria-busy', 'true');
+            label.textContent = 'Gerando consultas…';
+        });
+        window.addEventListener('pageshow', () => {
+            button.disabled = false;
+            generationForm.removeAttribute('aria-busy');
+            label.textContent = initialLabel;
+        });
+    }
     const table = document.getElementById('tabela-consultas');
     if (!table) return;
     const feedback = document.querySelector('[data-status-feedback]');

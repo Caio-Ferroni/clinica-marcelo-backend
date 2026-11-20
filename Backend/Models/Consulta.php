@@ -25,41 +25,43 @@ require_once __DIR__ . '/../Config/Database.php';
             return $stmt->fetchAll();
         }
 
-        public function gerarConsultas(){
-            $mes = localtime(time()-9000, TRUE)['tm_mon'] + 1;
-            $ano = localtime(time()-9000, TRUE)['tm_year'] + 1900;
-            $stmt = $this->db->query("SELECT * FROM agendamento");
-            $agendamentos = $stmt->fetchAll();
-            $consultasCriadas = 0;
-
-            foreach($agendamentos as $agendamento){
-                $diaDaSemana = $agendamento['dia_semana'];
-                $repeticao = $agendamento['repeticao'];
-                $datasConsultas = self::encontrarDatas($ano, $mes, $diaDaSemana, $repeticao);
-
-
-                foreach($datasConsultas as $data_consultada){
-                    $id_agendamento = $agendamento['id_agendamento'];
-                    $horario_inicio = $agendamento["horario_inicio"];
-                    $horario_fim = $agendamento["horario_termino"];
-
-                    if(!self::consultaExiste($id_agendamento, $data_consultada, $horario_inicio)){
-                        $sql = "INSERT INTO consulta(id_agendamento, horario_inicio, horario_fim, data) VALUES(:id_agendamento, :horario_inicio, :horario_fim, :data_consultada)";
-                        $stmt = $this->db->prepare($sql);
+        public function gerarConsultas(?int $idPaciente = null): int {
+            $agora = new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+            $transacaoPropria = !$this->db->inTransaction();
+            if ($transacaoPropria) $this->db->beginTransaction();
+            try {
+                $sql = 'SELECT * FROM agendamento';
+                if ($idPaciente !== null) $sql .= ' WHERE id_paciente = :id_paciente';
+                $sql .= ' ORDER BY id_agendamento';
+                if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') $sql .= ' FOR UPDATE';
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute($idPaciente === null ? [] : [':id_paciente' => $idPaciente]);
+                $agendamentos = $stmt->fetchAll();
+                $consultasCriadas = 0;
+                foreach ($agendamentos as $agendamento) {
+                    if (!in_array((string) $agendamento['dia_semana'], ['0', '1', '2', '3', '4', '5', '6'], true)
+                        || !in_array($agendamento['repeticao'], ['Semanal', 'Quinzenal', 'Mensal'], true)
+                        || empty($agendamento['horario_inicio']) || empty($agendamento['horario_termino'])) continue;
+                    $datas = self::encontrarDatas($agora->format('Y'), $agora->format('m'), $agendamento['dia_semana'], $agendamento['repeticao']);
+                    foreach ($datas as $data) {
+                        if (self::consultaExiste($agendamento['id_agendamento'], $data, $agendamento['horario_inicio'])) continue;
+                        $stmt = $this->db->prepare('INSERT INTO consulta (id_agendamento, horario_inicio, horario_fim, data, status) VALUES (:id_agendamento, :horario_inicio, :horario_fim, :data, :status)');
                         $stmt->execute([
-                        ':id_agendamento' => $id_agendamento,
-                        ':horario_inicio' => $horario_inicio,
-                        ':horario_fim' => $horario_fim,
-                        ':data_consultada' => $data_consultada
-
-                    ]);
-                    $consultasCriadas++;
+                            ':id_agendamento' => $agendamento['id_agendamento'],
+                            ':horario_inicio' => $agendamento['horario_inicio'],
+                            ':horario_fim' => $agendamento['horario_termino'],
+                            ':data' => $data,
+                            ':status' => 'Pendente'
+                        ]);
+                        $consultasCriadas++;
                     }
-
                 }
+                if ($transacaoPropria) $this->db->commit();
+                return $consultasCriadas;
+            } catch (Throwable $e) {
+                if ($transacaoPropria && $this->db->inTransaction()) $this->db->rollBack();
+                throw $e;
             }
-            return $consultasCriadas;
-
         }
 
         public function visualizarCalendario(){

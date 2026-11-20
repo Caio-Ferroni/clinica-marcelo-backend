@@ -63,11 +63,18 @@ class ConsultaController {
     }
 
     public function gerarMesAtual() {
+        $token = $_POST['csrf_token'] ?? null;
+        $tokenSessao = $_SESSION['consulta_csrf'] ?? null;
+        if (!is_string($token) || !is_string($tokenSessao) || !hash_equals($tokenSessao, $token)) {
+            http_response_code(403);
+            $this->index(Toast::message('validation.form_expired'), 'warning');
+            return;
+        }
         try {
             $consultasCriadas = $this->obterConsulta()->gerarConsultas();
         } catch (PDOException $e) {
             http_response_code(500);
-            $this->index(Toast::message('operation.failed'));
+            $this->index(Toast::message('consultation.generate_failed'));
             return;
         }
         Toast::add($consultasCriadas > 0 ? 'consultation.generated' : 'consultation.none_generated');

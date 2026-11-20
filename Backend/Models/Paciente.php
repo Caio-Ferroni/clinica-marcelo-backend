@@ -28,7 +28,7 @@
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':nome'            => $nome,
-                ':cpf'             => $cpf,
+                ':cpf'             => preg_replace('/\D/', '', (string) $cpf),
                 ':telefone'        => $telefone,
                 ':data_nascimento' => $data_nascimento
             ]);
@@ -43,7 +43,7 @@
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':nome'            => $nome,
-                ':cpf'             => $cpf,
+                ':cpf'             => preg_replace('/\D/', '', (string) $cpf),
                 ':telefone'        => $telefone,
                 ':data_nascimento' => $data_nascimento,
                 ':id'              => $id

@@ -4,6 +4,7 @@ require_once __DIR__ . '/../Models/Paciente.php';
 require_once __DIR__ . '/../Models/Perfil.php';
 require_once __DIR__ . '/../Models/Encaminhamento.php';
 require_once __DIR__ . '/../Models/Agendamento.php';
+require_once __DIR__ . '/../Models/Consulta.php';
 require_once __DIR__ . '/../Auth/Auth.php';
 
 class PacienteController {
@@ -11,6 +12,7 @@ class PacienteController {
     public Perfil $perfil;
     public Encaminhamento $encaminhamento;
     public Agendamento $agendamento;
+    public Consulta $consulta;
     protected PDO $db;
 
     private function prepararModelos(): void {
@@ -20,6 +22,7 @@ class PacienteController {
         $this->perfil = new Perfil;
         $this->encaminhamento = new Encaminhamento;
         $this->agendamento = new Agendamento;
+        $this->consulta = new Consulta;
     }
 
     private function falhar(string $code, int $status): void {
@@ -130,7 +133,7 @@ class PacienteController {
         return null;
     }
 
-    private function salvarAssociacoes($id, array $v, bool $editar): void {
+    private function salvarAssociacoes($id, array $v, bool $editar): int {
         if ($v['quadro'] !== '') {
             $metodo = $editar ? 'atualizarPerfil' : 'criarPerfil';
             $this->perfil->$metodo($id, $v['quadro'], $v['descricao']);
@@ -142,7 +145,9 @@ class PacienteController {
         if ($v['dia_semana'] !== '') {
             $metodo = $editar ? 'atualizarAgendamento' : 'criarAgendamento';
             $this->agendamento->$metodo($id, $v['dia_semana'], $v['repeticao'], $v['horario_inicio'], $v['horario_termino'], $v['data_inicio']);
+            return $this->consulta->gerarConsultas((int) $id);
         }
+        return 0;
     }
 
     public function criar(): void {
@@ -159,7 +164,7 @@ class PacienteController {
             $this->prepararModelos();
             $this->db->beginTransaction();
             $id = $this->paciente->criarPaciente($valores['nome'], $valores['cpf'], $valores['telefone'], $valores['data_nascimento']);
-            $this->salvarAssociacoes($id, $valores, false);
+            $consultasCriadas = $this->salvarAssociacoes($id, $valores, false);
             $this->db->commit();
         } catch (PDOException $e) {
             if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
@@ -171,6 +176,7 @@ class PacienteController {
             return;
         }
         Toast::add('patient.created');
+        if ($consultasCriadas > 0) Toast::add('consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }
@@ -199,7 +205,7 @@ class PacienteController {
             $this->db->beginTransaction();
             $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
             if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
-            $this->salvarAssociacoes($id, $v, true);
+            $consultasCriadas = $this->salvarAssociacoes($id, $v, true);
             $this->db->commit();
         } catch (PDOException $e) {
             if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
@@ -207,6 +213,7 @@ class PacienteController {
             return;
         }
         Toast::add('patient.updated');
+        if ($consultasCriadas > 0) Toast::add('consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }

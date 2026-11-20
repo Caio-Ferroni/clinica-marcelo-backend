@@ -103,7 +103,8 @@ class PsicologoController {
         try {
             $existe = $this->obterPsicologo()->existePsicologo();
         } catch (PDOException $e) {
-            $this->mostrarErro('register', 'operation.failed', 503);
+            error_log('[Cadastro] Falha ao verificar a conta. SQLSTATE: ' . $e->getCode());
+            $this->mostrarErro('register', 'account.load_failed', 503);
             return;
         }
         if ($existe) {
@@ -121,7 +122,8 @@ class PsicologoController {
         try {
             $existe = $this->obterPsicologo()->existePsicologo();
         } catch (PDOException $e) {
-            $this->mostrarErro('register', 'operation.failed', 503);
+            error_log('[Cadastro] Falha ao verificar a conta. SQLSTATE: ' . $e->getCode());
+            $this->mostrarErro('register', 'account.load_failed', 503);
             return;
         }
         if ($existe) {
@@ -151,6 +153,7 @@ class PsicologoController {
         try {
             $sucesso = $this->obterPsicologo()->criarPsicologo($email, $senha);
         } catch (PDOException $e) {
+            error_log('[Cadastro] Falha ao salvar a conta. SQLSTATE: ' . $e->getCode());
             $this->mostrarErro('register', 'account.failed', 500);
             return;
         }

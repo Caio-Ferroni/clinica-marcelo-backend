@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 43 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 45 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -49,6 +49,16 @@ Os novos formulários de paciente, edição de tarefa e relatório usam token CS
 
 Os relatórios ficam em `/consultas/{id}`, com edição em `/consultas/{id}/editar`. Os endereços antigos `/relatorios/{id}` continuam disponíveis; `/relatorios` redireciona para a lista de consultas.
 
+## Status automático de consultas
+
+Na lista, o select salva ao mudar, sem recarregar ou reiniciar a paginação. O script `js/consultas.js` envia `POST /consultas/{id}/status` com `Accept: application/json`, `status` e `csrf_token` no corpo do formulário. As gravações são processadas em sequência; cada select fica indisponível durante seu envio. O lápis e os contadores só refletem o resultado confirmado pelo servidor.
+
+O sucesso retorna HTTP 200 com `ok`, `toast_code`, `id`, `status`, `pode_editar` e `indicadores` (`mes`, `realizadas`, `canceladas`). Falhas retornam `ok: false` e `toast_code`: HTTP 401 para sessão expirada, 403 para token inválido, 404 para consulta inexistente, 422 para status inválido e 500 para falha ao gravar. As respostas JSON não deixam confirmação na fila da sessão. Sem JavaScript, o botão de envio continua disponível e usa o redirecionamento e a fila existentes.
+
+Em falha de rede, resposta inválida ou erro do servidor, o select volta ao último valor confirmado e o aviso permanece disponível mesmo se o Toastify não carregar. O botão de visualizar usa somente o ícone de olho e abre os detalhes com ou sem relatório. O lápis só é liberado com status `Concluído`; pendente ou cancelado bloqueiam novamente a edição e preservam o texto salvo.
+
+A abertura e o salvamento do relatório verificam o status no servidor; a atualização no banco também exige `Concluído`. Consultas fora desse estado retornam HTTP 409 e `report.not_completed`, inclusive se o formulário foi aberto antes da mudança de status. A distribuição deve incluir `js/consultas.js` junto das views e do backend alterados.
+
 ## Catálogo
 
 | Código | Tipo | Mensagem |
@@ -69,6 +79,7 @@ Os relatórios ficam em `/consultas/{id}`, com edição em `/consultas/{id}/edit
 | `account.created` | Sucesso | Conta criada. Entre para continuar. |
 | `account.exists` | Informação | Já existe uma conta cadastrada. Entre para continuar. |
 | `account.failed` | Erro | Não foi possível realizar o cadastro. |
+| `account.load_failed` | Erro | Não foi possível acessar o cadastro. Verifique a conexão com o banco de dados. |
 | `task.created` | Sucesso | Tarefa criada com sucesso. |
 | `task.required` | Atenção | Preencha o título, o conteúdo e a data de conclusão da tarefa. |
 | `task.date` | Atenção | Informe uma data de conclusão válida. |
@@ -93,6 +104,7 @@ Os relatórios ficam em `/consultas/{id}`, com edição em `/consultas/{id}/edit
 | `task.missing` | Erro | Tarefa não encontrada. |
 | `task.status_invalid` | Atenção | Selecione um status válido para a tarefa. |
 | `report.saved` | Sucesso | Relatório da consulta salvo. |
+| `report.not_completed` | Atenção | Conclua a consulta para editar o relatório. |
 | `patient.load_failed` | Erro | Não foi possível carregar os pacientes. Tente novamente. |
 | `patient.required` | Atenção | Preencha o nome, CPF, telefone e a data de nascimento do paciente. |
 | `operation.failed` | Erro | Não foi possível concluir a ação. Tente novamente. |
@@ -102,3 +114,7 @@ Os relatórios ficam em `/consultas/{id}`, com edição em `/consultas/{id}/edit
 Após a integração, passaram 134 verificações HTTP com SQLite isolado, 50 de regressão de consultas, 96 verificações do catálogo e da fila PHP, 31 verificações das máscaras, 14 verificações do dashboard e os 19 cenários de autenticação/SMTP. Também passaram 27 verificações dos models em tabelas temporárias com a estrutura real do MySQL, sem alterar os registros existentes. Nenhum e-mail real foi enviado.
 
 No navegador foram conferidos o cadastro e a edição de paciente com máscaras e dados persistidos, a criação e a edição de tarefas, a atualização do relatório, as confirmações após redirecionamento e o dashboard. As verificações anteriores de teclado, fila, duplicações e alternativa sem biblioteca estão registradas no histórico da entrega de toasts. Os artefatos de validação ficam em `.local`, ignorado pelo Git. A publicação no servidor não foi realizada.
+
+Para os ajustes de consultas, passaram 135 verificações HTTP, 50 de regressão de consultas, 12 do cliente (fila, falha de rede e alternativa sem Toastify), 98 do catálogo e da fila PHP e 35 em tabelas temporárias MySQL. No navegador foram conferidos os ícones, a manutenção da segunda página após o salvamento, a atualização dos contadores, os toasts, a liberação e o bloqueio do lápis, a falha de gravação, a sessão expirada e o envio de formulário aberto antes da mudança de status.
+
+Para a correção do registro, passaram 51 verificações HTTP, 11 em tabela temporária MySQL com modo estrito, os 19 cenários de autenticação e 100 do catálogo e da fila PHP. A página real `/registrar` passou de HTTP 503 para HTTP 200 sem toast de erro inicial após corrigir as extensões do PHP local. Detalhes em [configuracao-local.md](configuracao-local.md).

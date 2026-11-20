@@ -136,6 +136,20 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - Catálogo ampliado para 43 mensagens; removidos os avisos de cadastro e edição indisponíveis. Documentação: [docs/notificacoes-toast.md](docs/notificacoes-toast.md).
 - Validação local: 134 verificações HTTP, 50 de regressão de consultas, 96 do helper de toasts, 31 de máscaras, 14 do dashboard, 27 em tabelas temporárias MySQL e 19 cenários de autenticação/SMTP. Cadastro, edição de paciente, tarefas e relatório também foram exercitados pelo navegador. Não houve alteração de registros reais nem publicação no servidor.
 
+### 3.12 Ações e Status Automático de Consultas — 20/11/2026
+
+- Padronizadas as ações da lista com os ícones de lápis e olho, nomes acessíveis e descrições. A visualização permanece disponível mesmo sem relatório.
+- O select salva automaticamente pela rota existente, com resposta JSON, CSRF, toast após persistência e atualização dos contadores sem reiniciar a paginação. Falhas restauram a seleção confirmada; o envio convencional permanece como alternativa sem JavaScript.
+- A edição do relatório depende do status `Concluído` na lista, nos detalhes, no controller e no comando de atualização do banco. Formulários antigos não podem salvar após a consulta voltar a pendente ou cancelada. O texto existente é preservado.
+- Validação: 135 verificações HTTP, 50 de regressão, 12 do cliente, 98 do helper de toasts e 35 em tabelas temporárias MySQL. Os fluxos principais e falhas também foram conferidos pelo navegador. Sem alteração de registros reais ou publicação.
+
+### 3.13 Registro e Configuração do PHP Local — 20/11/2026
+
+- Reproduzido HTTP 503 ao abrir `/registrar`: o servidor em `localhost:8000` usava `C:\php\php.ini` sem PDO MySQL e mbstring. Habilitadas essas extensões, OpenSSL e curl e reiniciado o servidor local. A página real voltou a HTTP 200, sem toast de erro inicial.
+- O cadastro agora informa `telefone` vazio explicitamente, pois o formulário não coleta esse campo e a estrutura real o exige sem valor padrão. Isso evita falha também com MySQL em modo estrito, preservando a conta única e a senha com hash.
+- Falhas ao consultar o cadastro usam mensagem específica; o log registra somente a etapa e o SQLSTATE. Guia: [docs/configuracao-local.md](docs/configuracao-local.md).
+- Validação: 51 verificações HTTP isoladas, 11 em tabela temporária MySQL estrita, 19 cenários de autenticação e 100 do helper de toasts. Página real conferida no navegador. Contas reais preservadas, sem criar a primeira conta nem enviar e-mails.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]

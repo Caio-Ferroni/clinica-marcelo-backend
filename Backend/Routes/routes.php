@@ -7,6 +7,17 @@
 // Protege todas as rotas privadas, exceto as telas de autenticação
 // =========================================================
 $router->before('GET|POST', '/(?!login|registrar|2fa|notificacoes(?:/|$)).*', function () {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+        && preg_match('~^/consultas/\d+/status/?$~', parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '')
+        && str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
+        && !Auth::estaAutenticado()) {
+        http_response_code(401);
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        header('X-Content-Type-Options: nosniff');
+        echo json_encode(['ok' => false, 'toast_code' => 'auth.required']);
+        exit;
+    }
     Auth::verificar();
 });
 

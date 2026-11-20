@@ -28,6 +28,7 @@ require_once __DIR__ . '/Backend/Controllers/PacienteController.php';
 require_once __DIR__ . '/Backend/Controllers/ConsultaController.php';
 require_once __DIR__ . '/Backend/Controllers/TarefaController.php';
 require_once __DIR__ . '/Backend/Controllers/PsicologoController.php';
+require_once __DIR__ . '/Backend/Controllers/DashboardController.php';
 require_once __DIR__ . '/Backend/Controllers/NotificacaoController.php';
 
 // Auth

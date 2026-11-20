@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 33 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes continuam sem gravação pela interface; os respectivos toasts informam essa indisponibilidade.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 43 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -27,12 +27,12 @@ A página de destino consome a fila uma única vez. Avisos de atenção e erro e
 Para uma ação no navegador:
 
 ```javascript
-ClinicToast.show('patient.create_unavailable');
+ClinicToast.show('validation.required');
 ```
 
 O segundo argumento opcional aceita o elemento existente que serve de aviso alternativo. O serviço só oculta esse elemento depois de apresentar o toast. Códigos desconhecidos retornam `false`. Avisos PHP já renderizados usam `data-toast-type` e, opcionalmente, `data-toast-code`.
 
-Login, 2FA, registro da conta, criação de tarefas, status e geração de consultas, erros de relatório e avisos de pacientes estão conectados. O envio do código depende da aceitação do SMTP; o toast não comprova recebimento na caixa de entrada. Web Push e APIs JSON permanecem separados.
+Login, 2FA, registro da conta, criação e edição de tarefas, cadastro e edição de pacientes, status e geração de consultas, leitura e edição de relatório estão conectados. O envio do código depende da aceitação do SMTP; o toast não comprova recebimento na caixa de entrada. Web Push e APIs JSON permanecem separados.
 
 ## Dependência e publicação
 
@@ -44,6 +44,10 @@ npm.cmd run vendor:toastify
 ```
 
 Publicar os arquivos versionados de `js/vendor`, `css/vendor`, `css/toasts.css`, `js/toasts.js`, o helper e o componente compartilhado junto das páginas e controllers alterados. A licença MIT está em `js/vendor/toastify.LICENSE.txt`. O script de sincronização remove comentários das cópias distribuídas e preserva a licença em arquivo separado. O navegador não precisa acessar um CDN para carregar o Toastify. Os recursos próprios usam a data de modificação na URL para atualizar o cache após alterações.
+
+Os novos formulários de paciente, edição de tarefa e relatório usam token CSRF de sessão. Um formulário expirado retorna HTTP 403 e uma mensagem específica. Dados inválidos retornam HTTP 422. O cadastro e a atualização de paciente usam transação para evitar gravações parciais das associações.
+
+Os relatórios ficam em `/consultas/{id}`, com edição em `/consultas/{id}/editar`. Os endereços antigos `/relatorios/{id}` continuam disponíveis; `/relatorios` redireciona para a lista de consultas.
 
 ## Catálogo
 
@@ -77,14 +81,24 @@ Publicar os arquivos versionados de `js/vendor`, `css/vendor`, `css/toasts.css`,
 | `consultation.generated` | Sucesso | As consultas do mês foram geradas. |
 | `consultation.none_generated` | Informação | Nenhuma nova consulta foi gerada. |
 | `report.load_failed` | Erro | Não foi possível carregar o relatório. Tente novamente. |
-| `patient.create_unavailable` | Atenção | O cadastro de pacientes ainda está indisponível. Nenhum dado foi salvo. |
-| `patient.edit_unavailable` | Atenção | A edição de pacientes ainda está indisponível. Nenhuma alteração foi salva. |
+| `patient.created` | Sucesso | Paciente cadastrado com sucesso. |
+| `patient.updated` | Sucesso | Dados do paciente atualizados. |
+| `patient.missing` | Erro | Paciente não encontrado. |
+| `patient.save_failed` | Erro | Não foi possível salvar os dados do paciente. Tente novamente. |
+| `patient.date_invalid` | Atenção | Informe uma data de nascimento válida. |
+| `patient.optional_required` | Atenção | Preencha todos os campos da seção que deseja salvar. |
+| `patient.schedule_invalid` | Atenção | Confira o dia, a frequência, a data e os horários do agendamento. |
+| `validation.form_expired` | Atenção | O formulário expirou. Atualize a página e tente novamente. |
+| `task.updated` | Sucesso | Tarefa atualizada com sucesso. |
+| `task.missing` | Erro | Tarefa não encontrada. |
+| `task.status_invalid` | Atenção | Selecione um status válido para a tarefa. |
+| `report.saved` | Sucesso | Relatório da consulta salvo. |
 | `patient.load_failed` | Erro | Não foi possível carregar os pacientes. Tente novamente. |
 | `patient.required` | Atenção | Preencha o nome, CPF, telefone e a data de nascimento do paciente. |
 | `operation.failed` | Erro | Não foi possível concluir a ação. Tente novamente. |
 
 ## Validação local
 
-Passaram 131 verificações HTTP com SQLite e SMTP simulado, 76 verificações do catálogo e da fila PHP, 50 verificações de regressão de consultas, os 19 cenários anteriores de autenticação/SMTP e as verificações existentes de máscaras, formulários e pesquisa. Nenhum e-mail real foi enviado.
+Após a integração, passaram 134 verificações HTTP com SQLite isolado, 50 de regressão de consultas, 96 verificações do catálogo e da fila PHP, 31 verificações das máscaras, 14 verificações do dashboard e os 19 cenários de autenticação/SMTP. Também passaram 27 verificações dos models em tabelas temporárias com a estrutura real do MySQL, sem alterar os registros existentes. Nenhum e-mail real foi enviado.
 
-No navegador foram conferidos erros e validações, consumo após redirecionamento, fechamento pelo teclado, pausa por foco, temporizador, fila, duplicações, modais, apresentação em 390 pixels e alternativa com a biblioteca indisponível. Os artefatos de validação ficam em `.local`, ignorado pelo Git. A publicação no servidor não foi realizada.
+No navegador foram conferidos o cadastro e a edição de paciente com máscaras e dados persistidos, a criação e a edição de tarefas, a atualização do relatório, as confirmações após redirecionamento e o dashboard. As verificações anteriores de teclado, fila, duplicações e alternativa sem biblioteca estão registradas no histórico da entrega de toasts. Os artefatos de validação ficam em `.local`, ignorado pelo Git. A publicação no servidor não foi realizada.

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../Backend/Auth/Auth.php';
+$csrfFormulario = Auth::csrfToken();
 $paciente = $paciente ?? [];
 $perfil = $perfil ?? [];
 $agendamento = $agendamento ?? [];
@@ -10,10 +12,11 @@ $encaminhamento = $encaminhamento ?? [];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar paciente | Clínica</title>
-    <link rel="stylesheet" href="../../css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../css/style.css">
-    <script src="../../js/layout.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/layout.js" defer></script>
+    <script src="/js/patient-masks.js" defer></script>
 </head>
 <body class="patient-create patient-edit">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -24,13 +27,11 @@ $encaminhamento = $encaminhamento ?? [];
                     <header class="text-center mb-8">
                         <h1 class="text-2xl fw-semibold mb-3">Editar paciente</h1>
                         <p class="text-sm mb-0" style="color: var(--color-text-muted);">Selecione um paciente para consultar e editar suas informações.</p>
-                        <button type="button" class="btn-outline mt-5" data-open-patient-search aria-haspopup="dialog" aria-controls="patient-search-modal">
-                            <i class="bi bi-search" aria-hidden="true"></i>
-                            Selecionar paciente
-                        </button>
                     </header>
 
-                    <form id="patient-form" data-patient-edit data-toast-validate>
+                    <?php if (!empty($erro)): ?><p role="alert" data-toast-type="warning"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p><?php endif; ?>
+                    <form id="patient-form" data-toast-validate data-patient-edit method="POST" action="/pacientes/<?= (int) ($paciente['id_paciente'] ?? 0)?>/editar">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfFormulario, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <input type="hidden" name="id_paciente" value="<?= htmlspecialchars($paciente['id_paciente'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <fieldset class="border-0 p-0 m-0" data-patient-fields <?= empty($paciente) ? 'disabled' : '' ?>>
                             <legend class="visually-hidden">Informações do paciente</legend>
@@ -43,11 +44,14 @@ $encaminhamento = $encaminhamento ?? [];
                                     <div class="row g-5">
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-name">Nome completo <span aria-hidden="true">*</span></label>
-                                            <input class="form-control" type="text" id="patient-name" name="nome" value="<?= htmlspecialchars($paciente['nome'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Selecione um paciente" autocomplete="name" required>
+                                            <div class="input-group">
+                                                <button type="button" class="input-group-text" aria-label="Selecionar outro paciente" style="cursor: pointer;" data-open-patient-search aria-haspopup="dialog" aria-controls="patient-search-modal"><i class="bi bi-search" aria-hidden="true"></i></button>
+                                                <input class="form-control" type="text" id="patient-name" name="nome" value="<?= htmlspecialchars($paciente['nome'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Nome completo do paciente" autocomplete="name" required>
+                                            </div>
                                         </div>
                                         <div class="col-12 md:col-3">
                                             <label class="form-label text-sm" for="birth-date">Data de nascimento</label>
-                                            <input class="form-control" type="date" id="birth-date" name="data_nascimento" value="<?= htmlspecialchars(substr($paciente['data_nascimento'] ?? '', 0, 10), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" autocomplete="bday">
+                                            <input class="form-control" type="date" id="birth-date" name="data_nascimento" required value="<?= htmlspecialchars(substr($paciente['data_nascimento'] ?? '', 0, 10), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" autocomplete="bday">
                                         </div>
                                         <div class="col-12 md:col-3">
                                             <label class="form-label text-sm" for="patient-status">Status</label>
@@ -59,11 +63,11 @@ $encaminhamento = $encaminhamento ?? [];
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-cpf">CPF</label>
-                                            <input class="form-control" type="text" id="patient-cpf" name="cpf" value="<?= htmlspecialchars($paciente['cpf'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14">
+                                            <input class="form-control" type="text" id="patient-cpf" name="cpf" required value="<?= htmlspecialchars($paciente['cpf'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="000.000.000-00" inputmode="numeric" maxlength="14" data-mask="cpf">
                                         </div>
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-phone">Telefone</label>
-                                            <input class="form-control" type="tel" id="patient-phone" name="telefone" value="<?= htmlspecialchars($paciente['telefone'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="(00) 00000-0000" autocomplete="tel">
+                                            <input class="form-control" type="tel" id="patient-phone" name="telefone" required value="<?= htmlspecialchars($paciente['telefone'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="(00) 00000-0000" autocomplete="tel" inputmode="numeric" maxlength="15" data-mask="telefone">
                                         </div>
                                     </div>
                                 </section>
@@ -179,12 +183,11 @@ $encaminhamento = $encaminhamento ?? [];
 
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-5 mt-7">
                             <small style="color: var(--color-text-muted);">* Campo obrigatório</small>
-                            <button class="btn-solid px-7 py-4" type="submit" disabled>
+                            <button class="btn-solid px-7 py-4" type="submit">
                                 <i class="bi bi-person-check" aria-hidden="true"></i>
                                 Salvar alterações
                             </button>
                         </div>
-                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">A edição de pacientes ainda está indisponível. Nenhuma alteração foi salva.</p>
                     </form>
                 </div>
             </main>
@@ -192,18 +195,12 @@ $encaminhamento = $encaminhamento ?? [];
         </div>
     </div>
 
-    <script id="patients-data" type="application/json">[]</script>
+    <script id="patients-data" type="application/json"><?= json_encode($pacientesSelecao ?? [], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
     <script>
         document.querySelectorAll('.optional-section').forEach((section) => {
             section.addEventListener('toggle', () => {
                 section.querySelector('fieldset').disabled = !section.open;
             });
-        });
-
-        document.getElementById('patient-form').addEventListener('submit', (event) => {
-            event.preventDefault();
-            document.getElementById('save-message').hidden = false;
-            window.ClinicToast?.show('patient.edit_unavailable', document.getElementById('save-message'));
         });
     </script>
     <?php require __DIR__ . '/../Shared/toasts.php'; ?>

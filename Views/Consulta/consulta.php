@@ -13,10 +13,10 @@ $formatarData = static function ($valor): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Consultas | Clínica</title>
-    <link rel="stylesheet" href="../../css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../css/style.css">
-    <script src="../../js/layout.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/layout.js" defer></script>
 </head>
 <body class="appointments-list">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -88,10 +88,11 @@ $formatarData = static function ($valor): string {
                                         </td>
                                         <td class="text-center text-sm align-middle" data-field="relatorio">
                                             <?php if (trim((string) ($consulta['relatorio'] ?? '')) !== ''): ?>
-                                                <a class="btn-outline text-sm text-decoration-none" href="/relatorios/<?= $id ?>">Ver relatório</a>
+                                                <a class="btn-outline text-sm text-decoration-none" href="/consultas/<?= $id ?>">Ver relatório</a>
                                             <?php else: ?>
                                                 Sem relatório
                                             <?php endif; ?>
+                                            <a class="d-block text-sm mt-3" href="/consultas/<?= $id ?>/editar">Editar relatório</a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

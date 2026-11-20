@@ -10,11 +10,17 @@ require_once __DIR__ . '/../Config/Database.php';
         }
 
         public function listarTodos(){
-            $sql = 'SELECT c.*, p.nome AS paciente_nome
+            $sql = 'SELECT
+                        c.*,
+                        a.id_paciente,
+                        p.nome AS paciente_nome,
+                        p.data_nascimento,
+                        p.telefone,
+                        p.cpf
                     FROM consulta c
-                    LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
-                    LEFT JOIN paciente p ON p.id_paciente = a.id_paciente
-                    ORDER BY c.data DESC, c.horario_inicio ASC, c.id_consulta DESC';
+                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
+                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
+                    ORDER BY c.data DESC, c.horario_inicio ASC, c.id_consulta DESC;';
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }
@@ -30,7 +36,7 @@ require_once __DIR__ . '/../Config/Database.php';
                 $diaDaSemana = $agendamento['dia_semana'];
                 $repeticao = $agendamento['repeticao'];
                 $datasConsultas = self::encontrarDatas($ano, $mes, $diaDaSemana, $repeticao);
-                
+
 
                 foreach($datasConsultas as $data_consultada){
                     $id_agendamento = $agendamento['id_agendamento'];
@@ -44,13 +50,13 @@ require_once __DIR__ . '/../Config/Database.php';
                         ':id_agendamento' => $id_agendamento,
                         ':horario_inicio' => $horario_inicio,
                         ':horario_fim' => $horario_fim,
-                        ':data_consultada' => $data_consultada  
-                               
+                        ':data_consultada' => $data_consultada
+
                     ]);
-                    $consultasCriadas++;  
+                    $consultasCriadas++;
                     }
-                   
-                }    
+
+                }
             }
             return $consultasCriadas;
 
@@ -61,12 +67,19 @@ require_once __DIR__ . '/../Config/Database.php';
         }
 
         public function visualizarConsulta($id){
-            $sql = 'SELECT c.*, p.nome AS paciente_nome
+            $sql = "SELECT
+                        c.*,
+                        a.id_paciente,
+                        p.nome AS paciente_nome,
+                        p.data_nascimento,
+                        p.telefone,
+                        p.cpf
                     FROM consulta c
-                    LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
-                    LEFT JOIN paciente p ON p.id_paciente = a.id_paciente
-                    WHERE c.id_consulta = :id';
-            $stmt = $this->db->prepare($sql); 
+                    LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
+                    LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
+                    WHERE c.id_consulta = :id
+                    LIMIT 1;";
+            $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':id' => $id
             ]);
@@ -106,7 +119,7 @@ require_once __DIR__ . '/../Config/Database.php';
         public static function encontrarDatas($ano, $mes, $diaAlvo, $repeticao){
             $datas = [];
             $diaAlvo = (string) $diaAlvo;
-            $primeiroDia = new DateTime("$ano-$mes-01"); 
+            $primeiroDia = new DateTime("$ano-$mes-01");
             $ultimoDia = (clone $primeiroDia)->modify('last day of this month');
             $cursor = (clone $primeiroDia);
             while ($cursor->format('w') !== $diaAlvo){
@@ -115,14 +128,14 @@ require_once __DIR__ . '/../Config/Database.php';
 
             $diaSemanalCursor = $cursor->format('w');
             while($cursor <= $ultimoDia){
-                
+
 
                 if($repeticao === 'Semanal' && $diaSemanalCursor === $diaAlvo){
                     $diaMesAno = (array) $cursor;
                     array_push($datas, substr($diaMesAno['date'], 0, 10));
                     $cursor->modify('+1 week');
-                }   
-                
+                }
+
                 if($repeticao === 'Quinzenal' && $diaSemanalCursor === $diaAlvo){
                     $diaMesAno = (array) $cursor;
                     array_push($datas, substr($diaMesAno['date'], 0, 10));
@@ -134,19 +147,19 @@ require_once __DIR__ . '/../Config/Database.php';
                     array_push($datas, substr($diaMesAno['date'], 0, 10));
                     $cursor->modify('+1 month');
                 }
-                
-            }
-            
 
-            
+            }
+
+
+
             return $datas;
-            
+
         }
 
         private static function consultaExiste($id_agendamento, $data_consultada, $horario_inicio): bool {
             $db = Database::getConnection();
             $stmt = $db->prepare("
-                SELECT COUNT(*) FROM consulta 
+                SELECT COUNT(*) FROM consulta
                 WHERE id_agendamento = :id_agendamento AND data = :data AND horario_inicio = :horario_inicio
             ");
             $stmt->execute([

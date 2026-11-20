@@ -1,186 +1,213 @@
-<?php 
+<?php
 require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Models/Paciente.php';
 require_once __DIR__ . '/../Models/Perfil.php';
 require_once __DIR__ . '/../Models/Encaminhamento.php';
 require_once __DIR__ . '/../Models/Agendamento.php';
-require_once __DIR__ . '/../Support/Toast.php';
+require_once __DIR__ . '/../Auth/Auth.php';
 
-    Class PacienteController{
+class PacienteController {
+    public Paciente $paciente;
+    public Perfil $perfil;
+    public Encaminhamento $encaminhamento;
+    public Agendamento $agendamento;
+    protected PDO $db;
 
-        public Paciente $paciente;
-        public Perfil $perfil;
-        public Encaminhamento $encaminhamento;
-        public Agendamento $agendamento;
+    private function prepararModelos(): void {
+        if (isset($this->db)) return;
+        $this->db = Database::getConnection(true);
+        $this->paciente = new Paciente;
+        $this->perfil = new Perfil;
+        $this->encaminhamento = new Encaminhamento;
+        $this->agendamento = new Agendamento;
+    }
 
-        protected PDO $db;
-        public function __construct()
-        {
-            $this->perfil = new Perfil;
-            $this->encaminhamento = new Encaminhamento;
-            $this->agendamento = new Agendamento;
-            $this->paciente = new Paciente;
-            $this->db = Database::getConnection();
+    private function falhar(string $code, int $status): void {
+        http_response_code($status);
+        Toast::discardSuccess();
+        $erro = Toast::message($code);
+        $secao = 'patients';
+        $voltar = '/pacientes';
+        require __DIR__ . '/../../Views/Shared/error.php';
+    }
+
+    public function index(): void {
+        try {
+            $this->prepararModelos();
+            $pacientes = $this->paciente->listarTodos();
+        } catch (PDOException $e) {
+            $this->falhar('patient.load_failed', 503);
+            return;
         }
-        public function index(){
-            $pacientes = $this->paciente->listarTodos();          
-            require_once __DIR__ . '/../../Views/Paciente/paciente.php';
-        }
+        require __DIR__ . '/../../Views/Paciente/paciente.php';
+    }
 
-        public function visualizar($id){
+    private function carregarPaciente($id): ?array {
+        $this->prepararModelos();
+        $paciente = $this->paciente->visualizarPaciente($id)[0] ?? null;
+        if ($paciente === null) return null;
+        return [
+            'paciente' => $paciente,
+            'perfil' => $this->perfil->buscarPorPaciente($id),
+            'agendamento' => $this->agendamento->buscarPorPaciente($id),
+            'encaminhamento' => $this->encaminhamento->buscarPorPaciente($id)
+        ];
+    }
+
+    public function visualizar($id): void {
+        try {
+            $dados = $this->carregarPaciente($id);
+        } catch (PDOException $e) {
+            $this->falhar('patient.load_failed', 503);
+            return;
+        }
+        if ($dados === null) {
+            $this->falhar('patient.missing', 404);
+            return;
+        }
+        extract($dados);
+        require __DIR__ . '/../../Views/Paciente/paciente-show.php';
+    }
+
+    private function formularioEdicao(array $dados, ?string $erro = null): void {
+        extract($dados);
+        $toastType = 'warning';
+        $pacientesSelecao = array_map(static fn($p) => [
+            'id_paciente' => $p['id_paciente'], 'nome' => $p['nome'], 'cpf' => $p['cpf'] ?? ''
+        ], $this->paciente->listarTodos());
+        require __DIR__ . '/../../Views/Paciente/paciente-update.php';
+    }
+
+    public function editar($id): void {
+        try {
             $dados = $this->carregarPaciente($id);
             if ($dados === null) {
-                http_response_code(404);
-                echo 'Paciente não encontrado.';
+                $this->falhar('patient.missing', 404);
                 return;
             }
-
-            $paciente = $dados['paciente'];
-            $perfil = $dados['perfil'];
-            $agendamento = $dados['agendamento'];
-            $encaminhamento = $dados['encaminhamento'];
-            require_once __DIR__ . '/../../Views/Paciente/paciente-show.php';
-        }
-
-        public function editar($id){
-            $dados = $this->carregarPaciente($id);
-            if ($dados === null) {
-                http_response_code(404);
-                echo 'Paciente não encontrado.';
-                return;
-            }
-
-            $paciente = $dados['paciente'];
-            $perfil = $dados['perfil'];
-            $agendamento = $dados['agendamento'];
-            $encaminhamento = $dados['encaminhamento'];
-            require_once __DIR__ . '/../../Views/Paciente/paciente-update.php';
-        }
-
-        private function carregarPaciente($id): ?array {
-            $paciente = $this->paciente->visualizarPaciente($id)[0] ?? null;
-            if ($paciente === null) {
-                return null;
-            }
-
-            return [
-                'paciente' => $paciente,
-                'perfil' => $this->perfil->buscarPorPaciente($id),
-                'agendamento' => $this->agendamento->buscarPorPaciente($id),
-                'encaminhamento' => $this->encaminhamento->buscarPorPaciente($id)
-            ];
-        }
-
-        public function criar(){
-            $valores = array_filter($_POST, 'is_scalar');
-            foreach (['nome', 'cpf', 'telefone', 'data_nascimento'] as $campo) {
-                if (!isset($_POST[$campo]) || !is_string($_POST[$campo]) || trim($_POST[$campo]) === '') {
-                    $erro = Toast::message('patient.required');
-                    Toast::discardSuccess();
-                    http_response_code(422);
-                    require_once __DIR__ . '/../../Views/Paciente/paciente-create.php';
-                    return;
-                }
-            }
-
-            // Cria o paciente e obtém o ID gerado para associar as entidades dependentes
-            $id_paciente = $this->paciente->criarPaciente(
-                $_POST['nome'],
-                $_POST['cpf'],
-                $_POST['telefone'],
-                $_POST['data_nascimento']
-            );
-
-            // Perfil — opcional: criado somente se todos os campos forem preenchidos
-            if(!empty($_POST['quadro']) && !empty($_POST['descricao'])){
-                $this->perfil->criarPerfil(
-                    $id_paciente,
-                    $_POST['quadro'],
-                    $_POST['descricao']
-                );
-            }
-
-            // Encaminhamento — opcional: criado somente se todos os campos forem preenchidos
-            if(!empty($_POST['historico_paciente']) && !empty($_POST['tipo_encaminhamento'])){
-                $this->encaminhamento->criarEncaminhamento(
-                    $id_paciente,
-                    $_POST['historico_paciente'],
-                    $_POST['tipo_encaminhamento']
-                );
-            }
-
-            // Agendamento — opcional: todos os campos são necessários para ter sentido
-            $horario_termino = $_POST['horario_termino'] ?? '';
-            if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
-               !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
-               !empty($_POST['data_inicio'])){
-                $this->agendamento->criarAgendamento(
-                    $id_paciente,
-                    $_POST['dia_semana'],
-                    $_POST['repeticao'],
-                    $_POST['horario_inicio'],
-                    $horario_termino,
-                    $_POST['data_inicio']
-                );
-            }
-
-            $this->visualizar($id_paciente);
-        }
-        
-
-        public function atualizar($id){
-            // Atualiza os dados básicos do paciente se todos os campos forem enviados
-            if(!empty($_POST['nome']) && !empty($_POST['cpf']) &&
-               !empty($_POST['telefone']) && !empty($_POST['data_nascimento'])){
-                $this->paciente->atualizarPaciente(
-                    $id,
-                    $_POST['nome'],
-                    $_POST['cpf'],
-                    $_POST['telefone'],
-                    $_POST['data_nascimento']
-                );
-            }
-
-            // Perfil — upsert se todos os campos necessários forem preenchidos
-            if(!empty($_POST['quadro']) && !empty($_POST['descricao'])){
-                $this->perfil->atualizarPerfil(
-                    $id,
-                    $_POST['quadro'],
-                    $_POST['descricao'] 
-                );
-            }
-
-            // Encaminhamento — upsert se todos os campos necessários forem preenchidos
-            if(!empty($_POST['historico_paciente']) && !empty($_POST['tipo_encaminhamento'])){
-                $this->encaminhamento->atualizarEncaminhamento(
-                    $id,
-                    $_POST['historico_paciente'],
-                    $_POST['tipo_encaminhamento']
-                );
-            }
-
-            // Agendamento — upsert se todos os campos necessários forem preenchidos
-            $horario_termino = $_POST['horario_termino'] ?? '';
-            if(isset($_POST['dia_semana']) && $_POST['dia_semana'] !== '' && !empty($_POST['repeticao']) &&
-               !empty($_POST['horario_inicio']) && !empty($horario_termino) &&
-               !empty($_POST['data_inicio'])){
-                $this->agendamento->atualizarAgendamento(
-                    $id,
-                    $_POST['dia_semana'],
-                    $_POST['repeticao'],
-                    $_POST['horario_inicio'],
-                    $horario_termino,
-                    $_POST['data_inicio']
-                );
-            }
-
-            require_once __DIR__ . '/../../Views/Paciente/paciente-update.php';
-        }
-
-        public function mudarStatus($id, $status){
-            $mensagem = $this->paciente->atualizarStatus($id, $status);
-            echo $mensagem;
-            require_once __DIR__ . '/../../Views/Paciente/paciente-show.php';
+            $this->formularioEdicao($dados);
+        } catch (PDOException $e) {
+            $this->falhar('patient.load_failed', 503);
         }
     }
-?>
+
+    private function valores(): array {
+        $campos = ['nome', 'cpf', 'telefone', 'data_nascimento', 'status', 'quadro', 'descricao',
+            'historico_paciente', 'tipo_encaminhamento', 'dia_semana', 'repeticao',
+            'horario_inicio', 'horario_termino', 'data_inicio'];
+        $valores = [];
+        foreach ($campos as $campo) {
+            $valores[$campo] = is_string($_POST[$campo] ?? null) ? trim($_POST[$campo]) : '';
+        }
+        return $valores;
+    }
+
+    private function validar(array $v): ?string {
+        foreach (['nome', 'cpf', 'telefone', 'data_nascimento'] as $campo) {
+            if ($v[$campo] === '') return 'patient.required';
+        }
+        $data = preg_match('/^\d{4}-\d{2}-\d{2}$/D', $v['data_nascimento']) ? DateTimeImmutable::createFromFormat('!Y-m-d', $v['data_nascimento']) : false;
+        if (!$data || $data->format('Y-m-d') !== $v['data_nascimento']) return 'patient.date_invalid';
+        if ($v['status'] !== '' && !in_array($v['status'], ['Ativo', 'Inativo'], true)) return 'validation.fields';
+        $grupos = [
+            ['quadro', 'descricao'], ['historico_paciente', 'tipo_encaminhamento'],
+            ['dia_semana', 'repeticao', 'horario_inicio', 'horario_termino', 'data_inicio']
+        ];
+        foreach ($grupos as $grupo) {
+            $preenchidos = count(array_filter($grupo, static fn($campo) => $v[$campo] !== ''));
+            if ($preenchidos > 0 && $preenchidos < count($grupo)) return 'patient.optional_required';
+        }
+        if ($v['tipo_encaminhamento'] !== '' && !in_array($v['tipo_encaminhamento'], ['Recebimento', 'Envio'], true)) return 'validation.fields';
+        if ($v['dia_semana'] !== '') {
+            $inicio = preg_match('/^\d{4}-\d{2}-\d{2}$/D', $v['data_inicio']) ? DateTimeImmutable::createFromFormat('!Y-m-d', $v['data_inicio']) : false;
+            $horaValida = static fn($hora) => preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$/D', $hora);
+            if (!in_array($v['dia_semana'], ['0','1','2','3','4','5','6'], true)
+                || !in_array($v['repeticao'], ['Semanal', 'Quinzenal', 'Mensal'], true)
+                || !$inicio || $inicio->format('Y-m-d') !== $v['data_inicio']
+                || !$horaValida($v['horario_inicio']) || !$horaValida($v['horario_termino'])
+                || substr($v['horario_termino'], 0, 5) <= substr($v['horario_inicio'], 0, 5)) return 'patient.schedule_invalid';
+        }
+        return null;
+    }
+
+    private function salvarAssociacoes($id, array $v, bool $editar): void {
+        if ($v['quadro'] !== '') {
+            $metodo = $editar ? 'atualizarPerfil' : 'criarPerfil';
+            $this->perfil->$metodo($id, $v['quadro'], $v['descricao']);
+        }
+        if ($v['tipo_encaminhamento'] !== '') {
+            $metodo = $editar ? 'atualizarEncaminhamento' : 'criarEncaminhamento';
+            $this->encaminhamento->$metodo($id, $v['historico_paciente'], $v['tipo_encaminhamento']);
+        }
+        if ($v['dia_semana'] !== '') {
+            $metodo = $editar ? 'atualizarAgendamento' : 'criarAgendamento';
+            $this->agendamento->$metodo($id, $v['dia_semana'], $v['repeticao'], $v['horario_inicio'], $v['horario_termino'], $v['data_inicio']);
+        }
+    }
+
+    public function criar(): void {
+        $valores = $this->valores();
+        $code = Auth::validarCsrf($_POST['csrf_token'] ?? null) ? $this->validar($valores) : 'validation.form_expired';
+        if ($code !== null) {
+            http_response_code($code === 'validation.form_expired' ? 403 : 422);
+            Toast::discardSuccess();
+            $erro = Toast::message($code);
+            require __DIR__ . '/../../Views/Paciente/paciente-create.php';
+            return;
+        }
+        try {
+            $this->prepararModelos();
+            $this->db->beginTransaction();
+            $id = $this->paciente->criarPaciente($valores['nome'], $valores['cpf'], $valores['telefone'], $valores['data_nascimento']);
+            $this->salvarAssociacoes($id, $valores, false);
+            $this->db->commit();
+        } catch (PDOException $e) {
+            if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
+            http_response_code(500);
+            Toast::discardSuccess();
+            $toastType = 'error';
+            $erro = Toast::message('patient.save_failed');
+            require __DIR__ . '/../../Views/Paciente/paciente-create.php';
+            return;
+        }
+        Toast::add('patient.created');
+        header('Location: /pacientes/' . $id, true, 303);
+        exit;
+    }
+
+    public function atualizar($id): void {
+        try {
+            $dados = $this->carregarPaciente($id);
+            if ($dados === null) {
+                $this->falhar('patient.missing', 404);
+                return;
+            }
+            $v = $this->valores();
+            $code = Auth::validarCsrf($_POST['csrf_token'] ?? null) ? $this->validar($v) : 'validation.form_expired';
+            if ($code !== null) {
+                if ($code !== 'validation.form_expired') {
+                    $dados['paciente'] = array_replace($dados['paciente'], array_intersect_key($v, array_flip(['nome','cpf','telefone','data_nascimento','status'])));
+                    foreach (['perfil' => ['quadro','descricao'], 'encaminhamento' => ['tipo_encaminhamento','historico_paciente'], 'agendamento' => ['dia_semana','repeticao','horario_inicio','horario_termino','data_inicio']] as $grupo => $campos) {
+                        $dados[$grupo] = array_replace($dados[$grupo], array_intersect_key($v, array_flip($campos), $_POST));
+                    }
+                }
+                Toast::discardSuccess();
+                http_response_code($code === 'validation.form_expired' ? 403 : 422);
+                $this->formularioEdicao($dados, Toast::message($code));
+                return;
+            }
+            $this->db->beginTransaction();
+            $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
+            if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
+            $this->salvarAssociacoes($id, $v, true);
+            $this->db->commit();
+        } catch (PDOException $e) {
+            if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
+            $this->falhar('patient.save_failed', 500);
+            return;
+        }
+        Toast::add('patient.updated');
+        header('Location: /pacientes/' . $id, true, 303);
+        exit;
+    }
+}

@@ -19,10 +19,10 @@
         document.head.appendChild(stylesheet);
     }
 
-    function renderMenuItem(section, label, icon) {
+    function renderMenuItem(section, label, icon, link) {
         return `
             <li>
-                <a href="#"
+                <a href="${link}"
                     class="d-flex align-items-center gap-4 w-100 p-4 rounded-3 text-start text-decoration-none"
                     data-section="${section}"
                     style="border: 0; background: transparent; color: inherit; font: inherit;">
@@ -63,18 +63,17 @@
                     <nav aria-label="Navegação principal" class="mb-7">
                         <p class="text-xs mb-4" style="color: var(--color-light-blue);">MENU PRINCIPAL</p>
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('home', 'Início', 'house-door')}
-                            ${renderMenuItem('patients', 'Pacientes', 'people')}
-                            ${renderMenuItem('appointments', 'Consultas', 'calendar-event')}
-                            ${renderMenuItem('reports', 'Relatórios', 'file-earmark-text')}
-                            ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check')}
+                            ${renderMenuItem('home', 'Início', 'house-door', '/dashboard')}
+                            ${renderMenuItem('patients', 'Pacientes', 'people', '/pacientes')}
+                            ${renderMenuItem('appointments', 'Consultas', 'calendar-event', '/consultas')}
+                            ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check', '/tarefas')}
                         </ul>
                     </nav>
                     <nav aria-label="Conta" class="mt-auto pt-5 border-top" style="--bs-border-color: var(--color-light-blue);">
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('profile', 'Meu perfil', 'person')}
-                            ${renderMenuItem('website', 'Home', 'house-door')}
-                            ${renderMenuItem('logout', 'Sair', 'box-arrow-right')}
+                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
+                            ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
+                            ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
                         </ul>
                     </nav>
                 </aside>`;
@@ -181,14 +180,10 @@
         }
 
         function selectPatient(patient) {
-            editForm.querySelector('[data-patient-fields]').disabled = false;
-            editForm.querySelectorAll('[name]').forEach((field) => {
-                field.value = patient[field.name] ?? '';
-            });
-            editForm.querySelector('[type="submit"]').disabled = false;
-            document.getElementById('save-message').hidden = true;
+            const id = String(patient.id_paciente ?? '');
+            if (!/^[1-9][0-9]*$/.test(id)) return;
             searchModal.close();
-            editForm.querySelector('[name="nome"]').focus();
+            window.location.assign('/pacientes/' + encodeURIComponent(id) + '/editar');
         }
 
         function searchPatients() {
@@ -233,8 +228,17 @@
             });
         }
 
-        document.querySelectorAll('[data-open-patient-search]').forEach((button) => {
-            button.addEventListener('click', () => {
+        let searchModalJustClosed = false;
+
+        searchModal.addEventListener('close', () => {
+            searchModalJustClosed = true;
+            setTimeout(() => { searchModalJustClosed = false; }, 200);
+        });
+
+        document.querySelectorAll('[data-open-patient-search]').forEach((el) => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (searchModalJustClosed) return;
                 searchInput.value = '';
                 searchLoadFailed = false;
                 message.hidden = false;
@@ -242,6 +246,15 @@
                 searchPatients();
                 searchInput.focus();
             });
+            if (el.tagName === 'INPUT') {
+                el.addEventListener('focus', () => {
+                    if (searchModalJustClosed) return;
+                    searchInput.value = '';
+                    searchPatients();
+                    searchModal.showModal();
+                    searchInput.focus();
+                });
+            }
         });
 
         searchInput.addEventListener('input', searchPatients);

@@ -26,7 +26,7 @@ $relatorio = (string) ($consulta['relatorio'] ?? '');
                         <h1 class="text-2xl fw-semibold mb-0">Relatório da consulta</h1>
                     </header>
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert"><?= $escapar($erro) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="error"><?= $escapar($erro) ?></p>
                     <?php elseif ($consulta !== null): ?>
                         <section class="border rounded-4 shadow-sm p-7 md:p-9 mb-7" style="background: var(--color-surface);" aria-labelledby="report-patient">
                             <h2 id="report-patient" class="text-lg fw-semibold mb-5"><?= $escapar($consulta['paciente_nome'] ?? 'Paciente indisponível') ?></h2>
@@ -58,5 +58,6 @@ $relatorio = (string) ($consulta['relatorio'] ?? '');
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

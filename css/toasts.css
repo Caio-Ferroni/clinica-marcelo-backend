@@ -1,0 +1,95 @@
+.toastify.clinic-toast {
+    right: 16px;
+    display: flex;
+    align-items: flex-start;
+    box-sizing: border-box;
+    max-width: min(390px, calc(100vw - 32px));
+    padding: 0;
+    border: 1px solid var(--color-border, #dce6ed);
+    border-left: 5px solid var(--toast-accent, #102d5b);
+    border-radius: 10px;
+    background: var(--color-surface, #fff);
+    color: var(--color-text, #233852);
+    box-shadow: 0 8px 28px rgb(16 45 91 / 18%);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    text-decoration: none;
+    z-index: 11000;
+}
+
+.clinic-toast--success { --toast-accent: #237447; }
+.clinic-toast--info { --toast-accent: #102d5b; }
+.clinic-toast--warning { --toast-accent: #916000; }
+.clinic-toast--error { --toast-accent: #b02b35; }
+
+.clinic-toast__content {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 16px;
+    padding: 16px;
+}
+
+.clinic-toast__text {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.clinic-toast__title {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--toast-accent);
+    font-weight: 700;
+}
+
+.clinic-toast__close {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.clinic-toast__close:hover,
+.clinic-toast__close:focus-visible {
+    background: var(--color-light-blue, #a8ddf5);
+    outline: 2px solid var(--color-dark-blue, #102d5b);
+    outline-offset: 2px;
+}
+
+.clinic-toast-fallback:has(> p:not([hidden])) {
+    padding: 16px;
+}
+
+.clinic-toast-fallback > p {
+    margin: 0 0 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border, #dce6ed);
+    border-radius: 8px;
+    background: var(--color-surface, #fff);
+    color: var(--color-text, #233852);
+}
+
+@media (max-width: 480px) {
+    .toastify.clinic-toast {
+        right: 16px;
+        left: 16px;
+        width: calc(100vw - 32px);
+        max-width: none;
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toastify.clinic-toast { transition: none; }
+}

@@ -12,6 +12,7 @@ try {
 
 // Config
 require_once __DIR__ . '/Backend/Config/Database.php';
+require_once __DIR__ . '/Backend/Support/Toast.php';
 
 // Models
 require_once __DIR__ . '/Backend/Models/Paciente.php';

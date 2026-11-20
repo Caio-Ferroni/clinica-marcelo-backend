@@ -28,10 +28,7 @@ $formatarData = static function ($valor): string {
                         <h1 class="text-2xl fw-semibold mb-0">Consultas</h1>
                     </header>
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert"><?= $escapar($erro) ?></p>
-                    <?php endif; ?>
-                    <?php if (!empty($mensagem)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="status"><?= $escapar($mensagem) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="<?= $toastType ?? 'error' ?>"><?= $escapar($erro) ?></p>
                     <?php endif; ?>
                     <div class="row g-5 mb-7">
                         <div class="col-12 md:col-4">
@@ -75,7 +72,7 @@ $formatarData = static function ($valor): string {
                                             <?= $escapar(substr((string) $consulta['horario_inicio'], 0, 5)) ?>
                                         </td>
                                         <td class="text-center text-sm align-middle" data-field="status">
-                                            <form method="post" action="/consultas/<?= $id ?>/status" class="d-flex flex-column align-items-stretch gap-3 m-0" style="min-width: 165px;">
+                                            <form method="post" action="/consultas/<?= $id ?>/status" data-toast-validate class="d-flex flex-column align-items-stretch gap-3 m-0" style="min-width: 165px;">
                                                 <input type="hidden" name="csrf_token" value="<?= $escapar($csrf) ?>">
                                                 <label class="visually-hidden" for="consulta-status-<?= $id ?>">Status da consulta de <?= $escapar($consulta['paciente_nome'] ?? 'paciente indisponível') ?> em <?= $formatarData($consulta['data']) ?></label>
                                                 <select class="form-control" id="consulta-status-<?= $id ?>" name="status" required>
@@ -109,5 +106,6 @@ $formatarData = static function ($valor): string {
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

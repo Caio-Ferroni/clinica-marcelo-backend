@@ -3,7 +3,7 @@
         protected PDO $db;
 
         public function __construct() {
-            $this->db = Database::getConnection();
+            $this->db = Database::getConnection(true);
         }
 
         public function listarTodos(){

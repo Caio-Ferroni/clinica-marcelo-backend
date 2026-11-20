@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Models/Consulta.php';
+require_once __DIR__ . '/../Support/Toast.php';
 
 class ConsultaController {
     public Consulta $consulta;
@@ -9,11 +10,10 @@ class ConsultaController {
         return $this->consulta ??= new Consulta;
     }
 
-    public function index(?string $erro = null): void {
+    public function index(?string $erro = null, string $toastType = 'error'): void {
         $consultas = [];
         $indicadores = null;
-        $mensagem = $erro === null ? ($_SESSION['consulta_mensagem'] ?? null) : null;
-        unset($_SESSION['consulta_mensagem']);
+        if ($erro !== null) Toast::discardSuccess();
         $statusPermitidos = Consulta::STATUS;
         $_SESSION['consulta_csrf'] ??= bin2hex(random_bytes(32));
         $csrf = $_SESSION['consulta_csrf'];
@@ -36,8 +36,8 @@ class ConsultaController {
             }
         } catch (PDOException $e) {
             http_response_code(503);
-            $mensagem = null;
-            $erro ??= 'Não foi possível carregar as consultas. Tente novamente.';
+            Toast::discardSuccess();
+            $erro ??= Toast::message('consultation.load_failed');
             error_log('[Consultas] Falha ao carregar a lista.');
         }
 
@@ -45,9 +45,16 @@ class ConsultaController {
     }
 
     public function gerarMesAtual() {
-        $consultasCriadas = $this->obterConsulta()->gerarConsultas();
-        echo 'Foram criadas ' . $consultasCriadas . ' Consultas!';
-        require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        try {
+            $consultasCriadas = $this->obterConsulta()->gerarConsultas();
+        } catch (PDOException $e) {
+            http_response_code(500);
+            $this->index(Toast::message('operation.failed'));
+            return;
+        }
+        Toast::add($consultasCriadas > 0 ? 'consultation.generated' : 'consultation.none_generated');
+        header('Location: /consultas', true, 303);
+        exit;
     }
 
     public function mudarStatus($id): void {
@@ -56,31 +63,31 @@ class ConsultaController {
 
         if (!is_string($token) || !is_string($tokenSessao) || !hash_equals($tokenSessao, $token)) {
             http_response_code(403);
-            $this->index('O formulário expirou. Tente salvar o status novamente.');
+            $this->index(Toast::message('consultation.form_expired'), 'warning');
             return;
         }
 
         $status = $_POST['status'] ?? null;
         if (!is_string($status) || !in_array($status, Consulta::STATUS, true)) {
             http_response_code(422);
-            $this->index('Selecione um status válido para a consulta.');
+            $this->index(Toast::message('consultation.status_invalid'), 'warning');
             return;
         }
 
         try {
             if (!$this->obterConsulta()->atualizarStatus($id, $status)) {
                 http_response_code(404);
-                $this->index('Consulta não encontrada.');
+                $this->index(Toast::message('consultation.missing'));
                 return;
             }
         } catch (PDOException $e) {
             http_response_code(500);
             error_log('[Consultas] Falha ao atualizar o status.');
-            $this->index('Não foi possível salvar o status. Tente novamente.');
+            $this->index(Toast::message('consultation.save_failed'));
             return;
         }
 
-        $_SESSION['consulta_mensagem'] = 'Status da consulta atualizado com sucesso.';
+        Toast::add('consultation.status_saved');
         header('Location: /consultas', true, 303);
         exit;
     }
@@ -93,14 +100,15 @@ class ConsultaController {
             $consulta = $this->obterConsulta()->visualizarConsulta($id)[0] ?? null;
             if ($consulta === null) {
                 http_response_code(404);
-                $erro = 'Consulta não encontrada.';
+                $erro = Toast::message('consultation.missing');
             }
         } catch (PDOException $e) {
             http_response_code(503);
-            $erro = 'Não foi possível carregar o relatório. Tente novamente.';
+            $erro = Toast::message('report.load_failed');
             error_log('[Consultas] Falha ao carregar o relatório.');
         }
 
+        if ($erro !== null) Toast::discardSuccess();
         require __DIR__ . '/../../Views/Relatorio/relatorio-show.php';
     }
 }

@@ -111,5 +111,6 @@
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

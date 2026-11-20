@@ -32,10 +32,10 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
                     </header>
 
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="warning" style="background: var(--color-light-blue);"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
                     <?php endif; ?>
 
-                    <form id="patient-form">
+                    <form id="patient-form" data-toast-validate>
                         <div class="border rounded-4 shadow-sm" style="background: var(--color-surface);">
                             <section class="p-7 md:p-9" aria-labelledby="personal-heading">
                                 <h2 id="personal-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
@@ -176,7 +176,7 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
                                 Adicionar paciente
                             </button>
                         </div>
-                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">O cadastro ainda não está disponível. Nenhum dado foi salvo.</p>
+                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">O cadastro de pacientes ainda está indisponível. Nenhum dado foi salvo.</p>
                     </form>
                 </div>
             </main>
@@ -194,7 +194,9 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
         document.getElementById('patient-form').addEventListener('submit', (event) => {
             event.preventDefault();
             document.getElementById('save-message').hidden = false;
+            window.ClinicToast?.show('patient.create_unavailable', document.getElementById('save-message'));
         });
     </script>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

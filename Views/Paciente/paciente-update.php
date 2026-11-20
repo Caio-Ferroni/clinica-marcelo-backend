@@ -30,7 +30,7 @@ $encaminhamento = $encaminhamento ?? [];
                         </button>
                     </header>
 
-                    <form id="patient-form" data-patient-edit>
+                    <form id="patient-form" data-patient-edit data-toast-validate>
                         <input type="hidden" name="id_paciente" value="<?= htmlspecialchars($paciente['id_paciente'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <fieldset class="border-0 p-0 m-0" data-patient-fields <?= empty($paciente) ? 'disabled' : '' ?>>
                             <legend class="visually-hidden">Informações do paciente</legend>
@@ -184,7 +184,7 @@ $encaminhamento = $encaminhamento ?? [];
                                 Salvar alterações
                             </button>
                         </div>
-                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">O salvamento ainda não está disponível. Nenhuma alteração foi salva.</p>
+                        <p id="save-message" class="border rounded-3 p-5 mt-5 mb-0" role="status" hidden style="background: var(--color-light-blue); color: var(--color-dark-blue);">A edição de pacientes ainda está indisponível. Nenhuma alteração foi salva.</p>
                     </form>
                 </div>
             </main>
@@ -203,7 +203,9 @@ $encaminhamento = $encaminhamento ?? [];
         document.getElementById('patient-form').addEventListener('submit', (event) => {
             event.preventDefault();
             document.getElementById('save-message').hidden = false;
+            window.ClinicToast?.show('patient.edit_unavailable', document.getElementById('save-message'));
         });
     </script>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

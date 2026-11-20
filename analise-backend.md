@@ -117,6 +117,14 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - **Validação realizada**: 50 verificações HTTP em SQLite isolado, 31 de máscaras/cursor, 11 do model e 29 em tabelas temporárias no MySQL usando cópias da estrutura real. Os registros reais foram preservados. Passaram também as verificações existentes de contrato dos formulários, pesquisa de pacientes e gravação de relatório, além da sintaxe PHP/JavaScript. No navegador foram conferidos máscaras, colagem, exclusão, paginação, lista vazia, troca de status e leitura do relatório, com dados isolados de teste.
 - **Pendências preservadas**: envio do cadastro/edição de pacientes, listagem geral de relatórios, criação/edição de relatórios e publicação no servidor. Os artefatos de validação ficam em `.local`, ignorado pelo Git.
 
+### 3.10 Notificações Toast — 20/11/2026
+
+- Integrado Toastify.js 1.12.0 com arquivos locais, catálogo central de 33 frases, fila de sessão PHP e API JavaScript compartilhada. A dependência não utilizada de React Toastify foi substituída.
+- Login, 2FA, cadastro da conta, tarefas, consultas e relatórios usam toasts ligados ao resultado real das operações. O formulário de registro aponta para `/registrar`; falhas de validação ou banco não confirmam sucesso. O logout preserva o encerramento da autenticação e usa uma sessão anônima para a confirmação.
+- Os avisos fixos permanecem como alternativa sem JavaScript ou biblioteca. Os avisos de cadastro/edição de pacientes indicam indisponibilidade, sem habilitar gravação. Contagens, estados vazios e resultados de pesquisa permanecem como conteúdo.
+- Conferidos fila de até três avisos, bloqueio de duplicações, duração por tipo, pausa por foco, fechamento pelo teclado, modais, apresentação no celular e escape HTML. A licença da biblioteca foi preservada separadamente e não foram adicionados comentários ao código.
+- Passaram 131 verificações HTTP com SQLite e SMTP simulado, 76 do catálogo/fila PHP, 50 regressões de consultas, os 19 cenários anteriores de autenticação/SMTP e as verificações existentes de máscaras, formulários e pesquisa. Nenhum e-mail real foi enviado e não houve publicação no servidor. Catálogo, integração e validação em [docs/notificacoes-toast.md](docs/notificacoes-toast.md).
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
@@ -139,11 +147,11 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | B11 | `routes.php` / `TarefaController.php` | GET e POST `/tarefas/criar` usam a nova view `tarefa-create.php`. O formulário valida dados obrigatórios e data, preserva valores nos erros e redireciona após salvar. | 🟡 Média | ✅ Corrigido |
 | B12 | `routes.php` | `GET /relatorios` agora carrega `relatorio.php`. A integração dos dados segue pendente na seção 4.2. | 🟡 Média | ✅ Corrigido |
 | B13 | `routes.php` | `GET /relatorios/{id}` usa o identificador da consulta, carrega os dados pelo `ConsultaController` e apresenta o texto salvo em `relatorio-show.php`. | 🟡 Média | ✅ Corrigido |
-| B14 | `PsicologoController.php` | `formLogin()` agora carrega `login.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
+| B14 | `PsicologoController.php` | `formLogin()` carrega o formulário funcional, com validação e notificações toast. | 🔴 Crítico | ✅ Corrigido |
 | B15 | `PsicologoController.php` | Os retornos de erro de `login()` agora carregam `login.php`. | 🔴 Crítico | ✅ Corrigido |
 | B16 | `PsicologoController.php` | `form2fa()` agora carrega `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
 | B17 | `PsicologoController.php` | Os retornos de erro de `verificar2fa()` agora carregam `2fa.php`. | 🔴 Crítico | ✅ Corrigido |
-| B18 | `PsicologoController.php` | `formRegistrar()` e `registrar()` agora carregam `register.php`. O conteúdo do formulário continua pendente na seção 4.2. | 🔴 Crítico | ✅ Corrigido |
+| B18 | `PsicologoController.php` | `formRegistrar()` e `registrar()` carregam o formulário funcional de conta única, com validação e notificações toast. | 🔴 Crítico | ✅ Corrigido |
 | B19 | `PsicologoController.php` | `perfil()` agora carrega `perfil-show.php`. | 🔴 Crítico | ✅ Corrigido |
 | B20 | `Backend/Auth/2fa.php` | Arquivo vazio e redundante excluído. A lógica em `Auth.php` e a tela `Views/Auth/2fa.php` foram preservadas. | 🟢 Limpeza | ✅ Removido |
 | B21 | `Backend/Controllers/NotificacaoController.php` | API de configuração, cadastro e remoção com sessão/2FA e CSRF. | 🟢 Pendente | ✅ Implementado; integração visual pendente |
@@ -194,12 +202,11 @@ O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os
 
 #### 4.2.3 Formulário de 2FA (`2fa.php`)
 
-- `action` aponta para `../Dashboard/dashboard.html` em vez de `/2fa` (rota correta do backend).
-- O formulário já possui `method="post"`; falta corrigir o destino do `action`.
+- O formulário envia `POST /2fa`, valida o formato de seis dígitos e apresenta notificações de validação, falha ou acesso concluído. O envio por e-mail continua dependendo da configuração SMTP do ambiente.
 
 #### 4.2.4 Formulários de Login e Registro
 
-- `login.php` e `register.php` estão **vazios** (0 bytes). Sem HTML algum.
+- Os formulários enviam para `/login` e `/registrar`, com validação, mensagens específicas e alternativa sem JavaScript. O registro preserva a regra de conta única e verifica a confirmação de senha quando enviada.
 
 #### 4.2.5 Views de Listagem (Todas)
 
@@ -254,9 +261,9 @@ clinica-marcelo-backend/
 │
 ├── Views/
 │   ├── Auth/
-│   │   ├── login.php                            🔴 Vazio
-│   │   ├── register.php                         🔴 Vazio
-│   │   └── 2fa.php                              ⚠️ Action errado
+│   │   ├── login.php                            ✅ Formulário conectado e toasts
+│   │   ├── register.php                         ✅ Conta única, validação e toasts
+│   │   └── 2fa.php                              ✅ POST correto, validação e toasts
 │   ├── Paciente/
 │   │   ├── paciente.php                         ⚠️ Dados hardcoded
 │   │   ├── paciente-create.php                  ⚠️ Campos alinhados; envio pendente
@@ -328,9 +335,9 @@ flowchart TD
 
 | Tarefa | Detalhes |
 |---|---|
-| **Criar conteúdo de `login.php`** | Formulário com `method="POST" action="/login"`, campos `name="email"` e `name="senha"`, exibição de `$erro` se definido. |
-| **Criar conteúdo de `register.php`** | Formulário com `method="POST" action="/registrar"`, campos `name="email"`, `name="senha"`, `name="telefone"`, exibição de `$erro`. |
-| **Corrigir `2fa.php`** | Mudar `action` de `../Dashboard/dashboard.html` para `/2fa`, manter `method="post"` e `name="codigo"`. |
+| **Criar conteúdo de `login.php`** | ✅ Formulário conectado a `/login`, com validação e toasts. |
+| **Criar conteúdo de `register.php`** | ✅ Formulário conectado a `/registrar`, com e-mail, senha, confirmação e toasts. |
+| **Corrigir `2fa.php`** | ✅ Formulário conectado a `/2fa`, com validação e toasts. |
 
 ---
 

@@ -4,6 +4,7 @@ require_once __DIR__ . '/../Models/Paciente.php';
 require_once __DIR__ . '/../Models/Perfil.php';
 require_once __DIR__ . '/../Models/Encaminhamento.php';
 require_once __DIR__ . '/../Models/Agendamento.php';
+require_once __DIR__ . '/../Support/Toast.php';
 
     Class PacienteController{
 
@@ -74,7 +75,8 @@ require_once __DIR__ . '/../Models/Agendamento.php';
             $valores = array_filter($_POST, 'is_scalar');
             foreach (['nome', 'cpf', 'telefone', 'data_nascimento'] as $campo) {
                 if (!isset($_POST[$campo]) || !is_string($_POST[$campo]) || trim($_POST[$campo]) === '') {
-                    $erro = 'Preencha o nome, CPF, telefone e a data de nascimento do paciente.';
+                    $erro = Toast::message('patient.required');
+                    Toast::discardSuccess();
                     http_response_code(422);
                     require_once __DIR__ . '/../../Views/Paciente/paciente-create.php';
                     return;

@@ -174,6 +174,7 @@
         const searchInput = document.getElementById('patient-search');
         const results = document.getElementById('patient-search-results');
         const message = document.getElementById('patient-search-message');
+        let searchLoadFailed = false;
 
         function normalizeText(value) {
             return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -199,9 +200,14 @@
                 if (!Array.isArray(patients)) throw new Error();
             } catch {
                 message.textContent = 'Não foi possível carregar os pacientes.';
+                if (!searchLoadFailed) {
+                    window.ClinicToast?.show('patient.load_failed', message);
+                    searchLoadFailed = true;
+                }
                 return;
             }
 
+            message.hidden = false;
             const term = normalizeText(searchInput.value);
             const cpf = searchInput.value.replace(/\D/g, '');
             const matches = patients.filter((patient) => {
@@ -230,8 +236,10 @@
         document.querySelectorAll('[data-open-patient-search]').forEach((button) => {
             button.addEventListener('click', () => {
                 searchInput.value = '';
-                searchPatients();
+                searchLoadFailed = false;
+                message.hidden = false;
                 searchModal.showModal();
+                searchPatients();
                 searchInput.focus();
             });
         });

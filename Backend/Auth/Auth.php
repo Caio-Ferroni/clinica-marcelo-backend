@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../Support/Toast.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -127,6 +128,7 @@ class Auth {
     // Middleware de proteção de rotas privadas
     public static function verificar(): void {
         if (!self::estaAutenticado()) {
+            Toast::add('auth.required');
             header('Location: /login');
             exit;
         }
@@ -146,6 +148,10 @@ class Auth {
         }
 
         session_destroy();
+        session_id('');
+        session_start();
+        session_regenerate_id(true);
+        Toast::add('auth.logout');
         header('Location: /login');
         exit;
     }

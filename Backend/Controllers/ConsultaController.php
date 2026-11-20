@@ -20,10 +20,15 @@ require_once __DIR__ . '/../Models/Consulta.php';
             require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
         }
 
-        public function mudarStatus($id, $status){
-            $mensagem = $this->consulta->atualizarStatus($id, $status);
-            echo $mensagem;
-            require_once __DIR__ . '/../../Views/Consulta/consulta-show.php';
+        public function mudarStatus($id, $status = null){
+            if ($status === null) {
+                $status = is_string($_POST['status'] ?? null) ? trim($_POST['status']) : '';
+            }
+            if ($status !== '') {
+                $this->consulta->atualizarStatus($id, $status);
+            }
+            header('Location: /consultas', true, 303);
+            exit;
         }
 
         public function criarRelatorio($id, $relatorio){

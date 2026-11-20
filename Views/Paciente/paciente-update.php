@@ -24,10 +24,6 @@ $encaminhamento = $encaminhamento ?? [];
                     <header class="text-center mb-8">
                         <h1 class="text-2xl fw-semibold mb-3">Editar paciente</h1>
                         <p class="text-sm mb-0" style="color: var(--color-text-muted);">Selecione um paciente para consultar e editar suas informações.</p>
-                        <button type="button" class="btn-outline mt-5" data-open-patient-search aria-haspopup="dialog" aria-controls="patient-search-modal">
-                            <i class="bi bi-search" aria-hidden="true"></i>
-                            Selecionar paciente
-                        </button>
                     </header>
 
                     <form id="patient-form" data-patient-edit method="POST" action="/pacientes/<?= htmlspecialchars($paciente['id_paciente'])?>/editar">
@@ -43,7 +39,10 @@ $encaminhamento = $encaminhamento ?? [];
                                     <div class="row g-5">
                                         <div class="col-12 md:col-6">
                                             <label class="form-label text-sm" for="patient-name">Nome completo <span aria-hidden="true">*</span></label>
-                                            <input class="form-control" type="text" id="patient-name" name="nome" value="<?= htmlspecialchars($paciente['nome'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Selecione um paciente" autocomplete="name" required>
+                                            <div class="input-group">
+                                                <span class="input-group-text" style="cursor: pointer;" data-open-patient-search aria-haspopup="dialog" aria-controls="patient-search-modal"><i class="bi bi-search" aria-hidden="true"></i></span>
+                                                <input class="form-control" type="text" id="patient-name" name="nome" value="<?= htmlspecialchars($paciente['nome'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>" placeholder="Clique para selecionar um paciente" autocomplete="off" readonly data-open-patient-search aria-haspopup="dialog" aria-controls="patient-search-modal" style="cursor: pointer;" required>
+                                            </div>
                                         </div>
                                         <div class="col-12 md:col-3">
                                             <label class="form-label text-sm" for="birth-date">Data de nascimento</label>

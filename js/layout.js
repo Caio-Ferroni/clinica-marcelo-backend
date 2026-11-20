@@ -183,10 +183,14 @@
             editForm.querySelectorAll('[name]').forEach((field) => {
                 field.value = patient[field.name] ?? '';
             });
+            // Atualiza o action do formulário com o id do paciente selecionado
+            if (patient.id_paciente) {
+                editForm.action = '/pacientes/' + patient.id_paciente + '/editar';
+            }
             editForm.querySelector('[type="submit"]').disabled = false;
-            document.getElementById('save-message').hidden = true;
+            const saveMsg = document.getElementById('save-message');
+            if (saveMsg) saveMsg.hidden = true;
             searchModal.close();
-            editForm.querySelector('[name="nome"]').focus();
         }
 
         function searchPatients() {
@@ -226,13 +230,31 @@
             });
         }
 
-        document.querySelectorAll('[data-open-patient-search]').forEach((button) => {
-            button.addEventListener('click', () => {
+        let searchModalJustClosed = false;
+
+        searchModal.addEventListener('close', () => {
+            searchModalJustClosed = true;
+            setTimeout(() => { searchModalJustClosed = false; }, 200);
+        });
+
+        document.querySelectorAll('[data-open-patient-search]').forEach((el) => {
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (searchModalJustClosed) return;
                 searchInput.value = '';
                 searchPatients();
                 searchModal.showModal();
                 searchInput.focus();
             });
+            if (el.tagName === 'INPUT') {
+                el.addEventListener('focus', () => {
+                    if (searchModalJustClosed) return;
+                    searchInput.value = '';
+                    searchPatients();
+                    searchModal.showModal();
+                    searchInput.focus();
+                });
+            }
         });
 
         searchInput.addEventListener('input', searchPatients);

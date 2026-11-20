@@ -106,6 +106,11 @@ $router->mount('/consultas', function () use ($router) {
     $router->post('/(\d+)/editar', function ($id) {
         (new ConsultaController)->atualizar($id);
     });
+
+    // Alterar status da consulta
+    $router->post('/(\d+)/status', function ($id) {
+        (new ConsultaController)->mudarStatus($id);
+    });
 });
 
 // =========================================================

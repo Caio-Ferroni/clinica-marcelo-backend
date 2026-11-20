@@ -113,7 +113,24 @@ foreach ($consultas as $c) {
                                                 <?php endif; ?>
                                             </td>
                                             <td class="text-center text-sm align-middle" data-field="horario"><?= $escape($horarioCompleto) ?></td>
-                                            <td class="text-center text-sm align-middle" data-field="status"><?= $escape($c['status'] ?? 'Pendente') ?></td>
+                                            <td class="text-center text-sm align-middle" data-field="status">
+                                                <form method="POST" action="/consultas/<?= $escape($c['id_consulta'] ?? '') ?>/status" class="d-inline-block m-0">
+                                                    <?php
+                                                    $statusAtual = trim((string) ($c['status'] ?? 'Pendente'));
+                                                    $statusLower = function_exists('mb_strtolower') ? mb_strtolower($statusAtual) : strtolower($statusAtual);
+                                                    $badgeClass = match (true) {
+                                                        in_array($statusLower, ['realizada', 'realizado', 'concluída', 'concluído', 'concluida']) => 'border-success text-success bg-success-subtle',
+                                                        in_array($statusLower, ['cancelada', 'cancelado']) => 'border-danger text-danger bg-danger-subtle',
+                                                        default => 'border-warning text-warning-emphasis bg-warning-subtle',
+                                                    };
+                                                    ?>
+                                                    <select name="status" class="form-select form-select-sm text-center fw-medium <?= $badgeClass ?>" style="min-width: 125px; cursor: pointer;" onchange="this.form.submit()" aria-label="Alterar status da consulta #<?= $escape($c['id_consulta'] ?? '') ?>">
+                                                        <option value="Pendente" <?= in_array($statusLower, ['pendente', '']) ? 'selected' : '' ?>>Pendente</option>
+                                                        <option value="Concluída" <?= in_array($statusLower, ['realizada', 'realizado', 'concluída', 'concluído', 'concluida']) ? 'selected' : '' ?>>Concluída</option>
+                                                        <option value="Cancelada" <?= in_array($statusLower, ['cancelada', 'cancelado']) ? 'selected' : '' ?>>Cancelada</option>
+                                                    </select>
+                                                </form>
+                                            </td>
                                             <td class="text-center text-sm align-middle" data-field="nascimento"><?= $escape($nascimento !== '' ? $nascimento : '-') ?></td>
                                             <td class="text-center align-middle">
                                                 <div class="d-flex justify-content-center gap-3">

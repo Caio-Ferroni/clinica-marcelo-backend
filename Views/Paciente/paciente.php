@@ -2,6 +2,24 @@
 $pacientes = is_array($pacientes ?? null) ? $pacientes : [];
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $totalPacientes = count($pacientes);
+$timezone = new DateTimeZone('America/Sao_Paulo');
+$hoje = (new DateTime('now', $timezone))->format('Y-m-d');
+$limite30Dias = (new DateTime('-30 days', $timezone))->format('Y-m-d H:i:s');
+
+$pacientesHoje = 0;
+$pacientesNovosCount = 0;
+
+foreach ($pacientes as $p) {
+    $criadoEm = (string) ($p['criado_em'] ?? '');
+    if (!empty($criadoEm)) {
+        if (str_starts_with($criadoEm, $hoje)) {
+            $pacientesHoje++;
+        }
+        if ($criadoEm >= $limite30Dias) {
+            $pacientesNovosCount++;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -32,14 +50,14 @@ $totalPacientes = count($pacientes);
                         </div>
                         <div class="col-12 md:col-4">
                             <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
-                                <p class="text-sm mb-2" style="color: var(--color-text-muted);">Pacientes novos</p>
-                                <p class="text-lg fw-semibold mb-0" data-field="pacientes_novos"><?= $totalPacientes > 0 ? "+{$totalPacientes}" : '0' ?> <?= $totalPacientes === 1 ? 'Paciente' : 'Pacientes' ?></p>
+                                <p class="text-sm mb-2" style="color: var(--color-text-muted);">Pacientes no ultimo mês</p>
+                                <p class="text-lg fw-semibold mb-0" data-field="pacientes_novos"><?= $pacientesNovosCount > 0 ? "+{$pacientesNovosCount}" : '0' ?> <?= $pacientesNovosCount === 1 ? 'Paciente' : 'Pacientes' ?></p>
                             </div>
                         </div>
                         <div class="col-12 md:col-4">
                             <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
                                 <p class="text-sm mb-2" style="color: var(--color-text-muted);">Pacientes hoje</p>
-                                <p class="text-lg fw-semibold mb-0" data-field="pacientes_hoje">0 Pacientes</p>
+                                <p class="text-lg fw-semibold mb-0" data-field="pacientes_hoje"><?= $pacientesHoje ?> <?= $pacientesHoje === 1 ? 'Paciente' : 'Pacientes' ?></p>
                             </div>
                         </div>
                     </div>
@@ -90,11 +108,14 @@ $totalPacientes = count($pacientes);
                     <section aria-labelledby="novos-heading">
                         <h2 id="novos-heading" class="text-md fw-semibold mb-4">Pacientes novos</h2>
                         <div class="border rounded-4 shadow-sm p-6" style="background: var(--color-surface);">
-                            <?php if (empty($pacientes)): ?>
+                            <?php
+                            $listaNovos = array_filter($pacientes, static fn($p) => !empty($p['criado_em']) && (string) $p['criado_em'] >= $limite30Dias);
+                            ?>
+                            <?php if (empty($listaNovos)): ?>
                                 <p class="text-sm text-center mb-0" style="color: var(--color-text-muted);">Nenhum paciente cadastrado recentemente.</p>
                             <?php else: ?>
                                 <?php
-                                $pacientesNovos = array_slice(array_reverse($pacientes), 0, 8);
+                                $pacientesNovos = array_slice(array_reverse(array_values($listaNovos)), 0, 8);
                                 $metade = (int) ceil(count($pacientesNovos) / 2);
                                 $coluna1 = array_slice($pacientesNovos, 0, $metade);
                                 $coluna2 = array_slice($pacientesNovos, $metade);

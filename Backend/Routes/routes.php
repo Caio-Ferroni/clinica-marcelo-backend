@@ -100,10 +100,6 @@ $router->mount('/consultas', function () use ($router) {
         (new ConsultaController)->index();
     });
 
-    $router->post('/(\d+)/status', function ($id) {
-        (new ConsultaController)->mudarStatus($id);
-    });
-
     // Gerar consultas do mês atual a partir dos agendamentos
     $router->post('/gerar', function () {
         (new ConsultaController)->gerarMesAtual();
@@ -166,7 +162,8 @@ $router->get('/perfil', function () {
 // =========================================================
 $router->mount('/relatorios', function () use ($router) {
     $router->get('/', function () {
-        require_once __DIR__ . '/../../Views/Relatorio/relatorio.php';
+        header('Location: /consultas', true, 302);
+        exit;
     });
     $router->get('/(\d+)', function ($id) {
         (new ConsultaController)->visualizarRelatorio($id);

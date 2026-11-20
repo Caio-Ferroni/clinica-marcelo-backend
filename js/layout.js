@@ -71,7 +71,7 @@
                     </nav>
                     <nav aria-label="Conta" class="mt-auto pt-5 border-top" style="--bs-border-color: var(--color-light-blue);">
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/psicologo')}
+                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
                             ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
                             ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
                         </ul>
@@ -180,18 +180,10 @@
         }
 
         function selectPatient(patient) {
-            editForm.querySelector('[data-patient-fields]').disabled = false;
-            editForm.querySelectorAll('[name]').forEach((field) => {
-                field.value = patient[field.name] ?? '';
-            });
-            // Atualiza o action do formulário com o id do paciente selecionado
-            if (patient.id_paciente) {
-                editForm.action = '/pacientes/' + patient.id_paciente + '/editar';
-            }
-            editForm.querySelector('[type="submit"]').disabled = false;
-            const saveMsg = document.getElementById('save-message');
-            if (saveMsg) saveMsg.hidden = true;
+            const id = String(patient.id_paciente ?? '');
+            if (!/^[1-9][0-9]*$/.test(id)) return;
             searchModal.close();
+            window.location.assign('/pacientes/' + encodeURIComponent(id) + '/editar');
         }
 
         function searchPatients() {

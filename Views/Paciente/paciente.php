@@ -37,7 +37,7 @@ foreach ($pacientes as $p) {
         <clinic-sidebar active="patients"></clinic-sidebar>
         <div class="d-flex flex-column flex-grow-1 min-w-0">
             <main class="flex-grow-1 p-5 md:p-9">
-                <div class="mx-auto" style="max-width: 1000px;"> 
+                <div class="mx-auto" style="max-width: 1000px;">
                     <header class="text-center mb-8">
                         <h1 class="text-2xl fw-semibold mb-0">Pacientes</h1>
                     </header>

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../Backend/Auth/Auth.php';
+$csrfFormulario = Auth::csrfToken();
 $tarefa = $tarefa ?? [];
 $valores = $valores ?? $tarefa;
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -23,9 +25,10 @@ $idTarefa = $tarefa['id_tarefa'] ?? ($valores['id_tarefa'] ?? '');
                 <div class="mx-auto" style="max-width: 800px;">
                     <h1 class="text-2xl fw-semibold text-center mb-7">Editar tarefa</h1>
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="warning" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
                     <?php endif; ?>
-                    <form method="post" action="/tarefas/<?= $escape($idTarefa) ?>/editar" class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
+                    <form data-toast-validate method="post" action="/tarefas/<?= $escape($idTarefa) ?>/editar" class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfFormulario, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <input type="hidden" name="id_tarefa" value="<?= $escape($idTarefa) ?>">
                         <div class="mb-5">
                             <label class="form-label" for="task-title">Título</label>
@@ -62,5 +65,6 @@ $idTarefa = $tarefa['id_tarefa'] ?? ($valores['id_tarefa'] ?? '');
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

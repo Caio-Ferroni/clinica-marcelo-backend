@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Models/Consulta.php';
 require_once __DIR__ . '/../Support/Toast.php';
+require_once __DIR__ . '/../Auth/Auth.php';
 
 class ConsultaController {
     public Consulta $consulta;
@@ -92,23 +93,67 @@ class ConsultaController {
         exit;
     }
 
-    public function visualizarRelatorio($id): void {
-        $consulta = null;
-        $erro = null;
+    private function falhar(string $code, int $status): void {
+        http_response_code($status);
+        Toast::discardSuccess();
+        $erro = Toast::message($code);
+        $secao = 'appointments';
+        $voltar = '/consultas';
+        require __DIR__ . '/../../Views/Shared/error.php';
+    }
 
+    private function exibir($id, bool $editar): void {
         try {
             $consulta = $this->obterConsulta()->visualizarConsulta($id)[0] ?? null;
             if ($consulta === null) {
-                http_response_code(404);
-                $erro = Toast::message('consultation.missing');
+                $this->falhar('consultation.missing', 404);
+                return;
             }
         } catch (PDOException $e) {
-            http_response_code(503);
-            $erro = Toast::message('report.load_failed');
-            error_log('[Consultas] Falha ao carregar o relatório.');
+            $this->falhar('report.load_failed', 503);
+            return;
         }
+        $view = $editar ? 'consulta-update.php' : 'consulta-show.php';
+        require __DIR__ . '/../../Views/Consulta/' . $view;
+    }
 
-        if ($erro !== null) Toast::discardSuccess();
-        require __DIR__ . '/../../Views/Relatorio/relatorio-show.php';
+    public function visualizarRelatorio($id): void {
+        $this->visualizar($id);
+    }
+
+    public function visualizar($id): void {
+        $this->exibir($id, false);
+    }
+
+    public function editar($id): void {
+        $this->exibir($id, true);
+    }
+
+    public function atualizar($id): void {
+        if (!Auth::validarCsrf($_POST['csrf_token'] ?? null)) {
+            $this->falhar('validation.form_expired', 403);
+            return;
+        }
+        try {
+            $consulta = $this->obterConsulta()->visualizarConsulta($id)[0] ?? null;
+            if ($consulta === null) {
+                $this->falhar('consultation.missing', 404);
+                return;
+            }
+            if (!is_string($_POST['relatorio'] ?? null)) {
+                http_response_code(422);
+                Toast::discardSuccess();
+                $erro = Toast::message('validation.fields');
+                require __DIR__ . '/../../Views/Consulta/consulta-update.php';
+                return;
+            }
+            $this->obterConsulta()->gerarRelatorio($id, $_POST['relatorio']);
+        } catch (PDOException $e) {
+            $this->falhar('operation.failed', 500);
+            return;
+        }
+        Toast::add('report.saved');
+        header('Location: /consultas/' . $id, true, 303);
+        exit;
     }
 }

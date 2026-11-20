@@ -1,7 +1,7 @@
 # Análise do Backend — Clínica Marcelo
 
 > [!NOTE]
-> Esta análise cobre Config, Models, Controllers, Auth, Routes e Views. Atualizado em 15/11/2026 com a implementação do módulo Web Push (B21–B24), mantendo os disparos desativados. Os demais itens da seção 4.1 já foram tratados nas etapas anteriores. A integração visual, a configuração do servidor e a homologação real das notificações permanecem pendentes. Guia: [docs/webpush.md](docs/webpush.md).
+> Esta análise cobre Config, Models, Controllers, Auth, Routes e Views. Atualizada em 20/11/2026 após a integração das telas de pacientes, consultas, tarefas e dashboard. O módulo Web Push permanece sem ativação no servidor e sem integração dos controles nas telas. Guia: [docs/webpush.md](docs/webpush.md).
 
 ---
 
@@ -19,7 +19,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | **Servidor Web** | `.htaccess` | Regras de rewrite para encaminhar URLs amigáveis ao `index.php` | ✅ Criado |
 | **Auth** | `Backend/Auth/Auth.php` | Sessões, proteção de rotas e verificação de 2FA em memória | ✅ Concluído |
 | **Notificações** | `Backend/Notifications/`, `Backend/Cron/`, `sw.js` | Módulo reutilizável para lembretes, API, persistência e integração JavaScript | ✅ Implementado; integração visual e ativação pendentes |
-| **Views** | `Views/**/*.php` / `.html` | Telas do sistema (gerenciadas por outra frente) | ⏳ Visualização e carregamento da edição de paciente conectados; demais integrações pendentes |
+| **Views** | `Views/**/*.php` / `.html` | Telas do sistema (gerenciadas por outra frente) | ✅ Cadastro, edição, listagens, relatórios e dashboard conectados; Web Push visual pendente |
 | **Layout (Web Components)** | `js/layout.js` | Sidebar, footer e paginação de tabelas via Custom Elements | ✅ Funcional |
 
 ---
@@ -30,7 +30,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 |---|---|---|
 | **Criação Centralizada de Pacientes** | O cadastro de paciente reúne Paciente, Perfil, Encaminhamento e Agendamento em um único formulário. Paciente é obrigatório; Perfil e Agendamento exigem todos os seus campos; Encaminhamento exige ao menos um. | ✅ Concluído |
 | **Atualização em Cascata (Upsert)** | Atualizar o paciente também atualiza ou cria (caso ainda não existam) seus registros de Perfil, Agendamento e Encaminhamento via relação 1-1 baseada no `id_paciente`. | ✅ Concluído |
-| **Preservação de Dados (Soft Delete / Status)** | Pacientes nunca são deletados fisicamente do banco de dados; são marcados como inativos e ocultados das listagens até eventual reativação. | ⏳ Filtro de ativos no model pronto; troca de status e integração da listagem pendentes |
+| **Preservação de Dados (Soft Delete / Status)** | Pacientes nunca são deletados fisicamente do banco de dados; são marcados como inativos e ocultados das listagens até eventual reativação. | ✅ Lista de ativos e alteração de status no formulário de edição |
 | **Conta Única do Psicólogo** | Apenas um psicólogo atua na clínica. O registro de conta só é permitido uma única vez. Registros subsequentes são sumariamente bloqueados. | ✅ Concluído |
 | **Autenticação em Dois Fatores (2FA)** | O login exige e-mail + senha e, em seguida, validação de código numérico temporário de 6 dígitos gerado e conferido via memória de sessão (`$_SESSION`), disparado por e-mail. | ✅ Concluído |
 | **Notificação de Consulta a 10 Minutos** | Nome e horário para todos os dispositivos inscritos, inclusive após logout; recuperar atrasos somente até o início. | ✅ Módulo pronto; desativado por padrão |
@@ -125,10 +125,21 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - Conferidos fila de até três avisos, bloqueio de duplicações, duração por tipo, pausa por foco, fechamento pelo teclado, modais, apresentação no celular e escape HTML. A licença da biblioteca foi preservada separadamente e não foram adicionados comentários ao código.
 - Passaram 131 verificações HTTP com SQLite e SMTP simulado, 76 do catálogo/fila PHP, 50 regressões de consultas, os 19 cenários anteriores de autenticação/SMTP e as verificações existentes de máscaras, formulários e pesquisa. Nenhum e-mail real foi enviado e não houve publicação no servidor. Catálogo, integração e validação em [docs/notificacoes-toast.md](docs/notificacoes-toast.md).
 
+### 3.11 Integração do Merge — 20/11/2026
+
+- Combinadas as telas recebidas de Caio com as máscaras, validações, status de consultas e notificações existentes em Lucas.
+- Cadastro e edição de pacientes enviam dados reais, com CSRF, validação de datas e seções opcionais completas, transação e confirmação após gravação. A edição preserva associações omitidas e permite inativar o paciente.
+- A pesquisa recebe somente id, nome e CPF dos pacientes ativos. Selecionar outro paciente abre seu formulário completo, preservando as associações salvas.
+- Relatórios são lidos e editados nas consultas. As rotas antigas de relatório permanecem compatíveis. A edição de tarefas inicializa corretamente o model e valida status e datas antes de salvar.
+- Dashboard usa apenas consultas, pacientes e tarefas existentes. A próxima consulta precisa ser futura e pendente, a agenda contém somente o dia atual e o histórico cobre seis meses sem saltos na virada do mês. Ausência de dados produz estados vazios e porcentagens indisponíveis.
+- Mantida a rota de perfil com e-mail e telefone reais. Removidas as telas redundantes de encaminhamento, perfil de paciente, relatório e agendamento; seus dados são acessados nas telas de paciente ou consulta.
+- Catálogo ampliado para 43 mensagens; removidos os avisos de cadastro e edição indisponíveis. Documentação: [docs/notificacoes-toast.md](docs/notificacoes-toast.md).
+- Validação local: 134 verificações HTTP, 50 de regressão de consultas, 96 do helper de toasts, 31 de máscaras, 14 do dashboard, 27 em tabelas temporárias MySQL e 19 cenários de autenticação/SMTP. Cadastro, edição de paciente, tarefas e relatório também foram exercitados pelo navegador. Não houve alteração de registros reais nem publicação no servidor.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]
-> Os itens B1–B27 foram tratados; B20 foi resolvido pela remoção do arquivo redundante. B21–B24 têm módulo implementado, sem ativação no servidor ou integração nas telas. A severidade original é mantida como histórico. A seção 4.2 tem pendências, com a lista de consultas e a leitura de relatório integradas em 20/11/2026. A validação MySQL da seção 3.9 cobre consultas em tabelas temporárias, sem alterar registros reais.
+> Os itens B1–B27 foram tratados; os registros originais abaixo são históricos. A integração atual é descrita na seção 3.11 e na seção 4.2. B21–B24 têm módulo implementado, sem ativação no servidor ou controles nas telas. As verificações MySQL usam tabelas temporárias, sem alterar registros reais.
 
 ### 4.1 Bugs Críticos no Backend
 
@@ -165,7 +176,7 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 ### 4.2 Incompatibilidades entre Views (Frontend) e Backend
 
 > [!WARNING]
-> Os nomes e valores dos campos de cadastro e edição de paciente já coincidem com o backend. O envio dos formulários pela interface continua bloqueado e as demais integrações abaixo permanecem pendentes.
+> Cadastro e edição de paciente, listagens, tarefas, relatórios e navegação estão integrados. As validações do navegador complementam a validação no servidor.
 
 #### 4.2.1 Formulário de Cadastro de Paciente (`paciente-create.php`)
 
@@ -185,20 +196,11 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 | `tipo_encaminhamento` | `tipo_encaminhamento` | ✅ Alinhado |
 | `historico_paciente` | `historico_paciente` | ✅ Alinhado |
 
-A validação no controller já retorna o formulário com HTTP 422, mensagem e campos preservados quando recebe dados inválidos. A submissão pela interface ainda precisa das alterações abaixo.
-
-Além disso:
-- O `<form>` **não tem** `method="POST"` nem `action="/pacientes/criar"`.
-- O JavaScript atual **impede o submit** (`event.preventDefault()`) e mostra uma mensagem de "não disponível".
-Os `<option value>` já usam `dia_semana` de 0 a 6, `repeticao` com `Semanal`, `Quinzenal` ou `Mensal`, e `tipo_encaminhamento` com `Recebimento` ou `Envio`. O campo `horario_termino` foi adicionado.
+O formulário envia `POST /pacientes/criar`, inclui CSRF e preserva os campos com escape quando recebe HTTP 422. CPF e telefone possuem máscaras. Seções opcionais devem ser preenchidas por completo; datas e horários são validados no servidor. Paciente e associações são gravados em uma única transação.
 
 #### 4.2.2 Formulário de Edição (`paciente-update.php`)
 
-O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os campos exibem o paciente e suas associações, com escape HTML. Os nomes agora seguem o backend, com `id_paciente` no campo oculto, `horario_termino` e status `Ativo`/`Inativo`. A pesquisa usa os mesmos nomes para buscar e preencher os campos. O envio continua pendente:
-
-- Também **não tem** `method="POST"` nem `action="/pacientes/{id}/editar"`.
-- O JavaScript também bloqueia o submit.
-- O modal de busca de pacientes lê de um JSON embutido vazio (`[]`). O backend não injeta dados nele.
+O formulário recebe o paciente e suas associações e envia `POST /pacientes/{id}/editar` com CSRF. Nome e demais campos são editáveis. O status aceita `Ativo` ou `Inativo`; pacientes inativos deixam a lista de ativos. O modal recebe somente id, nome e CPF, com escape JSON, e navega para o formulário completo do paciente selecionado. Associações omitidas permanecem salvas.
 
 #### 4.2.3 Formulário de 2FA (`2fa.php`)
 
@@ -210,15 +212,15 @@ O carregamento inicial por `GET /pacientes/{id}/editar` foi corrigido em B10: os
 
 #### 4.2.5 Views de Listagem (Todas)
 
-`consulta.php` usa dados reais, com contadores, paginação, alteração de status e acesso ao relatório. As listagens `paciente.php`, `tarefa.php`, `encaminhamento.php`, `perfil.php` e `relatorio.php` ainda possuem dados estáticos.
+`consulta.php`, `paciente.php` e `tarefa.php` usam registros reais, contadores e paginação com estado vazio explícito. Os relatórios estão nos detalhes de consulta. Encaminhamento, perfil clínico e agendamento ficam associados ao paciente.
 
 #### 4.2.6 Caminhos de CSS/JS nas Views
 
-Todas as views usam caminhos relativos `../../css/` e `../../js/`. Isso funciona apenas se o servidor resolver o caminho relativo ao arquivo `.php`, **não** quando o roteador serve via `index.php` na raiz. Com Apache + `.htaccess`, as requisições a `/pacientes` vão para `index.php` e os caminhos relativos quebram. Devem ser caminhos absolutos: `/css/`, `/js/`.
+As telas novas e os formulários alterados usam caminhos absolutos `/css/` e `/js/`, compatíveis com as rotas servidas pelo `index.php`.
 
 #### 4.2.7 Links de Navegação na Sidebar
 
-Os links do `layout.js` usam `href="#"` com `data-section` mas **não navegam para nenhuma rota**. Precisam apontar para as rotas reais (`/pacientes`, `/consultas`, `/tarefas`, `/relatorios`, `/perfil`, `/logout`).
+A navegação principal aponta para `/dashboard`, `/pacientes`, `/consultas`, `/tarefas`, `/perfil` e `/logout`. O perfil do psicólogo mantém uma tela própria de leitura.
 
 ---
 
@@ -237,10 +239,11 @@ clinica-marcelo-backend/
 │   ├── Config/
 │   │   └── Database.php                         ✅ Singleton PDO
 │   ├── Controllers/
-│   │   ├── PacienteController.php               ✅ Leitura, validação e horário corrigidos
-│   │   ├── ConsultaController.php               ✅ B3 corrigido
-│   │   ├── TarefaController.php                 ✅ Formulário e criação corrigidos
-│   │   ├── PsicologoController.php              ✅ B14–B19 corrigidos; views de auth pendentes
+│   │   ├── PacienteController.php               ✅ Cadastro e edição com validação e transação
+│   │   ├── ConsultaController.php               ✅ Lista, status e relatório com dados reais
+│   │   ├── TarefaController.php                 ✅ Criação e edição com validação e toasts
+│   │   ├── PsicologoController.php              ✅ Autenticação e perfil conectados
+│   │   ├── DashboardController.php              ✅ Indicadores reais e estados vazios
 │   │   └── NotificacaoController.php            ✅ API autenticada com CSRF
 │   ├── Models/
 │   │   ├── Paciente.php                         ✅ CRUD + filtro de ativos
@@ -265,35 +268,32 @@ clinica-marcelo-backend/
 │   │   ├── register.php                         ✅ Conta única, validação e toasts
 │   │   └── 2fa.php                              ✅ POST correto, validação e toasts
 │   ├── Paciente/
-│   │   ├── paciente.php                         ⚠️ Dados hardcoded
-│   │   ├── paciente-create.php                  ⚠️ Campos alinhados; envio pendente
+│   │   ├── paciente.php                         ✅ Lista de pacientes ativos
+│   │   ├── paciente-create.php                  ✅ Cadastro, máscaras e toasts
 │   │   ├── paciente-show.php                    ✅ Visualização com dados reais
-│   │   └── paciente-update.php                  ⚠️ Dados carregados; envio pendente
+│   │   └── paciente-update.php                  ✅ Edição, pesquisa e toasts
 │   ├── Consulta/
 │   │   ├── consulta.php                         ✅ Dados reais, status e relatório
-│   │   └── consulta-show.php                    ⚠️ Incompleto
+│   │   ├── consulta-show.php                    ✅ Dados reais e relatório
+│   │   └── consulta-update.php                  ✅ Edição de relatório
 │   ├── Tarefa/
-│   │   ├── tarefa.php                           ⚠️ Dados hardcoded
-│   │   └── tarefa-create.php                    ✅ Formulário conectado ao controller
-│   ├── Encaminhamento/
-│   │   └── encaminhamento.php                   ⚠️ Dados hardcoded
+│   │   ├── tarefa.php                           ✅ Lista real com contadores
+│   │   ├── tarefa-create.php                    ✅ Formulário conectado ao controller
+│   │   └── tarefa-update.php                    ✅ Edição com validação e CSRF
 │   ├── Perfil/
-│   │   ├── perfil.php                           ⚠️ Dados hardcoded
-│   │   └── perfil-show.php                      ⚠️ Incompleto
-│   ├── Psicologo/
-│   │   └── psicologo.php                        ⚠️ Incompleto
-│   ├── Relatorio/
-│   │   ├── relatorio.php                        ⚠️ Dados hardcoded
-│   │   └── relatorio-show.php                   ✅ Leitura do relatório da consulta
-│   └── Agendamento/
-│       └── agendamento.html                     ✅ HTML corrigido; dados estáticos
+│   │   └── perfil-show.php                      ✅ E-mail e telefone do psicólogo
+│   ├── Dashboard/
+│   │   └── dashboard.php                        ✅ Indicadores e agenda reais
+│   └── Shared/
+│       ├── toasts.php                           ✅ Mensagens compartilhadas
+│       └── error.php                            ✅ Falhas de leitura e gravação
 │
 ├── css/
 │   ├── bootstrap.css / bootstrap.min.css        ✅
 │   └── style.css                                ✅
 └── js/
     ├── bootstrap.js / bootstrap.min.js          ✅
-    └── layout.js                                ⚠️ Links não navegam
+    └── layout.js                                ✅ Navegação, pesquisa e paginação
 ```
 
 ---
@@ -347,11 +347,11 @@ flowchart TD
 |---|---|
 | **Alinhar `name` dos inputs com o backend** | ✅ Concluído no cadastro, edição e pesquisa JavaScript, sem mapas ou aliases. |
 | **Adicionar campo `horario_termino`** | ✅ Concluído nos dois formulários. O controller aceita somente esse nome. |
-| **Configurar o `<form>`** | `method="POST" action="/pacientes/criar"` no create. `method="POST" action="/pacientes/<?= $paciente['id_paciente'] ?>/editar"` no update. |
-| **Remover `preventDefault()`** | Apagar o JavaScript que bloqueia o submit do formulário. |
+| **Configurar o `<form>`** | ✅ Concluído: `method="POST" action="/pacientes/criar"` no create. `method="POST" action="/pacientes/<?= $paciente['id_paciente'] ?>/editar"` no update. |
+| **Remover `preventDefault()`** | ✅ Concluído: formulários enviam ao servidor. |
 | **Alinhar `<option value>` com o backend** | ✅ Concluído: dias de 0 a 6, repetição em português, status `Ativo`/`Inativo` e encaminhamento `Recebimento`/`Envio`. |
-| **Implementar listagem dinâmica em `paciente.php`** | Usar `foreach ($pacientes as $p)` para gerar as `<tr>` com dados reais. Links de edição e visualização apontando para `/pacientes/{id}/editar` e `/pacientes/{id}`. |
-| **Injetar dados JSON em `paciente-update.php`** | Pendente: popular o `<script id="patients-data">` com registros de chaves `id_paciente`, `nome` e os demais nomes do formulário, mantendo o escape adequado no JSON. |
+| **Implementar listagem dinâmica em `paciente.php`** | ✅ Concluído: pacientes ativos e links reais. |
+| **Injetar dados JSON em `paciente-update.php`** | ✅ Concluído: id, nome e CPF, com escape seguro. |
 
 ---
 
@@ -360,12 +360,12 @@ flowchart TD
 | View | Ação necessária |
 |---|---|
 | `consulta.php` | ✅ Integrada: dados reais, contadores, paginação, alteração de status e relatório. |
-| `tarefa.php` | Loop PHP sobre `$tarefas`, links de edição. |
-| `encaminhamento.php` | Loop PHP sobre dados de encaminhamentos, contadores de tipo. |
-| `perfil.php` | Loop PHP sobre perfis de pacientes. |
-| `relatorio.php` | Listagem geral de relatórios ainda pendente. |
-| `relatorio-show.php` | ✅ Leitura do texto salvo na consulta pelo `ConsultaController`. |
-| `agendamento.html` → `.php` | Converter para PHP, loop sobre agendamentos. |
+| `tarefa.php` | ✅ Lista real e edição funcional. |
+| Encaminhamento | ✅ Dados na visualização e edição de paciente; tela redundante removida. |
+| Perfil clínico | ✅ Dados na visualização e edição de paciente; tela redundante removida. |
+| Relatórios | ✅ Acesso e edição em consultas; rotas antigas compatíveis. |
+| `consulta-show.php` / `consulta-update.php` | ✅ Leitura e edição do relatório salvo. |
+| Agendamento | ✅ Dados no formulário de paciente; tela estática removida. |
 
 ---
 
@@ -373,9 +373,9 @@ flowchart TD
 
 | Tarefa | Detalhes |
 |---|---|
-| **Corrigir links da Sidebar** | Em `layout.js`, mudar `href="#"` para as rotas reais: `home` → `/pacientes`, `patients` → `/pacientes`, `appointments` → `/consultas`, `reports` → `/relatorios`, `tasks` → `/tarefas`, `profile` → `/perfil`, `logout` → `/logout`. |
-| **Caminhos absolutos de assets** | Em todas as views, trocar `../../css/` por `/css/` e `../../js/` por `/js/` para funcionar com o router. |
-| **Sistema de Flash Messages** | Criar helper `$_SESSION['flash']` nos controllers + renderização com Toastify.js nas views. |
+| **Corrigir links da Sidebar** | ✅ Concluído: dashboard, pacientes, consultas, tarefas, perfil e logout. |
+| **Caminhos absolutos de assets** | ✅ Aplicados nas telas novas e nos formulários alterados. |
+| **Sistema de Flash Messages** | ✅ Helper de sessão e Toastify local integrados. |
 
 ---
 

@@ -2,110 +2,43 @@
 $pacientes = is_array($pacientes ?? null) ? $pacientes : [];
 $consultas = is_array($consultas ?? null) ? $consultas : [];
 $tarefas = is_array($tarefas ?? null) ? $tarefas : [];
-
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $formatarData = static function ($valor) {
-    if (empty($valor)) return '';
-    $data = DateTime::createFromFormat('!Y-m-d', substr((string) $valor, 0, 10));
-    return $data ? $data->format('d/m/Y') : (string) $valor;
+    $valor = substr((string) $valor, 0, 10);
+    $data = preg_match('/^\d{4}-\d{2}-\d{2}$/D', $valor) ? DateTimeImmutable::createFromFormat('!Y-m-d', $valor) : false;
+    return $data && $data->format('Y-m-d') === $valor ? $data->format('d/m/Y') : '';
 };
-
-$hoje = date('Y-m-d');
-$horaAtual = date('H:i:s');
-
-// 1. Próxima consulta
-$consultasFuturas = array_filter($consultas, function ($c) use ($hoje, $horaAtual) {
-    if (empty($c['data'])) return false;
-    $status = mb_strtolower(trim((string) ($c['status'] ?? '')));
-    if (in_array($status, ['cancelada', 'cancelado', 'concluída', 'concluído', 'realizada', 'realizado'])) return false;
-    if ($c['data'] > $hoje) return true;
-    if ($c['data'] === $hoje && !empty($c['horario_inicio']) && $c['horario_inicio'] >= $horaAtual) return true;
-    return false;
+$agora = $agora ?? new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
+$hoje = $agora->format('Y-m-d');
+$horaAtual = $agora->format('H:i:s');
+$concluida = static fn($c) => in_array(mb_strtolower(trim((string) ($c['status'] ?? ''))), ['concluído', 'concluída', 'realizado', 'realizada'], true);
+$consultasFuturas = array_filter($consultas, static function ($c) use ($hoje, $horaAtual) {
+    return ($c['status'] ?? '') === 'Pendente' && !empty($c['data'])
+        && ($c['data'] > $hoje || ($c['data'] === $hoje && ($c['horario_inicio'] ?? '') >= $horaAtual));
 });
-usort($consultasFuturas, function ($a, $b) {
-    return strcmp(($a['data'] ?? '') . ' ' . ($a['horario_inicio'] ?? ''), ($b['data'] ?? '') . ' ' . ($b['horario_inicio'] ?? ''));
-});
+usort($consultasFuturas, static fn($a, $b) => strcmp(($a['data'] ?? '') . ' ' . ($a['horario_inicio'] ?? ''), ($b['data'] ?? '') . ' ' . ($b['horario_inicio'] ?? '')));
 $proximaConsulta = $consultasFuturas[0] ?? null;
-if (!$proximaConsulta) {
-    foreach ($consultas as $c) {
-        $st = mb_strtolower(trim((string) ($c['status'] ?? '')));
-        if (!in_array($st, ['cancelada', 'cancelado'])) {
-            $proximaConsulta = $c;
-            break;
-        }
-    }
-}
-
-// 2. Dados dos últimos 6 meses para o Chart.js
 $mesesNomes = [1 => 'Jan', 2 => 'Fev', 3 => 'Mar', 4 => 'Abr', 5 => 'Mai', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago', 9 => 'Set', 10 => 'Out', 11 => 'Nov', 12 => 'Dez'];
-$ultimosMeses = [];
-for ($i = 5; $i >= 0; $i--) {
-    $time = strtotime("-{$i} month");
-    $mNum = (int) date('n', $time);
-    $yNum = (int) date('Y', $time);
-    $ultimosMeses[] = [
-        'nome' => $mesesNomes[$mNum],
-        'ano' => $yNum,
-        'mes' => str_pad((string)$mNum, 2, '0', STR_PAD_LEFT)
-    ];
-}
-
-$totalPacientesCount = count($pacientes);
 $dadosGrafico = [];
-foreach ($ultimosMeses as $idx => $m) {
-    $consultasDoMes = count(array_filter($consultas, function($c) use ($m) {
-        if (empty($c['data'])) return false;
-        return date('m', strtotime($c['data'])) === $m['mes'] && date('Y', strtotime($c['data'])) == $m['ano'];
-    }));
-    $baseConsultas = max($consultasDoMes, min($totalPacientesCount, ($idx + 1) * 2));
-    $novosMes = max(1, (int) round($baseConsultas * 0.35));
-    $clientesMes = max(1, $baseConsultas - $novosMes);
-    $dadosGrafico[] = [
-        'label' => $m['nome'],
-        'clientes' => $clientesMes,
-        'novos' => $novosMes,
-        'total' => $clientesMes + $novosMes
-    ];
+$mesBase = $agora->modify('first day of this month');
+for ($i = 5; $i >= 0; $i--) {
+    $mes = $mesBase->modify('-' . $i . ' months');
+    $mesConsultas = array_filter($consultas, static fn($c) => substr((string) ($c['data'] ?? ''), 0, 7) === $mes->format('Y-m'));
+    $realizadas = count(array_filter($mesConsultas, $concluida));
+    $dadosGrafico[] = ['label' => $mesesNomes[(int) $mes->format('n')], 'outras' => count($mesConsultas) - $realizadas, 'realizadas' => $realizadas, 'total' => count($mesConsultas)];
 }
-
-// 3. Pacientes novos (últimos 4 cadastrados)
-$pacientesNovos = array_slice(array_reverse($pacientes), 0, 4);
-
-// 4. Métricas de Consultas para o Chart.js
+$pacientesNovos = $pacientes;
+usort($pacientesNovos, static fn($a, $b) => strcmp((string) ($b['criado_em'] ?? ''), (string) ($a['criado_em'] ?? '')) ?: ((int) $b['id_paciente'] <=> (int) $a['id_paciente']));
+$pacientesNovos = array_slice($pacientesNovos, 0, 4);
 $totalConsultasCount = count($consultas);
-$realizadasCount = 0;
-foreach ($consultas as $c) {
-    $st = mb_strtolower(trim((string)($c['status'] ?? '')));
-    if (in_array($st, ['realizada', 'realizado', 'concluída', 'concluído'])) {
-        $realizadasCount++;
-    }
-}
-$percRealizadas = $totalConsultasCount > 0 ? (int) round(($realizadasCount / $totalConsultasCount) * 100) : 72;
-$percNaoRealizadas = 100 - $percRealizadas;
-
-// 5. Tarefas (pendentes primeiro)
-$tarefasPendentes = array_filter($tarefas, function($t) {
-    $st = mb_strtolower(trim((string)($t['status'] ?? 'pendente')));
-    return !in_array($st, ['concluída', 'concluida', 'concluído', 'concluido', 'finalizada']);
-});
+$realizadasCount = count(array_filter($consultas, $concluida));
+$percRealizadas = $totalConsultasCount > 0 ? (int) round($realizadasCount / $totalConsultasCount * 100) : 0;
+$percNaoRealizadas = $totalConsultasCount > 0 ? 100 - $percRealizadas : 0;
+$tarefasPendentes = array_filter($tarefas, static fn($t) => ($t['status'] ?? 'Pendente') === 'Pendente');
 $tarefasExibidas = array_slice($tarefasPendentes, 0, 4);
-if (count($tarefasExibidas) < 4) {
-    $faltam = 4 - count($tarefasExibidas);
-    $outrasTarefas = array_slice($tarefas, 0, $faltam);
-    foreach ($outrasTarefas as $ot) {
-        if (!in_array($ot, $tarefasExibidas, true)) {
-            $tarefasExibidas[] = $ot;
-        }
-    }
-}
-
-// 6. Agenda hoje
-$agendaHoje = array_filter($consultas, fn($c) => ($c['data'] ?? '') === $hoje);
-if (empty($agendaHoje)) {
-    $agendaHoje = array_slice($consultas, 0, 5);
-} else {
-    $agendaHoje = array_slice($agendaHoje, 0, 5);
-}
+$agendaHoje = array_values(array_filter($consultas, static fn($c) => ($c['data'] ?? '') === $hoje));
+usort($agendaHoje, static fn($a, $b) => strcmp((string) ($a['horario_inicio'] ?? ''), (string) ($b['horario_inicio'] ?? '')));
+$agendaHoje = array_slice($agendaHoje, 0, 5);
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR" data-bs-theme="light">
@@ -129,7 +62,7 @@ if (empty($agendaHoje)) {
                         <h1 class="text-2xl fw-semibold mb-0">Dashboard</h1>
                     </header>
 
-                    <!-- 1. Próxima consulta -->
+
                     <section aria-labelledby="proxima-heading" class="mb-7">
                         <p id="proxima-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Próxima consulta</p>
                         <div class="border rounded-4 shadow-sm p-6" style="background: var(--color-surface);">
@@ -166,7 +99,7 @@ if (empty($agendaHoje)) {
 
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
-                    <!-- 2. Atalhos -->
+
                     <section aria-labelledby="atalhos-heading" class="mb-7">
                         <p id="atalhos-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Atalhos</p>
                         <div class="row g-5">
@@ -187,9 +120,9 @@ if (empty($agendaHoje)) {
 
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
-                    <!-- 3. Pacientes por mês (Chart.js Bar Empilhado) -->
+
                     <section aria-labelledby="pacientes-mes-heading" class="mb-7">
-                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes por mês</p>
+                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Consultas por mês</p>
                         <div class="border rounded-4 shadow-sm p-7 md:p-8" style="background: var(--color-surface);">
                             <div style="height: 250px; position: relative;">
                                 <canvas id="chartPacientesMes"></canvas>
@@ -199,11 +132,11 @@ if (empty($agendaHoje)) {
 
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
-                    <!-- 4. Pacientes novos e Consultas (Chart.js Doughnut) -->
+
                     <div class="row g-7 mb-7">
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="novos-heading" class="h-100">
-                                <p id="novos-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes novos</p>
+                                <p id="novos-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes recentes</p>
                                 <div class="border rounded-4 shadow-sm p-6 h-100 d-flex flex-column" style="background: var(--color-surface);">
                                     <?php if (empty($pacientesNovos)): ?>
                                         <p class="text-sm mb-0 text-center my-auto" style="color: var(--color-text-muted);">Nenhum paciente cadastrado recentemente.</p>
@@ -235,7 +168,7 @@ if (empty($agendaHoje)) {
                                         <div class="d-flex flex-column gap-3">
                                             <div class="d-flex align-items-center gap-3">
                                                 <span class="d-inline-block rounded-circle flex-shrink-0" style="width: 12px; height: 12px; background: #102d5b;"></span>
-                                                <span class="text-sm">Consultas realizadas: <strong><?= $percRealizadas ?>%</strong></span>
+                                                <span class="text-sm">Consultas realizadas: <strong><?= $totalConsultasCount > 0 ? $percRealizadas . '%' : '—' ?></strong></span>
                                             </div>
                                             <div class="d-flex align-items-center gap-3">
                                                 <span class="d-inline-block rounded-circle flex-shrink-0" style="width: 12px; height: 12px; background: #a8ddf5;"></span>
@@ -253,7 +186,7 @@ if (empty($agendaHoje)) {
 
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
-                    <!-- 5. Tarefas e Agenda hoje -->
+
                     <div class="row g-7 mb-7">
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="tarefas-heading" class="h-100">
@@ -313,15 +246,13 @@ if (empty($agendaHoje)) {
         </div>
     </div>
 
-    <!-- Inicialização dos gráficos Chart.js -->
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof Chart === 'undefined') {
                 console.warn('Chart.js não encontrado.');
                 return;
             }
-
-            // 1. Gráfico empilhado: Pacientes por mês
             const ctxPacientes = document.getElementById('chartPacientesMes');
             if (ctxPacientes) {
                 new Chart(ctxPacientes, {
@@ -330,15 +261,15 @@ if (empty($agendaHoje)) {
                         labels: <?= json_encode(array_column($dadosGrafico, 'label')) ?>,
                         datasets: [
                             {
-                                label: 'Clientes do mês',
-                                data: <?= json_encode(array_column($dadosGrafico, 'clientes')) ?>,
+                                label: 'Outras consultas',
+                                data: <?= json_encode(array_column($dadosGrafico, 'outras')) ?>,
                                 backgroundColor: '#102d5b',
                                 borderRadius: { bottomLeft: 4, bottomRight: 4 },
                                 stack: 'pacientes'
                             },
                             {
-                                label: 'Clientes novos',
-                                data: <?= json_encode(array_column($dadosGrafico, 'novos')) ?>,
+                                label: 'Consultas concluídas',
+                                data: <?= json_encode(array_column($dadosGrafico, 'realizadas')) ?>,
                                 backgroundColor: '#a8ddf5',
                                 borderRadius: { topLeft: 6, topRight: 6 },
                                 stack: 'pacientes'
@@ -361,7 +292,7 @@ if (empty($agendaHoje)) {
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (item) => `${item.dataset.label}: ${item.parsed.y} paciente(s)`
+                                    label: (item) => `${item.dataset.label}: ${item.parsed.y} consulta(s)`
                                 }
                             }
                         },
@@ -388,8 +319,6 @@ if (empty($agendaHoje)) {
                     }
                 });
             }
-
-            // 2. Gráfico de Rosca/Pizza: Consultas realizadas vs pendentes
             const ctxConsultas = document.getElementById('chartConsultasStatus');
             if (ctxConsultas) {
                 new Chart(ctxConsultas, {
@@ -397,7 +326,7 @@ if (empty($agendaHoje)) {
                     data: {
                         labels: ['Consultas realizadas', 'Consultas pendentes/outras'],
                         datasets: [{
-                            data: [<?= $percRealizadas ?>, <?= $percNaoRealizadas ?>],
+                            data: [<?= $realizadasCount ?>, <?= $totalConsultasCount - $realizadasCount ?>],
                             backgroundColor: ['#102d5b', '#a8ddf5'],
                             borderWidth: 2,
                             borderColor: '#ffffff'
@@ -411,7 +340,7 @@ if (empty($agendaHoje)) {
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    label: (item) => `${item.label}: ${item.parsed}%`
+                                    label: (item) => `${item.label}: ${item.parsed} consulta(s)`
                                 }
                             }
                         }
@@ -420,5 +349,6 @@ if (empty($agendaHoje)) {
             }
         });
     </script>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

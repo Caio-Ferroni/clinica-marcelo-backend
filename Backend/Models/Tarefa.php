@@ -1,5 +1,6 @@
 <?php
     class Tarefa{
+        public const STATUS = ['Pendente', 'Concluída', 'Cancelada'];
         protected PDO $db;
 
         public function __construct() {

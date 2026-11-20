@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../Backend/Auth/Auth.php';
+$csrfFormulario = Auth::csrfToken();
 $consulta = is_array($consulta ?? null) ? $consulta : [];
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $formatarData = static function ($valor) {
@@ -49,13 +51,14 @@ $relatorio = $consulta['relatorio'] ?? '';
                     </header>
 
                     <?php if (!empty($erro)): ?>
-                        <p class="border rounded-3 p-5 mb-5" role="alert" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
+                        <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="warning" style="background: var(--color-light-blue);"><?= $escape($erro) ?></p>
                     <?php endif; ?>
 
-                    <form method="post" action="/consultas/<?= $escape($idConsulta) ?>/editar" class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
+                    <form data-toast-validate method="post" action="/consultas/<?= $escape($idConsulta) ?>/editar" class="border rounded-4 shadow-sm p-7 md:p-9" style="background: var(--color-surface);">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfFormulario, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <input type="hidden" name="id_consulta" value="<?= $escape($idConsulta) ?>">
 
-                        <!-- Informações da consulta (somente leitura) -->
+
                         <section aria-labelledby="heading-dados-consulta" class="mb-7">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-5">
                                 <h2 id="heading-dados-consulta" class="text-md fw-semibold d-flex align-items-center gap-3 m-0">
@@ -115,7 +118,7 @@ $relatorio = $consulta['relatorio'] ?? '';
 
                         <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
-                        <!-- Relatório da consulta (campo único editável) -->
+
                         <section aria-labelledby="heading-relatorio">
                             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
                                 <h2 id="heading-relatorio" class="text-md fw-semibold d-flex align-items-center gap-3 m-0">
@@ -133,12 +136,12 @@ $relatorio = $consulta['relatorio'] ?? '';
                                 </label>
                                 <textarea class="form-control" id="relatorio" name="relatorio" rows="9" placeholder="Digite aqui o relatório completo do atendimento..."><?= $escape($relatorio) ?></textarea>
                                 <small class="d-block mt-2 text-xs" style="color: var(--color-text-muted);">
-                                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Apenas este campo será atualizado no banco de dados.
+                                    <i class="bi bi-shield-check me-1" aria-hidden="true"></i>Os demais dados da consulta permanecem como estão.
                                 </small>
                             </div>
                         </section>
 
-                        <!-- Botões de ação -->
+
                         <div class="d-flex flex-wrap align-items-center justify-content-between gap-4 mt-7 pt-5 border-top">
                             <a class="btn-outline px-6 py-3 text-decoration-none" href="/consultas">
                                 <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Voltar para consultas
@@ -160,5 +163,6 @@ $relatorio = $consulta['relatorio'] ?? '';
             <clinic-footer></clinic-footer>
         </div>
     </div>
+    <?php require __DIR__ . '/../Shared/toasts.php'; ?>
 </body>
 </html>

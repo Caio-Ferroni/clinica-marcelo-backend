@@ -30,6 +30,18 @@ class Auth {
         return true;
     }
 
+    public static function csrfToken(): string {
+        self::iniciarSessao();
+        $_SESSION['form_csrf'] ??= bin2hex(random_bytes(32));
+        return $_SESSION['form_csrf'];
+    }
+
+    public static function validarCsrf($token): bool {
+        self::iniciarSessao();
+        return is_string($token) && is_string($_SESSION['form_csrf'] ?? null)
+            && hash_equals($_SESSION['form_csrf'], $token);
+    }
+
     // Valida o código 2FA digitado contra o que está na memória da sessão
     public static function validarCodigo2FA(string $codigoDigitado): bool {
         self::iniciarSessao();

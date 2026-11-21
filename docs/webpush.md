@@ -72,6 +72,26 @@ Execute uma vez por ambiente, em terminal privado:
 php Backend/Notifications/gerar_chaves.php
 ```
 
+O gerador usa P-256 e informa explicitamente o arquivo de configuração ao OpenSSL quando disponível. No Windows, procura `openssl.cnf` na instalação do PHP em execução e na pasta `apache/conf` do XAMPP. `OPENSSL_CONF` ou `SSLEAY_CONF`, quando definidos, têm precedência sobre essa procura; um caminho inválido retorna erro em vez de ser ignorado. O comando não depende de alterar permanentemente o ambiente do computador, não modifica o `.env` e continua restrito ao terminal.
+
+Para investigar falhas sem exibir nem salvar chaves:
+
+```sh
+php Backend/Notifications/gerar_chaves.php --diagnostico
+```
+
+Esse modo testa a geração e o formato VAPID e informa o PHP usado, o `php.ini` carregado, a versão do OpenSSL e o arquivo de configuração escolhido. Em uma falha, também mostra a causa e os detalhes da fila de erros do OpenSSL. Pode ser compartilhado para diagnóstico: não imprime as chaves.
+
+Para indicar diretamente a configuração do XAMPP, independentemente das variáveis de ambiente, no CMD ou no PowerShell:
+
+```sh
+php Backend/Notifications/gerar_chaves.php --diagnostico --config="C:\xampp\apache\conf\openssl.cnf"
+```
+
+Ajuste o caminho à instalação real. Se o diagnóstico passar, remova `--diagnostico` para gerar as duas linhas de chaves. Se mostrar outro PHP, use o executável correto, por exemplo `C:\xampp\php\php.exe` no lugar de `php`. Dependências baixadas não garantem que a extensão esteja habilitada no PHP do terminal ou que a configuração do OpenSSL seja legível. A opção `config` é suportada por [openssl_pkey_new](https://www.php.net/manual/en/function.openssl-pkey-new.php).
+
+Validação local do ajuste: geração e diagnóstico no PHP standalone e no XAMPP, configuração explícita sobrepondo ambiente inválido, arquivo inexistente, extensão ausente, formato das chaves, correspondência do par P-256 e assinatura/verificação. Chaves de teste foram descartadas em memória; o teste não altera a configuração nem as chaves de um ambiente existente.
+
 Copie as duas linhas geradas para o `.env`, sem substituir outras configurações. Não copie a chave privada para JavaScript, documentos públicos ou logs. Complete:
 
 ```dotenv

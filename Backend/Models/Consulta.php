@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/../Config/Database.php';
+require_once __DIR__ . '/../Support/Agenda.php';
+require_once __DIR__ . '/../Support/RecorrenciaConsulta.php';
     class Consulta{
         public const STATUS = ['Pendente', 'Concluído', 'Cancelado'];
 
         protected PDO $db;
 
-        public function __construct() {
-            $this->db = Database::getConnection(true);
+        public function __construct(?PDO $db = null) {
+            $this->db = $db ?? Database::getConnection(true);
         }
 
         public function listarTodos(){
@@ -25,26 +27,47 @@ require_once __DIR__ . '/../Config/Database.php';
             return $stmt->fetchAll();
         }
 
-        public function gerarConsultas(?int $idPaciente = null): int {
-            $agora = new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo'));
-            $transacaoPropria = !$this->db->inTransaction();
-            if ($transacaoPropria) $this->db->beginTransaction();
-            try {
-                $sql = 'SELECT * FROM agendamento';
-                if ($idPaciente !== null) $sql .= ' WHERE id_paciente = :id_paciente';
-                $sql .= ' ORDER BY id_agendamento';
-                if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'mysql') $sql .= ' FOR UPDATE';
+        public function gerarConsultas(?int $idPaciente = null, ?DateTimeImmutable $agora = null): array {
+            return AgendaTransacao::executar($this->db, function () use ($idPaciente, $agora) {
+                $agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone(new DateTimeZone('America/Sao_Paulo'));
+                $fim = $agora->modify('last day of this month')->setTime(23, 59, 59);
+                $resultado = ['criadas' => 0, 'existentes' => 0, 'conflitos' => [], 'agendamentos_invalidos' => []];
+                $sql = 'SELECT a.*, p.nome AS paciente_nome FROM agendamento a LEFT JOIN paciente p ON p.id_paciente = a.id_paciente';
+                if ($idPaciente !== null) $sql .= ' WHERE a.id_paciente = :id_paciente';
+                $sql .= ' ORDER BY a.id_agendamento';
                 $stmt = $this->db->prepare($sql);
                 $stmt->execute($idPaciente === null ? [] : [':id_paciente' => $idPaciente]);
                 $agendamentos = $stmt->fetchAll();
-                $consultasCriadas = 0;
                 foreach ($agendamentos as $agendamento) {
-                    if (!in_array((string) $agendamento['dia_semana'], ['0', '1', '2', '3', '4', '5', '6'], true)
-                        || !in_array($agendamento['repeticao'], ['Semanal', 'Quinzenal', 'Mensal'], true)
-                        || empty($agendamento['horario_inicio']) || empty($agendamento['horario_termino'])) continue;
-                    $datas = self::encontrarDatas($agora->format('Y'), $agora->format('m'), $agendamento['dia_semana'], $agendamento['repeticao']);
+                    try {
+                        if (!in_array((string) $agendamento['dia_semana'], ['0', '1', '2', '3', '4', '5', '6'], true)
+                            || !$this->horarioValido($agendamento['horario_inicio']) || !$this->horarioValido($agendamento['horario_termino'])
+                            || substr($agendamento['horario_inicio'], 0, 5) >= substr($agendamento['horario_termino'], 0, 5)) {
+                            throw new InvalidArgumentException('Agendamento inválido.');
+                        }
+                        $datas = self::encontrarDatas((string) $agendamento['data_inicio'], (int) $agendamento['dia_semana'], (string) $agendamento['repeticao'], $agora, $fim);
+                    } catch (InvalidArgumentException $e) {
+                        if ($idPaciente !== null) throw $e;
+                        $resultado['agendamentos_invalidos'][] = ['id_agendamento' => (int) $agendamento['id_agendamento'], 'paciente_nome' => $agendamento['paciente_nome']];
+                        continue;
+                    }
                     foreach ($datas as $data) {
-                        if (self::consultaExiste($agendamento['id_agendamento'], $data, $agendamento['horario_inicio'])) continue;
+                        $inicio = new DateTimeImmutable($data . ' ' . $agendamento['horario_inicio'], $agora->getTimezone());
+                        if ($inicio <= $agora) continue;
+                        if ($this->consultaExiste($agendamento['id_agendamento'], $data, $agendamento['horario_inicio'])) {
+                            $resultado['existentes']++;
+                            continue;
+                        }
+                        $conflito = $this->encontrarConflito($data, $agendamento['horario_inicio'], $agendamento['horario_termino']);
+                        if ($conflito !== null) {
+                            if ($idPaciente !== null) throw new ConflitoAgendaException($conflito);
+                            $resultado['conflitos'][] = $conflito + [
+                                'paciente_solicitante' => $agendamento['paciente_nome'],
+                                'inicio_solicitado' => $agendamento['horario_inicio'],
+                                'fim_solicitado' => $agendamento['horario_termino']
+                            ];
+                            continue;
+                        }
                         $stmt = $this->db->prepare('INSERT INTO consulta (id_agendamento, horario_inicio, horario_fim, data, status) VALUES (:id_agendamento, :horario_inicio, :horario_fim, :data, :status)');
                         $stmt->execute([
                             ':id_agendamento' => $agendamento['id_agendamento'],
@@ -53,15 +76,26 @@ require_once __DIR__ . '/../Config/Database.php';
                             ':data' => $data,
                             ':status' => 'Pendente'
                         ]);
-                        $consultasCriadas++;
+                        $resultado['criadas']++;
                     }
                 }
-                if ($transacaoPropria) $this->db->commit();
-                return $consultasCriadas;
-            } catch (Throwable $e) {
-                if ($transacaoPropria && $this->db->inTransaction()) $this->db->rollBack();
-                throw $e;
-            }
+                return $resultado;
+            });
+        }
+
+        private function horarioValido($horario): bool {
+            return is_string($horario) && preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$/D', $horario) === 1;
+        }
+
+        private function encontrarConflito(string $data, string $inicio, string $fim, int $ignorar = 0): ?array {
+            $stmt = $this->db->prepare("SELECT c.id_consulta, c.data, c.horario_inicio, c.horario_fim, a.id_paciente, p.nome AS paciente_nome
+                FROM consulta c LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
+                LEFT JOIN paciente p ON p.id_paciente = a.id_paciente
+                WHERE c.data = :data AND COALESCE(c.status, 'Pendente') <> 'Cancelado'
+                    AND c.horario_inicio < :fim AND c.horario_fim > :inicio AND c.id_consulta <> :ignorar
+                ORDER BY c.horario_inicio, c.id_consulta LIMIT 1");
+            $stmt->execute([':data' => $data, ':inicio' => $inicio, ':fim' => $fim, ':ignorar' => $ignorar]);
+            return $stmt->fetch() ?: null;
         }
 
         public function visualizarCalendario(){
@@ -93,14 +127,17 @@ require_once __DIR__ . '/../Config/Database.php';
                 throw new InvalidArgumentException('Status de consulta inválido.');
             }
 
-            $sql = "UPDATE consulta SET status = :status WHERE id_consulta = :id";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([
-                ':status' => $status,
-                ':id' => $id
-            ]);
-
-            return $stmt->rowCount() > 0 || $this->visualizarConsulta($id) !== [];
+            return AgendaTransacao::executar($this->db, function () use ($id, $status) {
+                $consulta = $this->visualizarConsulta($id)[0] ?? null;
+                if ($consulta === null) return false;
+                if ($consulta['status'] === 'Cancelado' && $status !== 'Cancelado') {
+                    $conflito = $this->encontrarConflito($consulta['data'], $consulta['horario_inicio'], $consulta['horario_fim'], (int) $id);
+                    if ($conflito !== null) throw new ConflitoAgendaException($conflito);
+                }
+                $stmt = $this->db->prepare('UPDATE consulta SET status = :status WHERE id_consulta = :id');
+                $stmt->execute([':status' => $status, ':id' => $id]);
+                return true;
+            });
         }
 
         public function enviarNotificação(){
@@ -123,49 +160,12 @@ require_once __DIR__ . '/../Config/Database.php';
             return self::podeEditarRelatorio($consulta) && ($consulta['relatorio'] ?? null) === $relatorio;
         }
 
-        public static function encontrarDatas($ano, $mes, $diaAlvo, $repeticao){
-            $datas = [];
-            $diaAlvo = (string) $diaAlvo;
-            $primeiroDia = new DateTime("$ano-$mes-01");
-            $ultimoDia = (clone $primeiroDia)->modify('last day of this month');
-            $cursor = (clone $primeiroDia);
-            while ($cursor->format('w') !== $diaAlvo){
-                $cursor->modify('+1 day');
-            }
-
-            $diaSemanalCursor = $cursor->format('w');
-            while($cursor <= $ultimoDia){
-
-
-                if($repeticao === 'Semanal' && $diaSemanalCursor === $diaAlvo){
-                    $diaMesAno = (array) $cursor;
-                    array_push($datas, substr($diaMesAno['date'], 0, 10));
-                    $cursor->modify('+1 week');
-                }
-
-                if($repeticao === 'Quinzenal' && $diaSemanalCursor === $diaAlvo){
-                    $diaMesAno = (array) $cursor;
-                    array_push($datas, substr($diaMesAno['date'], 0, 10));
-                    $cursor->modify('+2 weeks');
-                }
-
-                if($repeticao === 'Mensal' && $diaSemanalCursor === $diaAlvo){
-                    $diaMesAno = (array) $cursor;
-                    array_push($datas, substr($diaMesAno['date'], 0, 10));
-                    $cursor->modify('+1 month');
-                }
-
-            }
-
-
-
-            return $datas;
-
+        public static function encontrarDatas(string $dataInicio, int $diaAlvo, string $repeticao, DateTimeImmutable $de, DateTimeImmutable $ate): array {
+            return RecorrenciaConsulta::datas($dataInicio, $diaAlvo, $repeticao, $de, $ate);
         }
 
-        private static function consultaExiste($id_agendamento, $data_consultada, $horario_inicio): bool {
-            $db = Database::getConnection();
-            $stmt = $db->prepare("
+        private function consultaExiste($id_agendamento, $data_consultada, $horario_inicio): bool {
+            $stmt = $this->db->prepare("
                 SELECT COUNT(*) FROM consulta
                 WHERE id_agendamento = :id_agendamento AND data = :data AND horario_inicio = :horario_inicio
             ");

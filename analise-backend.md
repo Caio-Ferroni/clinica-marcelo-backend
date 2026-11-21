@@ -158,6 +158,13 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - Corrigido o envio do CPF ao campo numérico do banco: máscaras são removidas antes de gravar tanto no cadastro quanto na edição. Isso evita truncamento e falha com MySQL estrito, sem modificar registros antigos.
 - Validação: 88 verificações HTTP, 21 em tabelas temporárias MySQL estritas, 12 de regressão do cliente e 102 de toasts. Cadastro, edição, geração manual e ausência de duplicação também foram conferidos no navegador, com dados isolados.
 
+### 3.15 Recorrência Contínua e Conflitos de Agenda — 21/11/2026
+
+- A recorrência usa a primeira ocorrência do dia selecionado na data inicial ou depois dela. Semanais avançam 7 dias e quinzenais 14 dias sem reiniciar no mês. Mensais mantêm a posição na semana, com uso da última ocorrência se uma quinta estiver ausente. Somente horários futuros do mês atual são gerados; consultas existentes permanecem intactas.
+- Cadastro e edição são bloqueados em caso de sobreposição, com formulário preservado e identificação do paciente que ocupa o intervalo. A geração geral cria horários livres e informa conflitos e agendamentos inválidos em um resumo. Reativar uma consulta cancelada também valida a disponibilidade.
+- Uma trava por banco e uma transação comum protegem geração, salvamento de paciente e alterações de status, inclusive entre pacientes e conexões diferentes. As tabelas existentes não foram alteradas.
+- Validação: 276 verificações de datas, 22 no MariaDB isolado, 69 HTTP, 6 de concorrência, 12 do cliente e 112 de toasts. Fluxos conferidos no navegador. Banco real preservado. Documentação: [docs/agenda-consultas.md](docs/agenda-consultas.md).
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]

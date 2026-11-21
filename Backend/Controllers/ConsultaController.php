@@ -34,7 +34,7 @@ class ConsultaController {
         }
         if ($status >= 400) {
             http_response_code($status);
-            $this->index(Toast::message($code), Toast::catalog()[$code]['type']);
+            $this->index($dados['mensagem'] ?? Toast::message($code), Toast::catalog()[$code]['type']);
             return;
         }
         Toast::add($code);
@@ -46,6 +46,8 @@ class ConsultaController {
         $indicadores = null;
         if ($erro !== null) Toast::discardSuccess();
         $statusPermitidos = Consulta::STATUS;
+        $relatorioGeracao = $_SESSION['relatorio_geracao_consultas'] ?? null;
+        unset($_SESSION['relatorio_geracao_consultas']);
         $_SESSION['consulta_csrf'] ??= bin2hex(random_bytes(32));
         $csrf = $_SESSION['consulta_csrf'];
 
@@ -71,13 +73,22 @@ class ConsultaController {
             return;
         }
         try {
-            $consultasCriadas = $this->obterConsulta()->gerarConsultas();
+            $resultado = $this->obterConsulta()->gerarConsultas();
+        } catch (AgendaOcupadaException $e) {
+            http_response_code(503);
+            $this->index(Toast::message('schedule.busy'), 'warning');
+            return;
         } catch (PDOException $e) {
             http_response_code(500);
             $this->index(Toast::message('consultation.generate_failed'));
             return;
         }
-        Toast::add($consultasCriadas > 0 ? 'consultation.generated' : 'consultation.none_generated');
+        if ($resultado['conflitos'] !== [] || $resultado['agendamentos_invalidos'] !== []) {
+            $_SESSION['relatorio_geracao_consultas'] = $resultado;
+            Toast::add($resultado['criadas'] > 0 ? 'consultation.generated_partial' : 'consultation.generation_blocked');
+        } else {
+            Toast::add($resultado['criadas'] > 0 ? 'consultation.generated' : 'consultation.none_generated');
+        }
         header('Location: /consultas', true, 303);
         exit;
     }
@@ -116,6 +127,12 @@ class ConsultaController {
                     'indicadores' => $this->indicadores($this->obterConsulta()->listarTodos())
                 ];
             }
+        } catch (ConflitoAgendaException $e) {
+            $this->respostaStatus('schedule.conflict', 409, ['mensagem' => $e->getMessage(), 'conflito' => $e->conflito]);
+            return;
+        } catch (AgendaOcupadaException $e) {
+            $this->respostaStatus('schedule.busy', 503);
+            return;
         } catch (PDOException $e) {
             error_log('[Consultas] Falha ao atualizar o status.');
             $this->respostaStatus('consultation.save_failed', 500);

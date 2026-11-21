@@ -31,6 +31,33 @@ $formatarData = static function ($valor): string {
                         <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="<?= $toastType ?? 'error' ?>"><?= $escapar($erro) ?></p>
                     <?php endif; ?>
                     <p class="border rounded-3 p-5 mb-5" data-status-feedback role="status" hidden></p>
+                    <?php if (is_array($relatorioGeracao ?? null)): ?>
+                        <section class="border rounded-4 p-5 mb-7" aria-labelledby="resumo-geracao">
+                            <h2 class="text-md fw-semibold mb-3" id="resumo-geracao">Resultado da geração</h2>
+                            <p class="text-sm">Consultas criadas: <?= (int) $relatorioGeracao['criadas'] ?>. Já existentes: <?= (int) $relatorioGeracao['existentes'] ?>.</p>
+                            <?php if ($relatorioGeracao['conflitos'] !== []): ?>
+                                <p class="text-sm">Os horários abaixo não foram criados. Escolha outro horário no agendamento do paciente.</p>
+                                <ul class="text-sm mb-4">
+                                    <?php foreach ($relatorioGeracao['conflitos'] as $conflito): ?>
+                                        <li class="mb-3">
+                                            <?= $escapar($conflito['paciente_solicitante'] ?: 'Paciente não identificado') ?>:
+                                            <?= $formatarData($conflito['data']) ?>, das <?= $escapar(substr($conflito['inicio_solicitado'], 0, 5)) ?> às <?= $escapar(substr($conflito['fim_solicitado'], 0, 5)) ?>.
+                                            Ocupado por <?= $escapar($conflito['paciente_nome'] ?: 'consulta #' . $conflito['id_consulta']) ?>,
+                                            das <?= $escapar(substr($conflito['horario_inicio'], 0, 5)) ?> às <?= $escapar(substr($conflito['horario_fim'], 0, 5)) ?>.
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                            <?php if ($relatorioGeracao['agendamentos_invalidos'] !== []): ?>
+                                <p class="text-sm">Confira a data inicial, o dia da semana, a repetição e os horários destes agendamentos:</p>
+                                <ul class="text-sm mb-0">
+                                    <?php foreach ($relatorioGeracao['agendamentos_invalidos'] as $invalido): ?>
+                                        <li><?= $escapar($invalido['paciente_nome'] ?: 'Agendamento #' . $invalido['id_agendamento']) ?></li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php endif; ?>
+                        </section>
+                    <?php endif; ?>
                     <div class="row g-5 mb-7">
                         <div class="col-12 md:col-4">
                             <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
@@ -59,6 +86,7 @@ $formatarData = static function ($valor): string {
                             <span>Gerar consultas do mês</span>
                         </button>
                     </form>
+                    <p class="text-sm mb-5" style="color: var(--color-text-muted);">Gera somente os horários futuros deste mês, respeitando a sequência iniciada na data do agendamento.</p>
                     <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
                         <table class="table table-striped table-hover table-borderless align-middle mb-0" id="tabela-consultas">
                             <caption class="visually-hidden">Lista de consultas</caption>

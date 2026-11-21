@@ -155,6 +155,11 @@ $router->mount('/tarefas', function () use ($router) {
         (new TarefaController)->criar();
     });
 
+    // Visualizar uma tarefa específica
+    $router->get('/(\d+)', function ($id) {
+        (new TarefaController)->visualizar($id);
+    });
+
     // Formulário de edição de tarefa (GET) + processamento (POST)
     $router->get('/(\d+)/editar', function ($id) {
         (new TarefaController)->editar($id);

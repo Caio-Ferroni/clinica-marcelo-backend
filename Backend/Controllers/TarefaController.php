@@ -71,6 +71,20 @@ require_once __DIR__ . '/../Auth/Auth.php';
             require __DIR__ . '/../../Views/Shared/error.php';
         }
 
+        public function visualizar($id): void {
+            try {
+                $tarefa = $this->obterTarefa()->visualizarTarefa($id)[0] ?? null;
+                if ($tarefa === null) {
+                    $this->falhar('task.missing', 404);
+                    return;
+                }
+            } catch (PDOException $e) {
+                $this->falhar('operation.failed', 503);
+                return;
+            }
+            require __DIR__ . '/../../Views/Tarefa/tarefa-show.php';
+        }
+
         public function editar($id): void {
             try {
                 $tarefa = $this->obterTarefa()->visualizarTarefa($id)[0] ?? null;

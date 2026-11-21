@@ -1,6 +1,16 @@
 <?php
 $pacientes = is_array($pacientes ?? null) ? $pacientes : [];
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$formatarCpf = static function ($valor) {
+    if ($valor === null || $valor === '') return '-';
+    $digitos = preg_replace('/\D/', '', (string) $valor);
+    if ($digitos === '') return '-';
+    if (strlen($digitos) <= 11) {
+        $digitos = str_pad($digitos, 11, '0', STR_PAD_LEFT);
+        return preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $digitos);
+    }
+    return (string) $valor;
+};
 $totalPacientes = count($pacientes);
 $gruposPacientes = [
     'Ativo' => ['rotulo' => 'Ativos', 'titulo' => 'Pacientes ativos', 'total' => count(array_filter($pacientes, static fn($p) => ($p['status'] ?? '') === 'Ativo')), 'vazio' => 'Nenhum paciente ativo.'],
@@ -101,7 +111,7 @@ foreach ($pacientes as $p) {
                                         <tr data-id="<?= $escape($p['id_paciente'] ?? '') ?>" data-status="<?= $escape($p['status'] ?? '') ?>" <?= $statusSelecionado === 'Todos' || ($p['status'] ?? '') === $statusSelecionado ? '' : 'hidden' ?>>
                                             <td class="text-center text-sm align-middle" data-field="nome"><?= $escape($p['nome'] ?? '') ?></td>
                                             <td class="text-center text-sm align-middle" data-field="telefone"><?= $escape($p['telefone'] ?? '') ?></td>
-                                            <td class="text-center text-sm align-middle" data-field="cpf"><?= $escape($p['cpf'] ?? '') ?></td>
+                                            <td class="text-center text-sm align-middle" data-field="cpf"><?= $escape($formatarCpf($p['cpf'] ?? '')) ?></td>
                                             <td class="text-center text-sm align-middle" data-field="status"><?= $escape($p['status'] ?? 'Ativo') ?></td>
                                             <td class="text-center align-middle">
                                                 <div class="d-flex justify-content-center gap-3">

@@ -27,11 +27,12 @@
 
             $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
 
-            $sql = "INSERT INTO psicologo (email, senha) VALUES (:email, :senha)";
+            $sql = "INSERT INTO psicologo (email, senha, telefone) VALUES (:email, :senha, :telefone)";
             $stmt = $this->db->prepare($sql);
             return $stmt->execute([
                 ':email'    => $email,
-                ':senha'    => $senhaHash
+                ':senha'    => $senhaHash,
+                ':telefone' => ''
             ]);
         }
 

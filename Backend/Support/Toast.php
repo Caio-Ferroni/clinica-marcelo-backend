@@ -17,6 +17,7 @@ class Toast {
         'account.created' => ['type' => 'success', 'message' => 'Conta criada. Entre para continuar.'],
         'account.exists' => ['type' => 'info', 'message' => 'Já existe uma conta cadastrada. Entre para continuar.'],
         'account.failed' => ['type' => 'error', 'message' => 'Não foi possível realizar o cadastro.'],
+        'account.load_failed' => ['type' => 'error', 'message' => 'Não foi possível acessar o cadastro. Verifique a conexão com o banco de dados.'],
         'task.created' => ['type' => 'success', 'message' => 'Tarefa criada com sucesso.'],
         'task.required' => ['type' => 'warning', 'message' => 'Preencha o título, o conteúdo e a data de conclusão da tarefa.'],
         'task.date' => ['type' => 'warning', 'message' => 'Informe uma data de conclusão válida.'],
@@ -41,6 +42,7 @@ class Toast {
         'task.missing' => ['type' => 'error', 'message' => 'Tarefa não encontrada.'],
         'task.status_invalid' => ['type' => 'warning', 'message' => 'Selecione um status válido para a tarefa.'],
         'report.saved' => ['type' => 'success', 'message' => 'Relatório da consulta salvo.'],
+        'report.not_completed' => ['type' => 'warning', 'message' => 'Conclua a consulta para editar o relatório.'],
         'patient.load_failed' => ['type' => 'error', 'message' => 'Não foi possível carregar os pacientes. Tente novamente.'],
         'patient.required' => ['type' => 'warning', 'message' => 'Preencha o nome, CPF, telefone e a data de nascimento do paciente.'],
         'operation.failed' => ['type' => 'error', 'message' => 'Não foi possível concluir a ação. Tente novamente.']

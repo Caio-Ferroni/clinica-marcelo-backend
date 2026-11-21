@@ -30,6 +30,7 @@ $formatarData = static function ($valor): string {
                     <?php if (!empty($erro)): ?>
                         <p class="border rounded-3 p-5 mb-5" role="alert" data-toast-type="<?= $toastType ?? 'error' ?>"><?= $escapar($erro) ?></p>
                     <?php endif; ?>
+                    <p class="border rounded-3 p-5 mb-5" data-status-feedback role="status" hidden></p>
                     <div class="row g-5 mb-7">
                         <div class="col-12 md:col-4">
                             <div class="border rounded-4 shadow-sm p-6 text-center h-100" style="background: var(--color-surface);">
@@ -72,10 +73,10 @@ $formatarData = static function ($valor): string {
                                             <?= $escapar(substr((string) $consulta['horario_inicio'], 0, 5)) ?>
                                         </td>
                                         <td class="text-center text-sm align-middle" data-field="status">
-                                            <form method="post" action="/consultas/<?= $id ?>/status" data-toast-validate class="d-flex flex-column align-items-stretch gap-3 m-0" style="min-width: 165px;">
+                                            <form method="post" action="/consultas/<?= $id ?>/status" data-status-form data-id="<?= $id ?>" data-toast-validate class="d-flex flex-column align-items-stretch gap-3 m-0" style="min-width: 165px;">
                                                 <input type="hidden" name="csrf_token" value="<?= $escapar($csrf) ?>">
                                                 <label class="visually-hidden" for="consulta-status-<?= $id ?>">Status da consulta de <?= $escapar($consulta['paciente_nome'] ?? 'paciente indisponível') ?> em <?= $formatarData($consulta['data']) ?></label>
-                                                <select class="form-control" id="consulta-status-<?= $id ?>" name="status" required>
+                                                <select class="form-control" id="consulta-status-<?= $id ?>" name="status" data-saved-value="<?= $escapar(in_array($consulta['status'], $statusPermitidos, true) ? $consulta['status'] : '') ?>" required>
                                                     <?php if (!in_array($consulta['status'], $statusPermitidos, true)): ?>
                                                         <option value="" disabled selected><?= $escapar($consulta['status'] ?? 'Selecione o status') ?></option>
                                                     <?php endif; ?>
@@ -83,16 +84,19 @@ $formatarData = static function ($valor): string {
                                                         <option value="<?= $escapar($status) ?>" <?= $consulta['status'] === $status ? 'selected' : '' ?>><?= $escapar($status) ?></option>
                                                     <?php endforeach; ?>
                                                 </select>
-                                                <button class="btn-outline text-sm" type="submit">Salvar status</button>
+                                                <noscript><button class="btn-outline text-sm" type="submit">Salvar status</button></noscript>
                                             </form>
                                         </td>
                                         <td class="text-center text-sm align-middle" data-field="relatorio">
-                                            <?php if (trim((string) ($consulta['relatorio'] ?? '')) !== ''): ?>
-                                                <a class="btn-outline text-sm text-decoration-none" href="/consultas/<?= $id ?>">Ver relatório</a>
-                                            <?php else: ?>
-                                                Sem relatório
-                                            <?php endif; ?>
-                                            <a class="d-block text-sm mt-3" href="/consultas/<?= $id ?>/editar">Editar relatório</a>
+                                            <?php $podeEditar = Consulta::podeEditarRelatorio($consulta); ?>
+                                            <div class="d-flex justify-content-center gap-3">
+                                                <a class="btn btn-sm p-2<?= $podeEditar ? '' : ' disabled' ?>" data-consulta-edit data-edit-url="/consultas/<?= $id ?>/editar" aria-label="Editar relatório" title="<?= $podeEditar ? 'Editar relatório' : $escapar(Toast::message('report.not_completed')) ?>" <?= $podeEditar ? 'href="/consultas/' . $id . '/editar"' : 'role="link" aria-disabled="true" tabindex="-1"' ?>>
+                                                    <i class="bi bi-pencil-fill" aria-hidden="true"></i>
+                                                </a>
+                                                <a class="btn btn-sm p-2" href="/consultas/<?= $id ?>" aria-label="Visualizar consulta" title="Visualizar consulta">
+                                                    <i class="bi bi-eye-fill" aria-hidden="true"></i>
+                                                </a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -108,5 +112,6 @@ $formatarData = static function ($valor): string {
         </div>
     </div>
     <?php require __DIR__ . '/../Shared/toasts.php'; ?>
+    <script src="/js/consultas.js?v=<?= filemtime(__DIR__ . '/../../js/consultas.js') ?>" defer></script>
 </body>
 </html>

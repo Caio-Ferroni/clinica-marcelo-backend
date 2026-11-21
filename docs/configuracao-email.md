@@ -14,6 +14,8 @@ composer install
 
 O segundo comando deve retornar `true`. Se retornar `false`, habilite `extension=openssl` no `php.ini` usado pelo site e reinicie o servidor. O PHP do terminal e o PHP do Apache/XAMPP podem carregar arquivos de configuração diferentes.
 
+Para o acesso ao banco e o registro da conta, confira também PDO MySQL e mbstring conforme [configuracao-local.md](configuracao-local.md).
+
 O Composer instala `phpmailer/phpmailer` e `vlucas/phpdotenv`, além do roteador existente. Se estiver usando `composer.phar`, substitua `composer` por `php caminho/para/composer.phar`.
 
 O projeto mantém `composer.lock` ignorado pelo Git. Se seu arquivo local estiver desatualizado depois de atualizar o projeto, execute:

@@ -22,6 +22,10 @@ $horarioInicio = !empty($consulta['horario_inicio']) ? $formatarHorario($consult
 $horarioFim = !empty($consulta['horario_fim']) ? $formatarHorario($consulta['horario_fim']) : '-';
 $horarioCompleto = ($horarioInicio !== '-' || $horarioFim !== '-') ? "{$horarioInicio} às {$horarioFim}" : '-';
 $status = !empty($consulta['status']) ? $consulta['status'] : 'Pendente';
+$podeEditar = Consulta::podeEditarRelatorio($consulta);
+$atributosEdicao = $podeEditar
+    ? 'href="/consultas/' . (int) $idConsulta . '/editar"'
+    : 'role="link" aria-disabled="true" tabindex="-1" title="' . $escape(Toast::message('report.not_completed')) . '"';
 $relatorio = trim((string) ($consulta['relatorio'] ?? ''));
 ?>
 <!DOCTYPE html>
@@ -65,7 +69,7 @@ $relatorio = trim((string) ($consulta['relatorio'] ?? ''));
                                     <span class="badge bg-primary-subtle text-primary-emphasis px-3 py-2 text-xs">
                                         <?= $escape($status) ?>
                                     </span>
-                                    <a class="btn-solid btn-sm px-4 py-2 text-decoration-none d-inline-flex align-items-center gap-2" href="/consultas/<?= $escape($idConsulta) ?>/editar">
+                                    <a class="btn-solid btn-sm px-4 py-2 text-decoration-none d-inline-flex align-items-center gap-2<?= $podeEditar ? '' : ' disabled opacity-50' ?>" <?= $atributosEdicao ?>>
                                         <i class="bi bi-pencil" aria-hidden="true"></i>
                                         <span>Editar relatório</span>
                                     </a>
@@ -118,7 +122,7 @@ $relatorio = trim((string) ($consulta['relatorio'] ?? ''));
                                         <i class="bi bi-file-earmark-medical" aria-hidden="true"></i>
                                         Relatório da consulta
                                     </h3>
-                                    <a href="/consultas/<?= $escape($idConsulta) ?>/editar" class="text-decoration-none text-sm fw-medium">
+                                    <a <?= $atributosEdicao ?> class="text-decoration-none text-sm fw-medium<?= $podeEditar ? '' : ' disabled opacity-50' ?>">
                                         <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Atualizar relatório
                                     </a>
                                 </div>
@@ -129,10 +133,13 @@ $relatorio = trim((string) ($consulta['relatorio'] ?? ''));
                                     <div class="border rounded-3 p-6 text-center text-muted" style="background: var(--color-field-background);">
                                         <i class="bi bi-journal-text text-2xl d-block mb-3" aria-hidden="true"></i>
                                         <p class="mb-3 text-sm">Esta consulta ainda não possui relatório.</p>
-                                        <a class="btn-solid btn-sm px-4 py-2 text-decoration-none" href="/consultas/<?= $escape($idConsulta) ?>/editar">
+                                        <a class="btn-solid btn-sm px-4 py-2 text-decoration-none<?= $podeEditar ? '' : ' disabled opacity-50' ?>" <?= $atributosEdicao ?>>
                                             <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Cadastrar relatório
                                         </a>
                                     </div>
+                                <?php endif; ?>
+                                <?php if (!$podeEditar): ?>
+                                    <p class="text-sm mt-4 mb-0"><?= $escape(Toast::message('report.not_completed')) ?></p>
                                 <?php endif; ?>
                             </section>
 
@@ -141,7 +148,7 @@ $relatorio = trim((string) ($consulta['relatorio'] ?? ''));
                                 <a class="btn-outline px-6 py-3 text-decoration-none" href="/consultas">
                                     <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>Voltar para consultas
                                 </a>
-                                <a class="btn-solid px-6 py-3 text-decoration-none" href="/consultas/<?= $escape($idConsulta) ?>/editar">
+                                <a class="btn-solid px-6 py-3 text-decoration-none<?= $podeEditar ? '' : ' disabled opacity-50' ?>" <?= $atributosEdicao ?>>
                                     <i class="bi bi-pencil-fill me-2" aria-hidden="true"></i>Editar relatório
                                 </a>
                             </div>

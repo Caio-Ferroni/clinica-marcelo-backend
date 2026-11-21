@@ -11,6 +11,36 @@ class ConsultaController {
         return $this->consulta ??= new Consulta;
     }
 
+    private function indicadores(array $consultas): array {
+        $mesAtual = (new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo')))->format('Y-m');
+        $indicadores = ['mes' => 0, 'realizadas' => 0, 'canceladas' => 0];
+        foreach ($consultas as $consulta) {
+            if (substr((string) $consulta['data'], 0, 7) === $mesAtual) $indicadores['mes']++;
+            if ($consulta['status'] === 'Concluído') $indicadores['realizadas']++;
+            if ($consulta['status'] === 'Cancelado') $indicadores['canceladas']++;
+        }
+        return $indicadores;
+    }
+
+    private function respostaStatus(string $code, int $status, array $dados = []): void {
+        if ($status >= 400) Toast::discardSuccess();
+        if (str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')) {
+            http_response_code($status);
+            header('Content-Type: application/json; charset=utf-8');
+            header('Cache-Control: no-store');
+            header('X-Content-Type-Options: nosniff');
+            echo json_encode(['ok' => $status < 400, 'toast_code' => $code] + $dados, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            return;
+        }
+        if ($status >= 400) {
+            http_response_code($status);
+            $this->index(Toast::message($code), Toast::catalog()[$code]['type']);
+            return;
+        }
+        Toast::add($code);
+        header('Location: /consultas', true, 303);
+    }
+
     public function index(?string $erro = null, string $toastType = 'error'): void {
         $consultas = [];
         $indicadores = null;
@@ -21,20 +51,7 @@ class ConsultaController {
 
         try {
             $consultas = $this->obterConsulta()->listarTodos();
-            $mesAtual = (new DateTimeImmutable('now', new DateTimeZone('America/Sao_Paulo')))->format('Y-m');
-            $indicadores = ['mes' => 0, 'realizadas' => 0, 'canceladas' => 0];
-
-            foreach ($consultas as $consulta) {
-                if (substr((string) $consulta['data'], 0, 7) === $mesAtual) {
-                    $indicadores['mes']++;
-                }
-                if ($consulta['status'] === 'Concluído') {
-                    $indicadores['realizadas']++;
-                }
-                if ($consulta['status'] === 'Cancelado') {
-                    $indicadores['canceladas']++;
-                }
-            }
+            $indicadores = $this->indicadores($consultas);
         } catch (PDOException $e) {
             http_response_code(503);
             Toast::discardSuccess();
@@ -63,37 +80,45 @@ class ConsultaController {
         $tokenSessao = $_SESSION['consulta_csrf'] ?? null;
 
         if (!is_string($token) || !is_string($tokenSessao) || !hash_equals($tokenSessao, $token)) {
-            http_response_code(403);
-            $this->index(Toast::message('consultation.form_expired'), 'warning');
+            $this->respostaStatus('consultation.form_expired', 403);
             return;
         }
 
         $status = $_POST['status'] ?? null;
         if (!is_string($status) || !in_array($status, Consulta::STATUS, true)) {
-            http_response_code(422);
-            $this->index(Toast::message('consultation.status_invalid'), 'warning');
+            $this->respostaStatus('consultation.status_invalid', 422);
             return;
         }
 
         try {
             if (!$this->obterConsulta()->atualizarStatus($id, $status)) {
-                http_response_code(404);
-                $this->index(Toast::message('consultation.missing'));
+                $this->respostaStatus('consultation.missing', 404);
                 return;
             }
+            $dados = [];
+            if (str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')) {
+                $consulta = $this->obterConsulta()->visualizarConsulta($id)[0] ?? null;
+                if ($consulta === null) {
+                    $this->respostaStatus('consultation.missing', 404);
+                    return;
+                }
+                $dados = [
+                    'id' => (int) $id,
+                    'status' => $consulta['status'],
+                    'pode_editar' => Consulta::podeEditarRelatorio($consulta),
+                    'indicadores' => $this->indicadores($this->obterConsulta()->listarTodos())
+                ];
+            }
         } catch (PDOException $e) {
-            http_response_code(500);
             error_log('[Consultas] Falha ao atualizar o status.');
-            $this->index(Toast::message('consultation.save_failed'));
+            $this->respostaStatus('consultation.save_failed', 500);
             return;
         }
 
-        Toast::add('consultation.status_saved');
-        header('Location: /consultas', true, 303);
-        exit;
+        $this->respostaStatus('consultation.status_saved', 200, $dados);
     }
 
-    private function falhar(string $code, int $status): void {
+    private function falhar(string $code, int $status, string $toastType = 'error'): void {
         http_response_code($status);
         Toast::discardSuccess();
         $erro = Toast::message($code);
@@ -107,6 +132,10 @@ class ConsultaController {
             $consulta = $this->obterConsulta()->visualizarConsulta($id)[0] ?? null;
             if ($consulta === null) {
                 $this->falhar('consultation.missing', 404);
+                return;
+            }
+            if ($editar && !Consulta::podeEditarRelatorio($consulta)) {
+                $this->falhar('report.not_completed', 409, 'warning');
                 return;
             }
         } catch (PDOException $e) {
@@ -140,6 +169,10 @@ class ConsultaController {
                 $this->falhar('consultation.missing', 404);
                 return;
             }
+            if (!Consulta::podeEditarRelatorio($consulta)) {
+                $this->falhar('report.not_completed', 409, 'warning');
+                return;
+            }
             if (!is_string($_POST['relatorio'] ?? null)) {
                 http_response_code(422);
                 Toast::discardSuccess();
@@ -147,7 +180,10 @@ class ConsultaController {
                 require __DIR__ . '/../../Views/Consulta/consulta-update.php';
                 return;
             }
-            $this->obterConsulta()->gerarRelatorio($id, $_POST['relatorio']);
+            if (!$this->obterConsulta()->gerarRelatorio($id, $_POST['relatorio'])) {
+                $this->falhar('report.not_completed', 409, 'warning');
+                return;
+            }
         } catch (PDOException $e) {
             $this->falhar('operation.failed', 500);
             return;

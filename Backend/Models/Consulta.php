@@ -104,16 +104,21 @@ require_once __DIR__ . '/../Config/Database.php';
         public function enviarNotificação(){
 
         }
-        public function gerarRelatorio($id, $relatorio){
-            $sql = "UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id";
+        public static function podeEditarRelatorio(array $consulta): bool {
+            return ($consulta['status'] ?? null) === 'Concluído';
+        }
+
+        public function gerarRelatorio($id, $relatorio): bool {
+            $sql = "UPDATE consulta SET relatorio = :relatorio WHERE id_consulta = :id AND status = :status";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 ':relatorio' => $relatorio,
-                ':id' => $id
+                ':id' => $id,
+                ':status' => 'Concluído'
             ]);
-            $mensagem = "Relatorio criado com sucesso!";
-            return $mensagem;
-
+            if ($stmt->rowCount() > 0) return true;
+            $consulta = $this->visualizarConsulta($id)[0] ?? [];
+            return self::podeEditarRelatorio($consulta) && ($consulta['relatorio'] ?? null) === $relatorio;
         }
 
         public static function encontrarDatas($ano, $mes, $diaAlvo, $repeticao){

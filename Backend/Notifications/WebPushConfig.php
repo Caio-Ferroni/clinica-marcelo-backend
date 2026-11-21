@@ -9,17 +9,22 @@ final class WebPushConfig
         public readonly bool $enabled = false,
         public readonly string $publicKey = '',
         public readonly string $privateKey = '',
-        public readonly string $subject = ''
+        public readonly string $subject = '',
+        public readonly int $reminderSeconds = 600
     ) {}
 
     public static function fromEnvironment(): self
     {
         $env = array_merge(getenv() ?: [], $_SERVER, $_ENV);
+        $minutes = filter_var($env['WEBPUSH_REMINDER_MINUTES'] ?? '10', FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1, 'max_range' => 1440],
+        ]);
         return new self(
             filter_var($env['WEBPUSH_ENABLED'] ?? 'false', FILTER_VALIDATE_BOOLEAN),
             trim((string) ($env['WEBPUSH_VAPID_PUBLIC_KEY'] ?? '')),
             trim((string) ($env['WEBPUSH_VAPID_PRIVATE_KEY'] ?? '')),
-            trim((string) ($env['WEBPUSH_VAPID_SUBJECT'] ?? ''))
+            trim((string) ($env['WEBPUSH_VAPID_SUBJECT'] ?? '')),
+            ($minutes === false ? 10 : (int) $minutes) * 60
         );
     }
 

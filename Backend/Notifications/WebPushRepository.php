@@ -54,7 +54,7 @@ final class WebPushRepository
         $stmt->execute([$this->lockName]);
     }
 
-    public function candidates(DateTimeImmutable $now): array
+    public function candidates(DateTimeImmutable $now, int $reminderSeconds, int $graceSeconds): array
     {
         if ((int) $this->db->query('SELECT COUNT(*) FROM psicologo')->fetchColumn() > 1) {
             throw new RuntimeException('Webpush de consultas requer a regra atual de conta única.');
@@ -72,7 +72,9 @@ final class WebPushRepository
                 AND TIMESTAMP(c.data, c.horario_inicio) <= ?
             ORDER BY c.data, c.horario_inicio, c.id_consulta, s.id');
         $stmt->execute([
-            self::utc($now), $now->format('Y-m-d H:i:s'), $now->modify('+10 minutes')->format('Y-m-d H:i:s'),
+            self::utc($now),
+            $now->modify('-' . max(0, $graceSeconds) . ' seconds')->format('Y-m-d H:i:s'),
+            $now->modify('+' . max(0, $reminderSeconds) . ' seconds')->format('Y-m-d H:i:s'),
         ]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -93,29 +95,29 @@ final class WebPushRepository
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
-    public function attempt(array $candidate, DateTimeImmutable $now): bool
+    public function attempt(array $candidate, string $kind, DateTimeImmutable $now): bool
     {
         $stmt = $this->db->prepare('INSERT IGNORE INTO webpush_deliveries
-            (id_consulta, subscription_id, starts_at, status, attempts, updated_at)
-            VALUES (?, ?, ?, \'pending\', 0, ?)');
-        $stmt->execute([$candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at'], self::utc($now)]);
+            (id_consulta, subscription_id, starts_at, kind, status, attempts, updated_at)
+            VALUES (?, ?, ?, ?, \'pending\', 0, ?)');
+        $stmt->execute([$candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at'], $kind, self::utc($now)]);
         $stmt = $this->db->prepare('UPDATE webpush_deliveries SET attempts = attempts + 1, updated_at = ?
-            WHERE id_consulta = ? AND subscription_id = ? AND starts_at = ? AND status = \'pending\'
+            WHERE id_consulta = ? AND subscription_id = ? AND starts_at = ? AND kind = ? AND status = \'pending\'
                 AND (next_attempt_at IS NULL OR next_attempt_at <= ?)');
-        $stmt->execute([self::utc($now), $candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at'], self::utc($now)]);
+        $stmt->execute([self::utc($now), $candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at'], $kind, self::utc($now)]);
         return $stmt->rowCount() === 1;
     }
 
-    public function finish(array $candidate, array $result, DateTimeImmutable $now): void
+    public function finish(array $candidate, string $kind, array $result, DateTimeImmutable $now): void
     {
         $status = match ($result['status']) {
             'sent' => 'sent', 'expired' => 'expired', 'permanent' => 'failed', default => 'pending',
         };
         $retry = $status === 'pending' ? $now->modify('+' . max(60, $result['retry_after'] ?? 60) . ' seconds') : null;
         $stmt = $this->db->prepare('UPDATE webpush_deliveries SET status = ?, http_status = ?, next_attempt_at = ?, updated_at = ?
-            WHERE id_consulta = ? AND subscription_id = ? AND starts_at = ?');
+            WHERE id_consulta = ? AND subscription_id = ? AND starts_at = ? AND kind = ?');
         $stmt->execute([$status, $result['http_status'], $retry ? self::utc($retry) : null, self::utc($now),
-            $candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at']]);
+            $candidate['id_consulta'], $candidate['subscription_id'], $candidate['starts_at'], $kind]);
         if ($status === 'expired') {
             $stmt = $this->db->prepare('UPDATE webpush_subscriptions SET active = 0, updated_at = UTC_TIMESTAMP() WHERE id = ?');
             $stmt->execute([$candidate['subscription_id']]);

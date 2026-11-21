@@ -13,7 +13,7 @@
                         <i class="bi bi-x-lg" aria-hidden="true"></i>
                     </button>
                 </div>
-                <p id="webpush-description" class="text-sm">Receba lembretes quando faltarem até dez minutos para uma consulta, mesmo com a tela fechada. A entrega depende da conexão e das configurações do dispositivo.</p>
+                <p id="webpush-description" class="text-sm">Receba dois avisos por consulta: um antes do horário e outro no horário marcado, mesmo com a tela fechada. A entrega depende da conexão e das configurações do dispositivo.</p>
                 <p class="text-sm"><strong>Privacidade:</strong> a notificação mostra o nome do paciente e o horário da consulta, inclusive na tela bloqueada.</p>
                 <p class="text-sm">Os lembretes continuam após sair da conta. Em dispositivo compartilhado, desative-os aqui antes de sair. Estes controles afetam somente este dispositivo.</p>
                 <p id="webpush-status" class="text-sm" role="status" aria-live="polite" aria-atomic="true">Preparando lembretes…</p>

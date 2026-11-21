@@ -20,13 +20,14 @@ CREATE TABLE webpush_deliveries (
     id_consulta INT NOT NULL,
     subscription_id BIGINT UNSIGNED NOT NULL,
     starts_at DATETIME NOT NULL,
+    kind VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'antes',
     status VARCHAR(16) CHARACTER SET ascii COLLATE ascii_bin NOT NULL DEFAULT 'pending',
     attempts INT UNSIGNED NOT NULL DEFAULT 0,
     http_status SMALLINT UNSIGNED DEFAULT NULL,
     next_attempt_at DATETIME DEFAULT NULL,
     updated_at DATETIME NOT NULL,
     PRIMARY KEY (id),
-    UNIQUE KEY webpush_delivery_unique (id_consulta, subscription_id, starts_at),
+    UNIQUE KEY webpush_delivery_unique (id_consulta, subscription_id, starts_at, kind),
     CONSTRAINT webpush_delivery_subscription_fk FOREIGN KEY (subscription_id) REFERENCES webpush_subscriptions (id)
         ON DELETE CASCADE,
     CONSTRAINT webpush_delivery_consulta_fk FOREIGN KEY (id_consulta) REFERENCES consulta (id_consulta)

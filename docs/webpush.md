@@ -1,6 +1,6 @@
 # Webpush: lembretes de consultas
 
-O módulo avisa o psicólogo quando faltam até dez minutos para uma consulta. A entrega inclui API, persistência, remetente Web Push, script CLI, service worker e uma biblioteca JavaScript para os devs conectarem às telas. O envio vem **desativado**. As telas autenticadas carregam a integração pelo menu compartilhado; nenhuma tarefa do sistema operacional é criada pela aplicação.
+O módulo avisa o psicólogo duas vezes por consulta: um lembrete alguns minutos antes do horário e outro no horário marcado. A entrega inclui API, persistência, remetente Web Push, script CLI, service worker e uma biblioteca JavaScript para os devs conectarem às telas. O envio vem **desativado**. As telas autenticadas carregam a integração pelo menu compartilhado; nenhuma tarefa do sistema operacional é criada pela aplicação.
 
 ## Avaliação do sistema e decisões
 
@@ -12,8 +12,8 @@ Decisões da entrega:
 
 - Mostrar nome e horário do paciente na notificação, inclusive onde o sistema operacional a apresentar na tela bloqueada. Outros dados clínicos não são incluídos.
 - Enviar a todos os dispositivos inscritos. Logout não cancela a inscrição. O botão de desativar atua somente no dispositivo atual.
-- Executar a verificação no servidor a cada minuto. O envio começa na primeira execução em que faltarem até 600 segundos, nunca antes; normalmente isso representa entre nove e dez minutos de antecedência.
-- Recuperar lembretes atrasados apenas antes do início. A mensagem informa os minutos restantes, arredondados para cima, e o horário da consulta.
+- Executar a verificação no servidor a cada minuto. Nada é enviado no momento do cadastro: o aviso prévio sai na primeira execução em que faltarem até `WEBPUSH_REMINDER_MINUTES` minutos (padrão 10) e o aviso final sai quando o horário chega.
+- Enviar o aviso final com tolerância de 15 minutos após o início, para o caso de o agendador ficar parado; depois disso a ocorrência é ignorada. A mensagem do aviso prévio informa os minutos restantes; a do horário indica que a consulta começa naquele momento.
 - Não criar dependência de timer JavaScript, aba aberta ou sessão ativa para o disparo.
 
 ## Componentes e fluxo
@@ -34,7 +34,7 @@ O navegador pede permissão após clique explícito, cria uma inscrição com a 
 - PHP **8.2 ou superior**, Composer, extensões `curl`, `mbstring`, `openssl` com P-256 e `pdo_mysql`. O Composer selecionará dependências compatíveis com o PHP usado na instalação: execute-o com a mesma versão do servidor.
 - MySQL/MariaDB com InnoDB e permissão para `GET_LOCK`/`RELEASE_LOCK`. A conexão da aplicação continua sendo a de `Backend/Config/Database.php`.
 - Site servido em HTTPS. `http://localhost` é uma exceção útil para desenvolvimento; um IP da rede em HTTP não equivale a localhost.
-- Acesso de saída HTTPS aos serviços de push. Não desabilitar a verificação de certificados. O PHP do agendador deve ter as mesmas extensões, certificados e acesso ao `.env` que a aplicação web.
+- Acesso de saída HTTPS aos serviços de push. Não desabilitar a verificação de certificados. O PHP do agendador deve ter as mesmas extensões, certificados e acesso ao `.env` que a aplicação web. O PHP precisa de uma lista de CAs raiz confiáveis (CA bundle): sem ela, toda tentativa de envio falha antes de chegar ao serviço de push e o resultado fica registrado como `pending` com `http_status` nulo.
 
 Instalar as dependências declaradas no projeto:
 
@@ -51,16 +51,27 @@ No Windows, se o OpenSSL não localizar sua configuração, configure `OPENSSL_C
 $env:OPENSSL_CONF = 'C:\php\extras\ssl\openssl.cnf'
 ```
 
+O CA bundle é outro item, independente do `openssl.cnf`. Instalações standalone do PHP no Windows frequentemente não trazem `curl.cainfo` nem `openssl.cafile`; nesse caso o envio falha com erro de cURL 60 (`unable to get local issuer certificate`) e o histórico registra `pending` sem código HTTP. Aponte as duas diretivas do `php.ini` usado pelo agendador para um arquivo de CAs raiz já existente na máquina — por exemplo o bundle que acompanha o XAMPP:
+
+```ini
+curl.cainfo = "C:\xampp\apache\bin\curl-ca-bundle.crt"
+openssl.cafile = "C:\xampp\apache\bin\curl-ca-bundle.crt"
+```
+
+Esse arquivo contém certificados públicos de autoridades certificadoras e não é uma credencial do sistema: mantém a verificação TLS ativa e pode ser distribuído ou substituído por `cacert.pem` de mesma origem. Não use `verify => false` nem desative a verificação para contornar a falta do bundle. O `.env` não tem relação com esse ajuste.
+
 Use o caminho da instalação de cada servidor. Não é necessário alterar o PHP global para testes: as extensões podem ser habilitadas em um arquivo de configuração próprio ou por opções `-d`.
 
 ### 1. Aplicar a migração manualmente
 
 Com backup e no banco correto, execute o conteúdo de `Backend/Migrations/001_webpush_up.sql`, por exemplo pela aba SQL do phpMyAdmin. O script não cria nem altera pacientes, agendamentos, consultas ou psicólogos; requer que essas tabelas já existam. A execução repetida falha intencionalmente se as tabelas novas já existirem, evitando esconder uma instalação parcial.
 
+Quem já tinha aplicado a versão anterior da migração (sem a coluna `kind`) executa uma única vez `Backend/Migrations/002_webpush_kinds.sql`, que acrescenta a variante do aviso à chave única do histórico. Registros antigos passam a valer como aviso prévio.
+
 | Tabela | Dados |
 | --- | --- |
 | `webpush_subscriptions` | Psicólogo, endpoint, hash único do endpoint, chaves da inscrição, validade e estado ativo. |
-| `webpush_deliveries` | Consulta, dispositivo, início da ocorrência, tentativas, resultado HTTP e próxima tentativa. Não armazena nome nem corpo da mensagem. |
+| `webpush_deliveries` | Consulta, dispositivo, início da ocorrência, variante (`antes` ou `no_horario`), tentativas, resultado HTTP e próxima tentativa. Não armazena nome nem corpo da mensagem. |
 
 As chaves estrangeiras correspondem aos identificadores `INT` assinados existentes. `starts_at` usa a data/hora local de São Paulo, assim como a consulta. Validades, próxima tentativa e datas operacionais das novas tabelas usam UTC, independentemente do fuso da conexão MySQL.
 
@@ -99,9 +110,12 @@ WEBPUSH_ENABLED=false
 WEBPUSH_VAPID_PUBLIC_KEY=<chave pública gerada>
 WEBPUSH_VAPID_PRIVATE_KEY=<chave privada gerada>
 WEBPUSH_VAPID_SUBJECT=mailto:contato@seu-dominio.example
+WEBPUSH_REMINDER_MINUTES=10
 ```
 
 Troque o contato pelo endereço real do responsável técnico; também é aceita uma URL HTTPS de contato. Não gere novas chaves em cada execução. A chave pública pode ser entregue ao navegador; a privada permanece no servidor. O módulo valida o formato e se as chaves formam um par.
+
+`WEBPUSH_REMINDER_MINUTES` define a antecedência do primeiro aviso: aceita de 1 a 1440 e vale 10 quando omitido ou inválido. O segundo aviso é sempre no horário marcado, com tolerância fixa de 15 minutos.
 
 ### 3. Ativar após preparar banco, tela e ambiente
 
@@ -250,6 +264,33 @@ php Backend/Cron/notificar_consultas.php --dry-run
 
 Com o módulo desativado, a saída será `Webpush desabilitado.`. Com ele ativo, `--dry-run` conta os pares consulta/dispositivo elegíveis no momento, incluindo os que já constam no histórico; não é uma previsão de quantos novos envios ocorreriam. Não exibe nomes, endpoints ou mensagens.
 
+### Diagnóstico
+
+Quando não houver envio, execute o relatório somente leitura:
+
+```sh
+php Backend/Cron/notificar_consultas.php --diagnostico
+```
+
+Ele não envia, não grava tentativas e não imprime endpoints, chaves nem nomes de pacientes. Reporta, em ordem, cada etapa que pode impedir a entrega: extensões PHP, `WEBPUSH_ENABLED`, antecedência configurada, formato e par das chaves VAPID, conexão com o banco, existência das tabelas, inscrições ativas (total, vencidas e por conta), número de contas de psicólogo, consultas `Pendente` de paciente `Ativo` dentro do aviso prévio, consultas já iniciadas dentro da tolerância, pares elegíveis, próxima consulta, últimas dez entregas com `kind`/`status`/`http_status` e alcançabilidade HTTPS de cada serviço de push em uso.
+
+Interpretação do histórico: `vazio` indica que o agendador não executou ou não encontrou pares elegíveis; `pending` com `http` nulo indica falha local de rede, TLS/CA bundle ou tempo esgotado; `failed` com 401/403 indica recusa de autenticação VAPID; `failed` com 404/410 desativa a inscrição como `expired`; `sent` indica aceitação pelo provedor e desloca a investigação para o dispositivo e o service worker.
+
+O modo convive com `--dry-run` e `--help` e retorna `0` mesmo quando aponta problemas, para não confundir o agendador.
+
+### Testar
+
+Como não há envio no cadastro, o aviso só aparece quando a consulta entra na antecedência configurada. Para não esperar, cadastre o paciente com horário próximo ou ajuste `WEBPUSH_REMINDER_MINUTES` temporariamente no ambiente de testes. Para ver o resultado sem aguardar o agendador, rode o CLI na mão:
+
+```sh
+php Backend/Cron/notificar_consultas.php --dry-run
+php Backend/Cron/notificar_consultas.php
+```
+
+Confira o JSON de retorno — `sent` significa aceito pelo provedor; depois disso a investigação passa a ser o dispositivo e o service worker. Com a consulta a poucos minutos do início, o primeiro comando já dispara o aviso prévio; o aviso do horário sai quando o relógio alcançar o início.
+
+A chave única do histórico é `(consulta, dispositivo, horário de início, variante)`. Repetir o teste exatamente com a mesma consulta e o mesmo horário resulta em `skipped`, sem novo envio. Para repetir: mude o horário no sistema, cadastre outra consulta, ou remova em ambiente de testes a linha correspondente em `webpush_deliveries` com `DELETE FROM webpush_deliveries WHERE id_consulta = <id>`.
+
 ### Linux
 
 Exemplo de cron, ajustando os caminhos absolutos e o usuário que lê o `.env`:
@@ -276,7 +317,7 @@ Não copiar o exemplo de caminho sem conferir o PHP usado. O PHP padrão desta m
 
 O CLI retorna `0` quando conclui, está desativado ou outra execução já possui a trava; `1` para falha de execução/configuração; `2` quando houve falha temporária ou permanente de envio. O próximo ciclo deve continuar rodando mesmo após erro. O retorno JSON contém contagens `eligible`, `sent`, `temporary`, `expired`, `permanent`, `skipped` e `locked`.
 
-`GET_LOCK` é específico do banco e permanece na conexão durante toda a execução, com liberação em `finally` ou quando a conexão termina. A chave única do histórico é `(id_consulta, subscription_id, starts_at)`. Sucessos não são reenviados; falhas de um dispositivo não provocam reenvio nos demais.
+`GET_LOCK` é específico do banco e permanece na conexão durante toda a execução, com liberação em `finally` ou quando a conexão termina. A chave única do histórico é `(id_consulta, subscription_id, starts_at, kind)`, o que permite os dois avisos da mesma consulta sem duplicar nenhum deles. Sucessos não são reenviados; falhas de um dispositivo não provocam reenvio nos demais.
 
 - Somente HTTP 2xx confirma aceitação pelo serviço de push.
 - `404`/`410`: marcar a inscrição inativa.
@@ -284,7 +325,7 @@ O CLI retorna `0` quando conclui, está desativado ou outra execução já possu
 - Outros resultados, inclusive redirecionamento: falha permanente daquela ocorrência/dispositivo. Verificar chaves/serviço e, após corrigir, renovar a inscrição quando necessário.
 - Cancelamentos, conclusões, inativação do paciente, inscrição removida/expirada e mudanças de horário são revalidados antes do envio. Uma consulta remarcada é tratada pelo novo horário.
 
-Não há promessa de entrega exatamente aos dez minutos: rede, navegador, economia de energia e configurações do aparelho influenciam a exibição. A aceitação pelo provedor não é confirmação de leitura. O TTL termina no início da consulta e o worker ignora payloads vencidos pelo relógio do dispositivo. Uma interrupção após aceitação pelo provedor e antes da gravação local pode causar repetição; `topic`, `tag` estáveis e `renotify:false` reduzem o efeito, sem garantir entrega exatamente uma vez.
+Não há promessa de entrega em um instante exato: rede, navegador, economia de energia e configurações do aparelho influenciam a exibição, e o envio depende da execução do agendador. A aceitação pelo provedor não é confirmação de leitura. O TTL do aviso prévio termina no início da consulta; o do aviso final termina ao fim da tolerância de 15 minutos. O worker ignora payloads vencidos pelo relógio do dispositivo. Uma interrupção após aceitação pelo provedor e antes da gravação local pode causar repetição; `topic`, `tag` estáveis e `renotify:false` reduzem o efeito, sem garantir entrega exatamente uma vez.
 
 Uma notificação já entregue não pode ser revogada com segurança após cancelamento ou reagendamento. Use o horário na própria mensagem e confira a agenda atual ao abri-la. Mantenha os relógios do servidor e dos dispositivos sincronizados.
 

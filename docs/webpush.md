@@ -1,6 +1,6 @@
 # Webpush: lembretes de consultas
 
-O módulo avisa o psicólogo quando faltam até dez minutos para uma consulta. A entrega inclui API, persistência, remetente Web Push, script CLI, service worker e uma biblioteca JavaScript para os devs conectarem às telas. O envio vem **desativado**. Nenhuma tela carrega a biblioteca automaticamente; nenhuma tarefa do sistema operacional é criada pela aplicação.
+O módulo avisa o psicólogo quando faltam até dez minutos para uma consulta. A entrega inclui API, persistência, remetente Web Push, script CLI, service worker e uma biblioteca JavaScript para os devs conectarem às telas. O envio vem **desativado**. As telas autenticadas carregam a integração pelo menu compartilhado; nenhuma tarefa do sistema operacional é criada pela aplicação.
 
 ## Avaliação do sistema e decisões
 
@@ -111,7 +111,11 @@ Não é necessário publicar endpoint público de disparo nem fornecer senha ao 
 
 ## Integração nas telas
 
-Os devs escolhem a tela autenticada que terá os controles. A inicialização registra `/sw.js` com escopo `/`, mas não pede permissão. **Aguarde `init()` antes de habilitar o botão de ativação** e chame `enable()` diretamente no clique, para preservar a ação do usuário exigida pelos navegadores.
+As telas com `<clinic-sidebar>` oferecem os controles no item **Notificações** do menu. `js/layout.js` carrega `js/webpush-ui.js` somente nessas telas; a interface carrega a biblioteca, aguarda `init()` e chama `sync()` a cada abertura de tela autenticada, sem solicitar permissão automaticamente. Login, cadastro e 2FA não inicializam a integração.
+
+O painel permite ativar/renovar e desativar neste dispositivo, informa a exposição de nome/horário na tela bloqueada e a continuidade após logout, orienta sobre permissões bloqueadas e oferece nova tentativa em caso de falha. Não altera as configurações do servidor nem agenda o CLI. A instalação PWA (manifest e ícones) continua pendente para uso no iPhone/iPad.
+
+A inicialização registra `/sw.js` com escopo `/`, mas não pede permissão. **Aguarde `init()` antes de habilitar o botão de ativação** e chame `enable()` diretamente no clique, para preservar a ação do usuário exigida pelos navegadores.
 
 Exemplo de integração, a adaptar aos componentes visuais do projeto:
 
@@ -292,6 +296,7 @@ Testes sem notificações reais:
 php tests/webpush.php
 node tests/webpush-browser.cjs
 node tests/webpush-http.cjs
+node tests/webpush-ui.cjs
 ```
 
 O teste PHP cria um banco aleatório `codex_webpush_test_<identificador>`, executa as migrações e remove esse banco no `finally`. Requer usuário de teste com permissão de criar/remover bancos. Não lê nem altera os registros da clínica. Aceita `WEBPUSH_TEST_HOST`, `WEBPUSH_TEST_PORT`, `WEBPUSH_TEST_USER` e `WEBPUSH_TEST_PASSWORD`. As credenciais padrão são localhost:3306, root sem senha, apenas para desenvolvimento local. Nunca executar com credenciais de produção. Se o processo for encerrado à força, o banco temporário pode permanecer; conferir o nome antes de removê-lo manualmente.

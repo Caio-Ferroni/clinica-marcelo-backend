@@ -51,7 +51,7 @@
                         </div>
                     </div>
                     <div class="d-flex flex-wrap gap-5 mb-7">
-                        <a href="#" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
+                        <a href="#webpush-modal" data-open-webpush aria-haspopup="dialog" aria-controls="webpush-modal" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
                             <i class="bi bi-bell text-lg" aria-hidden="true"></i>
                             Notificações
                         </a>
@@ -119,6 +119,13 @@
 
     if (!customElements.get('clinic-footer')) {
         customElements.define('clinic-footer', ClinicFooter);
+    }
+
+    // Apenas telas privadas usam o menu; login/2FA não inicializam Web Push.
+    if (document.querySelector('clinic-sidebar')) {
+        const webpushUI = document.createElement('script');
+        webpushUI.src = '/js/webpush-ui.js';
+        document.head.appendChild(webpushUI);
     }
 
     document.body.insertAdjacentHTML('beforeend', `

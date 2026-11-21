@@ -150,6 +150,14 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - Falhas ao consultar o cadastro usam mensagem específica; o log registra somente a etapa e o SQLSTATE. Guia: [docs/configuracao-local.md](docs/configuracao-local.md).
 - Validação: 51 verificações HTTP isoladas, 11 em tabela temporária MySQL estrita, 19 cenários de autenticação e 100 do helper de toasts. Página real conferida no navegador. Contas reais preservadas, sem criar a primeira conta nem enviar e-mails.
 
+### 3.14 Geração Manual e Automática de Consultas — 20/11/2026
+
+- Adicionado o botão “Gerar consultas do mês”, ligado à rota existente com autenticação, CSRF e toasts de sucesso, ausência de novas ocorrências ou falha.
+- Cadastro e edição com agendamento completo geram automaticamente as consultas do mês atual apenas para o paciente salvo, reutilizando o cálculo de recorrência existente. Sem agendamento informado, a geração não é chamada.
+- A geração participa da transação de salvamento do paciente ou abre sua própria transação na ação manual. Agendamentos são bloqueados no MySQL durante a operação; ocorrências existentes são preservadas e os novos registros recebem status `Pendente`.
+- Corrigido o envio do CPF ao campo numérico do banco: máscaras são removidas antes de gravar tanto no cadastro quanto na edição. Isso evita truncamento e falha com MySQL estrito, sem modificar registros antigos.
+- Validação: 88 verificações HTTP, 21 em tabelas temporárias MySQL estritas, 12 de regressão do cliente e 102 de toasts. Cadastro, edição, geração manual e ausência de duplicação também foram conferidos no navegador, com dados isolados.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]

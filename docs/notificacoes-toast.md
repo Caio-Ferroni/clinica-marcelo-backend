@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 45 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 46 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -59,6 +59,16 @@ Em falha de rede, resposta inválida ou erro do servidor, o select volta ao últ
 
 A abertura e o salvamento do relatório verificam o status no servidor; a atualização no banco também exige `Concluído`. Consultas fora desse estado retornam HTTP 409 e `report.not_completed`, inclusive se o formulário foi aberto antes da mudança de status. A distribuição deve incluir `js/consultas.js` junto das views e do backend alterados.
 
+## Geração mensal de consultas
+
+A lista de consultas inclui “Gerar consultas do mês”, conectado a `POST /consultas/gerar`, com autenticação e token CSRF da lista. A operação preserva o cálculo mensal existente para `Semanal`, `Quinzenal` e `Mensal`, usando o mês atual de São Paulo. Enquanto envia, o botão fica indisponível e mostra “Gerando consultas…”. Sem JavaScript, o formulário também funciona.
+
+Ao cadastrar ou editar um paciente com os campos completos de agendamento, o controller salva o agendamento e chama o mesmo método de geração somente para aquele paciente. Sem dados de agendamento, não inicia a geração. `Consulta::gerarConsultas(?int $idPaciente = null): int` retorna a quantidade criada; sem argumento, processa todos os agendamentos completos. O cálculo de recorrência existente não foi alterado.
+
+Paciente, associações e consultas usam a mesma transação. A geração manual também usa uma transação própria; no MySQL, os agendamentos são bloqueados durante a geração. Consultas já existentes para o mesmo agendamento, data e horário inicial são preservadas, inclusive status e relatório. Repetir o salvamento com o mesmo agendamento não duplica as consultas. Alterar o horário pode acrescentar ocorrências; essa ação não remove consultas anteriores.
+
+As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro ou edição confirma o paciente e também apresenta `consultation.generated` quando criou consultas. Na geração manual, zero novas ocorrências apresenta `consultation.none_generated`; uma falha apresenta `consultation.generate_failed`, sem confirmação de sucesso e sem gravações parciais. Token inválido retorna HTTP 403 com `validation.form_expired`.
+
 ## Catálogo
 
 | Código | Tipo | Mensagem |
@@ -91,6 +101,7 @@ A abertura e o salvamento do relatório verificam o status no servidor; a atuali
 | `consultation.save_failed` | Erro | Não foi possível salvar o status. Tente novamente. |
 | `consultation.generated` | Sucesso | As consultas do mês foram geradas. |
 | `consultation.none_generated` | Informação | Nenhuma nova consulta foi gerada. |
+| `consultation.generate_failed` | Erro | Não foi possível gerar as consultas. Tente novamente. |
 | `report.load_failed` | Erro | Não foi possível carregar o relatório. Tente novamente. |
 | `patient.created` | Sucesso | Paciente cadastrado com sucesso. |
 | `patient.updated` | Sucesso | Dados do paciente atualizados. |
@@ -118,3 +129,5 @@ No navegador foram conferidos o cadastro e a edição de paciente com máscaras 
 Para os ajustes de consultas, passaram 135 verificações HTTP, 50 de regressão de consultas, 12 do cliente (fila, falha de rede e alternativa sem Toastify), 98 do catálogo e da fila PHP e 35 em tabelas temporárias MySQL. No navegador foram conferidos os ícones, a manutenção da segunda página após o salvamento, a atualização dos contadores, os toasts, a liberação e o bloqueio do lápis, a falha de gravação, a sessão expirada e o envio de formulário aberto antes da mudança de status.
 
 Para a correção do registro, passaram 51 verificações HTTP, 11 em tabela temporária MySQL com modo estrito, os 19 cenários de autenticação e 100 do catálogo e da fila PHP. A página real `/registrar` passou de HTTP 503 para HTTP 200 sem toast de erro inicial após corrigir as extensões do PHP local. Detalhes em [configuracao-local.md](configuracao-local.md).
+
+Para a geração mensal, passaram 88 verificações HTTP, 21 em tabelas temporárias MySQL com modo estrito, 12 de regressão do cliente e 102 do catálogo e da fila PHP. Também passaram as 135 verificações de regressão de status e edição de relatório. No navegador foram conferidos cadastro e edição com geração automática, geração manual e repetição sem novas ocorrências. Os testes não alteraram pacientes nem consultas reais.

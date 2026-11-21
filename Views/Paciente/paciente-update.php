@@ -85,6 +85,7 @@ $encaminhamento = $encaminhamento ?? [];
                                     </summary>
                                     <fieldset class="m-0 p-0 border-0">
                                         <legend class="visually-hidden">Dados de agendamento</legend>
+                                        <p class="text-sm mb-5" style="color: var(--color-text-muted);">As consultas do mês atual serão geradas automaticamente ao salvar o paciente.</p>
                                         <div class="row g-5">
                                             <div class="col-12 md:col-6">
                                                 <label class="form-label text-sm" for="week-day">Dia da semana</label>

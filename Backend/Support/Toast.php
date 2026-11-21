@@ -29,6 +29,7 @@ class Toast {
         'consultation.save_failed' => ['type' => 'error', 'message' => 'Não foi possível salvar o status. Tente novamente.'],
         'consultation.generated' => ['type' => 'success', 'message' => 'As consultas do mês foram geradas.'],
         'consultation.none_generated' => ['type' => 'info', 'message' => 'Nenhuma nova consulta foi gerada.'],
+        'consultation.generate_failed' => ['type' => 'error', 'message' => 'Não foi possível gerar as consultas. Tente novamente.'],
         'report.load_failed' => ['type' => 'error', 'message' => 'Não foi possível carregar o relatório. Tente novamente.'],
         'patient.created' => ['type' => 'success', 'message' => 'Paciente cadastrado com sucesso.'],
         'patient.updated' => ['type' => 'success', 'message' => 'Dados do paciente atualizados.'],

@@ -52,6 +52,13 @@ $formatarData = static function ($valor): string {
                         </div>
                     </div>
                     <hr class="mb-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
+                    <form method="post" action="/consultas/gerar" data-generate-consultations data-toast-validate class="mb-5">
+                        <input type="hidden" name="csrf_token" value="<?= $escapar($csrf) ?>">
+                        <button class="btn-outline px-7 py-4 d-inline-flex align-items-center gap-3" type="submit">
+                            <i class="bi bi-calendar-plus" aria-hidden="true"></i>
+                            <span>Gerar consultas do mês</span>
+                        </button>
+                    </form>
                     <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
                         <table class="table table-striped table-hover table-borderless align-middle mb-0" id="tabela-consultas">
                             <caption class="visually-hidden">Lista de consultas</caption>

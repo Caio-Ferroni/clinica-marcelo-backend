@@ -176,7 +176,7 @@ class PacienteController {
             return;
         }
         Toast::add('patient.created');
-        if ($consultasCriadas > 0) Toast::add('consultation.generated');
+        if ($consultasCriadas > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }
@@ -213,7 +213,7 @@ class PacienteController {
             return;
         }
         Toast::add('patient.updated');
-        if ($consultasCriadas > 0) Toast::add('consultation.generated');
+        if ($consultasCriadas > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }

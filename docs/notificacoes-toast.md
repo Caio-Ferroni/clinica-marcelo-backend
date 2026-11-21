@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 46 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 47 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -67,7 +67,7 @@ Ao cadastrar ou editar um paciente com os campos completos de agendamento, o con
 
 Paciente, associações e consultas usam a mesma transação. A geração manual também usa uma transação própria; no MySQL, os agendamentos são bloqueados durante a geração. Consultas já existentes para o mesmo agendamento, data e horário inicial são preservadas, inclusive status e relatório. Repetir o salvamento com o mesmo agendamento não duplica as consultas. Alterar o horário pode acrescentar ocorrências; essa ação não remove consultas anteriores.
 
-As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro ou edição confirma o paciente e também apresenta `consultation.generated` quando criou consultas. Na geração manual, zero novas ocorrências apresenta `consultation.none_generated`; uma falha apresenta `consultation.generate_failed`, sem confirmação de sucesso e sem gravações parciais. Token inválido retorna HTTP 403 com `validation.form_expired`.
+As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro ou edição confirma o paciente e também apresenta `patient-consultation.generated` quando criou consultas apenas para esse paciente. A geração manual geral mantém `consultation.generated`; zero novas ocorrências apresenta `consultation.none_generated`. Uma falha apresenta `consultation.generate_failed`, sem confirmação de sucesso e sem gravações parciais. Token inválido retorna HTTP 403 com `validation.form_expired`.
 
 ## Catálogo
 
@@ -100,6 +100,7 @@ As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro o
 | `consultation.load_failed` | Erro | Não foi possível carregar as consultas. Tente novamente. |
 | `consultation.save_failed` | Erro | Não foi possível salvar o status. Tente novamente. |
 | `consultation.generated` | Sucesso | As consultas do mês foram geradas. |
+| `patient-consultation.generated` | Sucesso | As consultas do mês para este paciente foram geradas. |
 | `consultation.none_generated` | Informação | Nenhuma nova consulta foi gerada. |
 | `consultation.generate_failed` | Erro | Não foi possível gerar as consultas. Tente novamente. |
 | `report.load_failed` | Erro | Não foi possível carregar o relatório. Tente novamente. |

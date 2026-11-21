@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../../Backend/Auth/Auth.php';
+require_once __DIR__ . '/../../Backend/Support/EnvioPaciente.php';
 $csrfFormulario = Auth::csrfToken();
 $paciente = $paciente ?? [];
+$envioFormulario = EnvioPaciente::token('editar:' . (int) ($paciente['id_paciente'] ?? 0), $_POST['envio_token'] ?? null);
 $perfil = $perfil ?? [];
 $agendamento = $agendamento ?? [];
 $encaminhamento = $encaminhamento ?? [];
@@ -17,6 +19,7 @@ $encaminhamento = $encaminhamento ?? [];
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/layout.js" defer></script>
     <script src="/js/patient-masks.js" defer></script>
+    <script src="/js/patient-schedule.js?v=<?= filemtime(__DIR__ . '/../../js/patient-schedule.js') ?>" defer></script>
 </head>
 <body class="patient-create patient-edit">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -32,6 +35,7 @@ $encaminhamento = $encaminhamento ?? [];
                     <?php if (!empty($erro)): ?><p role="alert" data-toast-type="warning"><?= htmlspecialchars($erro, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p><?php endif; ?>
                     <form id="patient-form" data-toast-validate data-patient-edit method="POST" action="/pacientes/<?= (int) ($paciente['id_paciente'] ?? 0)?>/editar">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfFormulario, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
+                        <input type="hidden" name="envio_token" value="<?= htmlspecialchars($envioFormulario, ENT_QUOTES, 'UTF-8') ?>">
                         <input type="hidden" name="id_paciente" value="<?= htmlspecialchars($paciente['id_paciente'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                         <fieldset class="border-0 p-0 m-0" data-patient-fields <?= empty($paciente) ? 'disabled' : '' ?>>
                             <legend class="visually-hidden">Informações do paciente</legend>
@@ -122,6 +126,7 @@ $encaminhamento = $encaminhamento ?? [];
                                                 <input class="form-control" type="date" id="start-date" name="data_inicio" value="<?= htmlspecialchars(substr($agendamento['data_inicio'] ?? '', 0, 10), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                                             </div>
                                         </div>
+                                        <?php require __DIR__ . '/horarios-livres.php'; ?>
                                     </fieldset>
                                 </details>
 

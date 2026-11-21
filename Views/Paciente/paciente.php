@@ -2,6 +2,12 @@
 $pacientes = is_array($pacientes ?? null) ? $pacientes : [];
 $escape = static fn($valor) => htmlspecialchars((string) $valor, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 $totalPacientes = count($pacientes);
+$gruposPacientes = [
+    'Ativo' => ['rotulo' => 'Ativos', 'titulo' => 'Pacientes ativos', 'total' => count(array_filter($pacientes, static fn($p) => ($p['status'] ?? '') === 'Ativo')), 'vazio' => 'Nenhum paciente ativo.'],
+    'Inativo' => ['rotulo' => 'Inativos', 'titulo' => 'Pacientes inativos', 'total' => count(array_filter($pacientes, static fn($p) => ($p['status'] ?? '') === 'Inativo')), 'vazio' => 'Nenhum paciente inativo.'],
+    'Todos' => ['rotulo' => 'Todos', 'titulo' => 'Todos os pacientes', 'total' => $totalPacientes, 'vazio' => 'Nenhum paciente cadastrado.']
+];
+$statusSelecionado = is_string($_GET['status'] ?? null) && isset($gruposPacientes[$_GET['status']]) ? $_GET['status'] : 'Ativo';
 $timezone = new DateTimeZone('America/Sao_Paulo');
 $hoje = (new DateTime('now', $timezone))->format('Y-m-d');
 $limite30Dias = (new DateTime('-30 days', $timezone))->format('Y-m-d H:i:s');
@@ -30,7 +36,8 @@ foreach ($pacientes as $p) {
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/layout.js" defer></script>
+    <link rel="stylesheet" href="/css/patient-tabs.css?v=<?= filemtime(__DIR__ . '/../../css/patient-tabs.css') ?>">
+    <script src="/js/layout.js?v=<?= filemtime(__DIR__ . '/../../js/layout.js') ?>" defer></script>
 </head>
 <body class="patients-list">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -68,9 +75,17 @@ foreach ($pacientes as $p) {
                             Adicionar paciente
                         </a>
                     </div>
-                    <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
-                        <table class="table table-striped table-hover table-borderless align-middle mb-0" id="tabela-pacientes">
-                            <caption class="visually-hidden">Lista de pacientes</caption>
+                    <div class="patient-tabs" role="tablist" aria-label="Filtrar pacientes por status">
+                        <?php foreach ($gruposPacientes as $status => $grupo): ?>
+                            <a id="patient-tab-<?= $escape($status) ?>" class="patient-tab" role="tab" href="/pacientes?status=<?= $escape($status) ?>" aria-controls="patient-list-panel" aria-selected="<?= $statusSelecionado === $status ? 'true' : 'false' ?>" tabindex="<?= $statusSelecionado === $status ? '0' : '-1' ?>" data-patient-status="<?= $escape($status) ?>" data-patient-title="<?= $escape($grupo['titulo']) ?>" data-patient-empty="<?= $escape($grupo['vazio']) ?>">
+                                <?= $escape($grupo['rotulo']) ?> <span class="patient-tab-count">(<?= $grupo['total'] ?>)</span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                    <section class="mb-7" id="patient-list-panel" role="tabpanel" aria-labelledby="patient-tab-<?= $escape($statusSelecionado) ?>">
+                        <div class="border rounded-4 shadow-sm table-responsive" style="background: var(--color-surface);">
+                        <table class="table table-striped table-hover table-borderless align-middle mb-0" id="tabela-pacientes" data-status-filter="<?= $escape($statusSelecionado) ?>">
+                            <caption class="visually-hidden"><?= $escape($gruposPacientes[$statusSelecionado]['titulo']) ?></caption>
                             <thead style="border-bottom: 1px solid var(--color-border);">
                                 <tr>
                                     <th scope="col" class="text-center text-sm fw-semibold">Nome</th>
@@ -83,7 +98,7 @@ foreach ($pacientes as $p) {
                             <tbody>
                                 <?php if (!empty($pacientes)): ?>
                                     <?php foreach ($pacientes as $p): ?>
-                                        <tr data-id="<?= $escape($p['id_paciente'] ?? '') ?>">
+                                        <tr data-id="<?= $escape($p['id_paciente'] ?? '') ?>" data-status="<?= $escape($p['status'] ?? '') ?>" <?= $statusSelecionado === 'Todos' || ($p['status'] ?? '') === $statusSelecionado ? '' : 'hidden' ?>>
                                             <td class="text-center text-sm align-middle" data-field="nome"><?= $escape($p['nome'] ?? '') ?></td>
                                             <td class="text-center text-sm align-middle" data-field="telefone"><?= $escape($p['telefone'] ?? '') ?></td>
                                             <td class="text-center text-sm align-middle" data-field="cpf"><?= $escape($p['cpf'] ?? '') ?></td>
@@ -101,9 +116,11 @@ foreach ($pacientes as $p) {
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
+                                <tr data-empty-row <?= $gruposPacientes[$statusSelecionado]['total'] === 0 ? '' : 'hidden' ?>><td colspan="5" class="text-center text-sm p-7"><?= $escape($gruposPacientes[$statusSelecionado]['vazio']) ?></td></tr>
                             </tbody>
                         </table>
-                    </div>
+                        </div>
+                    </section>
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
                     <section aria-labelledby="novos-heading">
                         <h2 id="novos-heading" class="text-md fw-semibold mb-4">Pacientes novos</h2>

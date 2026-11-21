@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 51 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 54 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -115,6 +115,9 @@ O método JavaScript `ClinicToast.show(code, source, message)` aceita um terceir
 | `patient.date_invalid` | Atenção | Informe uma data de nascimento válida. |
 | `patient.optional_required` | Atenção | Preencha todos os campos da seção que deseja salvar. |
 | `patient.schedule_invalid` | Atenção | Confira o dia, a frequência, a data e os horários do agendamento. |
+| `schedule.search_invalid` | Atenção | Informe o dia, a repetição, a data inicial, a duração e uma faixa de busca válida. |
+| `schedule.suggestions_failed` | Erro | Não foi possível consultar os horários livres. Tente novamente. |
+| `schedule.selected` | Informação | Horário preenchido. Salve o paciente para confirmar o agendamento. |
 | `validation.form_expired` | Atenção | O formulário expirou. Atualize a página e tente novamente. |
 | `task.updated` | Sucesso | Tarefa atualizada com sucesso. |
 | `task.missing` | Erro | Tarefa não encontrada. |
@@ -138,3 +141,5 @@ Para a correção do registro, passaram 51 verificações HTTP, 11 em tabela tem
 Para a geração mensal, passaram 88 verificações HTTP, 21 em tabelas temporárias MySQL com modo estrito, 12 de regressão do cliente e 102 do catálogo e da fila PHP. Também passaram as 135 verificações de regressão de status e edição de relatório. No navegador foram conferidos cadastro e edição com geração automática, geração manual e repetição sem novas ocorrências. Os testes não alteraram pacientes nem consultas reais.
 
 Para recorrência contínua e bloqueio de sobreposição, passaram 276 verificações de datas, 22 de geração e conflitos no MariaDB isolado, 69 HTTP, 6 de concorrência com duas conexões, 12 do cliente e 112 do catálogo/fila. Cadastro bloqueado com nome do paciente e geração parcial também foram conferidos no navegador.
+
+Na busca de horários, as falhas de validação e de consulta usam os novos códigos de atenção e erro; selecionar uma sugestão usa `schedule.selected`, sem afirmar que o agendamento foi salvo. Um envio repetido já concluído não enfileira avisos de conflito nem novas confirmações. O conflito mantém uma orientação visível no formulário além do toast.

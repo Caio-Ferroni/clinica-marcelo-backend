@@ -1,0 +1,51 @@
+.patient-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.patient-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.8rem 1.2rem;
+    border-bottom: 3px solid transparent;
+    border-radius: 0.7rem 0.7rem 0 0;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.patient-tab:hover,
+.patient-tab[aria-selected="true"] {
+    background: var(--color-light-blue);
+    color: var(--color-dark-blue);
+}
+
+.patient-tab[aria-selected="true"] {
+    border-bottom-color: var(--color-dark-blue);
+}
+
+.patient-tab:focus-visible {
+    outline: 2px solid var(--color-dark-blue);
+    outline-offset: 2px;
+}
+
+.patient-tab-count {
+    font-size: 0.85em;
+    font-weight: 400;
+}
+
+@media (max-width: 480px) {
+    .patient-tabs {
+        gap: 0;
+    }
+
+    .patient-tab {
+        flex: 1;
+        padding: 0.8rem 0.35rem;
+        font-size: 0.85rem;
+    }
+}

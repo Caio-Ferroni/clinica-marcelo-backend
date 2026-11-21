@@ -7,10 +7,12 @@
         }
         
 
-        public function listarTodos(){
-            $sql = 'SELECT * FROM paciente WHERE status = :status';
+        public function listarTodos(?string $status = 'Ativo'): array {
+            $sql = 'SELECT * FROM paciente';
+            if ($status !== null) $sql .= ' WHERE status = :status';
+            $sql .= ' ORDER BY id_paciente';
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([':status' => 'Ativo']);
+            $stmt->execute($status === null ? [] : [':status' => $status]);
             return $stmt->fetchAll();
         }
 

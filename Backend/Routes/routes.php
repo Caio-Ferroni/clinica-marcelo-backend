@@ -8,7 +8,7 @@
 // =========================================================
 $router->before('GET|POST', '/(?!login|registrar|2fa|notificacoes(?:/|$)).*', function () {
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
-        && preg_match('~^/consultas/\d+/status/?$~', parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '')
+        && preg_match('~^/(?:consultas/\d+/status|pacientes/horarios-livres)/?$~', parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '')
         && str_contains(strtolower($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json')
         && !Auth::estaAutenticado()) {
         http_response_code(401);
@@ -70,6 +70,9 @@ $router->get('/logout', function () {
 // PACIENTES
 // =========================================================
 $router->mount('/pacientes', function () use ($router) {
+    $router->post('/horarios-livres', function () {
+        (new PacienteController)->horariosLivres();
+    });
     // Lista todos os pacientes ativos
     $router->get('/', function () {
         (new PacienteController)->index();

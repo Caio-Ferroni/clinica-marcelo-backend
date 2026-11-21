@@ -8,7 +8,11 @@ Exemplo: início em 01/10/2026, quinta-feira, quinzenal → 01/10, 15/10, 29/10,
 
 Na frequência mensal, a origem define a posição do dia da semana: segunda quinta-feira, terceira terça-feira etc. Uma quinta ocorrência ausente usa a última daquele dia da semana no mês. A posição original é mantida: o uso da quarta quinta-feira em fevereiro não transforma os meses seguintes em quarta ocorrência.
 
-Os fluxos manual e automático geram somente ocorrências do mês atual cujo início seja posterior ao momento da geração, no fuso `America/Sao_Paulo`. Horários de hoje que já passaram são ignorados. A geração não atualiza, exclui nem cancela consultas existentes, inclusive as criadas anteriormente em datas incorretas.
+Os fluxos manual e automático geram somente ocorrências de pacientes com status `Ativo`, no mês atual e cujo início seja posterior ao momento da geração, no fuso `America/Sao_Paulo`. Horários de hoje que já passaram são ignorados. O filtro também se aplica à geração de um único paciente. A geração não atualiza, exclui nem cancela consultas existentes, inclusive as criadas anteriormente em datas incorretas.
+
+Pacientes inativos podem ter seus dados e seu agendamento editados sem gerar consultas nem exigir disponibilidade para o agendamento previsto. Ao voltar para `Ativo`, a edição verifica conflitos e gera as ocorrências futuras do mês. Se a reativação conflitar, a transação mantém o paciente inativo e preserva os dados anteriores. Agendamentos previstos de pacientes inativos não reservam horários nas sugestões; consultas já registradas continuam ocupando seus horários até serem canceladas explicitamente.
+
+A página `/pacientes` exibe uma única tabela com as abas `Ativos`, `Inativos` e `Todos`, cada uma com sua contagem. A troca filtra os registros sem recarregar a página e volta à primeira página dos resultados, mantendo os ícones de edição e visualização. A aba escolhida também pode ser aberta pelo parâmetro `status` da URL; a opção inicial é `Ativo`. As setas, Home e End permitem navegar pelas abas usando o teclado. O total de pacientes inclui ambos os status. A seleção de paciente na edição também inclui inativos, permitindo consultar os dados e reativar o cadastro.
 
 ## Sobreposição
 
@@ -20,7 +24,25 @@ Consultas canceladas liberam o horário para outro agendamento. Uma ocorrência 
 - Geração geral: cria somente horários livres. Após o redirecionamento, mostra quantidades criadas e existentes, conflitos com os dois pacientes e seus horários, e agendamentos que precisam ser corrigidos. O resumo é consumido uma vez.
 - Reativação: retorna HTTP 409 com `schedule.conflict`, `mensagem` e `conflito` quando o horário está ocupado. O select permanece no status anterior e mostra o aviso recebido como texto.
 
-A verificação considera as ocorrências concretas da geração do mês e as consultas já gravadas. Agendamentos quinzenais em semanas alternadas podem compartilhar o mesmo horário. Não há reserva antecipada de todos os meses futuros: a disponibilidade é verificada a cada geração.
+A verificação no cadastro e na edição considera as consultas já gravadas e as ocorrências previstas dos outros agendamentos, mesmo quando suas consultas ainda não foram geradas. A pré-validação ocorre dentro da trava e antes de inserir ou alterar qualquer dado do paciente. Agendamentos quinzenais em semanas alternadas podem compartilhar o mesmo horário. Não há reserva antecipada de todos os meses futuros: o salvamento verifica as ocorrências do mês atual, e a disponibilidade é conferida novamente a cada geração.
+
+## Reenvio do formulário
+
+Cada formulário de cadastro e edição inclui `envio_token`, associado à sessão, à ação e ao paciente na edição. O token dura duas horas e só é concluído após a confirmação da transação. Repetir um envio já concluído retorna HTTP 303 para o paciente salvo, sem gravar novamente ou acusar conflito com o próprio cadastro. Um erro mantém o token reutilizável para corrigir o horário e tentar de novo. Tokens ausentes, expirados ou de outro formulário retornam HTTP 403, assim como falhas de CSRF. Formulários abertos antes dessa atualização precisam ser recarregados.
+
+O botão fica desabilitado durante o envio e é restaurado ao voltar pelo navegador. Essa proteção visual complementa a proteção no servidor. Um novo formulário continua sujeito à validação normal de conflitos; pacientes diferentes com o mesmo nome não são ignorados.
+
+## Sugestões de horários
+
+Cadastro e edição oferecem uma faixa de busca ajustável, inicialmente 08:00–20:00. Essa faixa é apenas o filtro inicial da busca, sem impor um expediente fixo à clínica. A duração acompanha o intervalo informado ou começa em 50 minutos quando ainda não há intervalo, podendo ser alterada. Domingo não recebe sugestões.
+
+`POST /pacientes/horarios-livres` exige autenticação e CSRF e não grava dados. Recebe `dia_semana`, `repeticao`, `data_inicio`, `duracao`, `busca_inicio`, `busca_fim` e, opcionalmente, os horários atuais e `id_paciente` na edição. O servidor busca o agendamento pelo paciente, sem aceitar um agendamento arbitrário para excluir da verificação.
+
+São retornadas até seis opções próximas do início informado, preservando a duração. A busca usa passos de 15 minutos e também os términos das ocupações, para encontrar encaixes fora dessa grade em faixas apertadas. Cada opção está livre em todas as datas futuras da repetição no período consultado. O resultado informa o período e as datas verificadas por opção. Sem ocorrências futuras neste mês, a busca avança para o próximo período da repetição ou para o mês da data inicial futura. A busca também considera agendamentos ainda não gerados. Ocorrências já registradas, inclusive canceladas, não voltam a ocupar a agenda como reservas previstas.
+
+Na edição, a mesma ocorrência já gerada não conflita consigo; uma consulta distinta do mesmo paciente continua bloqueando sobreposição. Escolher uma opção preenche início e término e mostra `schedule.selected`; salvar continua sendo uma ação explícita. Nenhuma busca reserva o horário. Se outra solicitação ocupar o intervalo depois da busca, a pré-validação do salvamento bloqueia a gravação.
+
+Conflitos reapresentam os campos, mantêm uma mensagem visível junto à busca e carregam sugestões automaticamente. Alterações nos campos descartam resultados antigos e respostas atrasadas. Falhas de busca mostram orientação e toast, permitindo tentar novamente.
 
 ## Gravação e concorrência
 
@@ -37,3 +59,7 @@ Os toasts mantêm a confirmação específica `patient-consultation.generated` n
 Passaram 276 verificações do cálculo puro, 22 de geração/sobreposição no MariaDB isolado, 69 HTTP dos formulários e respostas, 6 com duas conexões MariaDB simultâneas, 12 de regressão do cliente e 112 do catálogo e da fila de toasts. A disputa simultânea permitiu uma gravação e bloqueou a outra; também foram verificados timeout e liberação da trava após falha.
 
 No navegador foram conferidos a ocorrência quinzenal correta, bloqueio com nome do paciente e formulário preservado, salvamento em horário consecutivo e geração parcial com resumo visível. Como o banco principal estava indisponível, foi usada uma instância MariaDB separada, na porta local 18770 e com arquivos em `.local`. Nenhum registro real foi alterado. Os artefatos de validação permanecem ignorados pelo Git.
+
+Na correção de reenvios e nas sugestões, foi reproduzido o comportamento: primeiro envio HTTP 303, segundo envio do mesmo formulário HTTP 409 citando o próprio paciente, com os dados da primeira operação já salvos. Com o token de envio, a repetição retorna o mesmo cadastro e não altera nenhuma tabela. O banco principal foi inspecionado apenas para confirmar a estrutura InnoDB e a ausência de gatilhos; os testes de escrita continuaram no MariaDB separado.
+
+As verificações adicionais cobrem reenvio de criação e edição, novas tentativas após conflito, falha SQL, preservação dos campos, consulta sem gravação, agendamentos previstos, todas as datas da repetição, cancelamento, horários consecutivos, busca futura, domingo, acesso não autenticado, CSRF e respostas atrasadas. No navegador foram conferidos cadastro por sugestão, conflito com orientação e opções automáticas, recuperação em horário livre com toasts de sucesso e sugestões na edição.

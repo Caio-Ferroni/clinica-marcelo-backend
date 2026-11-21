@@ -165,6 +165,20 @@ O projeto segue uma estrutura **MVC manual** (sem framework pesado), centralizad
 - Uma trava por banco e uma transação comum protegem geração, salvamento de paciente e alterações de status, inclusive entre pacientes e conexões diferentes. As tabelas existentes não foram alteradas.
 - Validação: 276 verificações de datas, 22 no MariaDB isolado, 69 HTTP, 6 de concorrência, 12 do cliente e 112 de toasts. Fluxos conferidos no navegador. Banco real preservado. Documentação: [docs/agenda-consultas.md](docs/agenda-consultas.md).
 
+### 3.16 Reenvios de Paciente e Sugestões de Horários — 21/11/2026
+
+- Reproduzido o conflito com o próprio paciente em um segundo envio após o primeiro já ter sido confirmado. Cadastro e edição agora identificam cada formulário na sessão; repetir uma operação concluída retorna o cadastro salvo, sem gravar novamente. O botão também impede envios repetidos durante o salvamento.
+- Cadastro e edição verificam consultas existentes e ocorrências previstas dos outros agendamentos antes de alterar qualquer dado, dentro da trava e da transação. Conflitos mantêm o formulário preenchido, uma orientação visível e sugestões automáticas.
+- A busca de horários livres permite faixa flexível e duração ajustável, não sugere domingos e confere todas as datas da repetição no período exibido. Escolher preenche os horários, com confirmação do agendamento somente ao salvar. A consulta de disponibilidade não grava dados.
+- Validação: 23 verificações de disponibilidade, 66 HTTP de reenvio e segurança, 76 HTTP de regressão, 14 do novo cliente, 276 de recorrência, 22 de geração, 6 de concorrência, 12 do cliente de consultas e 118 de toasts. Fluxos de cadastro, conflito, recuperação e edição conferidos no navegador. Escritas somente no banco separado de testes; registros reais preservados. Documentação: [docs/agenda-consultas.md](docs/agenda-consultas.md).
+
+### 3.17 Pacientes Inativos — 21/11/2026
+
+- A geração mensal geral e a geração por paciente filtram status `Ativo`. Salvar a edição de um inativo não gera consultas e não exige disponibilidade para uma reserva prevista. Reativar valida conflitos novamente e só confirma a mudança se o salvamento completo funcionar.
+- Agendamentos previstos de inativos não reservam horários nas sugestões. Consultas já registradas permanecem preservadas e continuam sujeitas ao cancelamento explícito.
+- A mesma página de pacientes apresenta uma única tabela com as abas `Ativos`, `Inativos` e `Todos`, com contagem, paginação e ações de editar e visualizar. Trocar a aba filtra os registros sem recarregar a página e reinicia a paginação. O total e a seleção de pacientes na edição incluem os inativos.
+- Validação inicial: 14 verificações de status e geração, 40 HTTP de inativação, reativação e tabelas, além de 22 de geração, 23 de disponibilidade e 76 HTTP de regressão. No ajuste de apresentação, foram conferidos no navegador os três filtros da tabela única, a paginação após trocar de aba, a navegação pelo teclado e as mensagens para listas vazias, usando apenas dados fictícios e sem acessar o banco real.
+
 ## 4. Bugs Encontrados e Problemas de Integração — Status Atual
 
 > [!CAUTION]

@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../../Backend/Auth/Auth.php';
+require_once __DIR__ . '/../../Backend/Support/EnvioPaciente.php';
 $csrfFormulario = Auth::csrfToken();
+$envioFormulario = EnvioPaciente::token('criar', $_POST['envio_token'] ?? null);
 $valores = $valores ?? [];
 $abrirAgendamento = ($valores['dia_semana'] ?? '') !== ''
     || ($valores['repeticao'] ?? '') !== ''
@@ -21,6 +23,7 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/layout.js" defer></script>
     <script src="/js/patient-masks.js" defer></script>
+    <script src="/js/patient-schedule.js?v=<?= filemtime(__DIR__ . '/../../js/patient-schedule.js') ?>" defer></script>
 </head>
 <body class="patient-create">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -39,6 +42,7 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
 
                     <form id="patient-form" method="post" action="/pacientes/criar" data-toast-validate>
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfFormulario, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
+                        <input type="hidden" name="envio_token" value="<?= htmlspecialchars($envioFormulario, ENT_QUOTES, 'UTF-8') ?>">
                         <div class="border rounded-4 shadow-sm" style="background: var(--color-surface);">
                             <section class="p-7 md:p-9" aria-labelledby="personal-heading">
                                 <h2 id="personal-heading" class="text-md fw-semibold d-flex align-items-center gap-3 mb-7">
@@ -115,6 +119,7 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
                                             <input class="form-control" type="date" id="start-date" name="data_inicio" value="<?= htmlspecialchars(($valores['data_inicio'] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
                                         </div>
                                     </div>
+                                    <?php require __DIR__ . '/horarios-livres.php'; ?>
                                 </fieldset>
                             </details>
 

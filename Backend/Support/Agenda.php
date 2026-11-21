@@ -7,7 +7,7 @@ final class ConflitoAgendaException extends RuntimeException {
     public function __construct(public readonly array $conflito) {
         $data = DateTimeImmutable::createFromFormat('!Y-m-d', $conflito['data']);
         $paciente = trim((string) ($conflito['paciente_nome'] ?? ''));
-        $paciente = $paciente !== '' ? $paciente : 'consulta #' . $conflito['id_consulta'];
+        $paciente = $paciente !== '' ? $paciente : (!empty($conflito['id_consulta']) ? 'consulta #' . $conflito['id_consulta'] : 'agendamento #' . $conflito['id_agendamento']);
         parent::__construct(sprintf(
             'O horário de %s, das %s às %s, já está ocupado por %s. Escolha outro horário.',
             $data ? $data->format('d/m/Y') : $conflito['data'],

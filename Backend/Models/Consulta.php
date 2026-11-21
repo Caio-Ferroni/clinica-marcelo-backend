@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../Config/Database.php';
 require_once __DIR__ . '/../Support/Agenda.php';
 require_once __DIR__ . '/../Support/RecorrenciaConsulta.php';
+require_once __DIR__ . '/../Support/DisponibilidadeAgenda.php';
     class Consulta{
         public const STATUS = ['Pendente', 'Concluído', 'Cancelado'];
 
@@ -32,11 +33,15 @@ require_once __DIR__ . '/../Support/RecorrenciaConsulta.php';
                 $agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone(new DateTimeZone('America/Sao_Paulo'));
                 $fim = $agora->modify('last day of this month')->setTime(23, 59, 59);
                 $resultado = ['criadas' => 0, 'existentes' => 0, 'conflitos' => [], 'agendamentos_invalidos' => []];
-                $sql = 'SELECT a.*, p.nome AS paciente_nome FROM agendamento a LEFT JOIN paciente p ON p.id_paciente = a.id_paciente';
-                if ($idPaciente !== null) $sql .= ' WHERE a.id_paciente = :id_paciente';
+                $sql = 'SELECT a.*, p.nome AS paciente_nome FROM agendamento a INNER JOIN paciente p ON p.id_paciente = a.id_paciente WHERE p.status = :status_paciente';
+                $parametros = [':status_paciente' => 'Ativo'];
+                if ($idPaciente !== null) {
+                    $sql .= ' AND a.id_paciente = :id_paciente';
+                    $parametros[':id_paciente'] = $idPaciente;
+                }
                 $sql .= ' ORDER BY a.id_agendamento';
                 $stmt = $this->db->prepare($sql);
-                $stmt->execute($idPaciente === null ? [] : [':id_paciente' => $idPaciente]);
+                $stmt->execute($parametros);
                 $agendamentos = $stmt->fetchAll();
                 foreach ($agendamentos as $agendamento) {
                     try {
@@ -81,6 +86,10 @@ require_once __DIR__ . '/../Support/RecorrenciaConsulta.php';
                 }
                 return $resultado;
             });
+        }
+
+        public function validarAgendamento(array $agendamento, int $idAgendamento = 0): void {
+            (new DisponibilidadeAgenda($this->db))->validar($agendamento, $idAgendamento);
         }
 
         private function horarioValido($horario): bool {

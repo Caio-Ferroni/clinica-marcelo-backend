@@ -6,6 +6,7 @@ require_once __DIR__ . '/../Models/Encaminhamento.php';
 require_once __DIR__ . '/../Models/Agendamento.php';
 require_once __DIR__ . '/../Models/Consulta.php';
 require_once __DIR__ . '/../Auth/Auth.php';
+require_once __DIR__ . '/../Support/EnvioPaciente.php';
 
 class PacienteController {
     public Paciente $paciente;
@@ -37,7 +38,7 @@ class PacienteController {
     public function index(): void {
         try {
             $this->prepararModelos();
-            $pacientes = $this->paciente->listarTodos();
+            $pacientes = $this->paciente->listarTodos(null);
         } catch (PDOException $e) {
             $this->falhar('patient.load_failed', 503);
             return;
@@ -77,7 +78,7 @@ class PacienteController {
         $toastType = 'warning';
         $pacientesSelecao = array_map(static fn($p) => [
             'id_paciente' => $p['id_paciente'], 'nome' => $p['nome'], 'cpf' => $p['cpf'] ?? ''
-        ], $this->paciente->listarTodos());
+        ], $this->paciente->listarTodos(null));
         require __DIR__ . '/../../Views/Paciente/paciente-update.php';
     }
 
@@ -103,6 +104,44 @@ class PacienteController {
             $valores[$campo] = is_string($_POST[$campo] ?? null) ? trim($_POST[$campo]) : '';
         }
         return $valores;
+    }
+
+    public function horariosLivres(): void {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        header('X-Content-Type-Options: nosniff');
+        $status = 200;
+        $resposta = [];
+        if (!Auth::validarCsrf($_POST['csrf_token'] ?? null)) {
+            $status = 403;
+            $resposta = ['ok' => false, 'toast_code' => 'validation.form_expired'];
+        } else {
+            try {
+                $this->prepararModelos();
+                $idAgendamento = 0;
+                if (isset($_POST['id_paciente']) && $_POST['id_paciente'] !== '') {
+                    $id = filter_var($_POST['id_paciente'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                    if (!$id || !$this->paciente->visualizarPaciente($id)) {
+                        http_response_code(404);
+                        echo json_encode(['ok' => false, 'toast_code' => 'patient.missing']);
+                        return;
+                    }
+                    $idAgendamento = (int) ($this->agendamento->buscarPorPaciente($id)['id_agendamento'] ?? 0);
+                }
+                $duracao = filter_var($_POST['duracao'] ?? null, FILTER_VALIDATE_INT);
+                if (!$duracao || !is_string($_POST['busca_inicio'] ?? null) || !is_string($_POST['busca_fim'] ?? null)) throw new InvalidArgumentException('Faixa inválida.');
+                $resultado = (new DisponibilidadeAgenda($this->db))->sugerir($this->valores(), $_POST['busca_inicio'], $_POST['busca_fim'], $duracao, $idAgendamento);
+                $resposta = ['ok' => true] + $resultado;
+            } catch (InvalidArgumentException $e) {
+                $status = 422;
+                $resposta = ['ok' => false, 'toast_code' => 'schedule.search_invalid'];
+            } catch (PDOException $e) {
+                $status = 503;
+                $resposta = ['ok' => false, 'toast_code' => 'schedule.suggestions_failed'];
+            }
+        }
+        http_response_code($status);
+        echo json_encode($resposta, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
     }
 
     private function validar(array $v): ?string {
@@ -160,7 +199,13 @@ class PacienteController {
 
     public function criar(): void {
         $valores = $this->valores();
-        $code = Auth::validarCsrf($_POST['csrf_token'] ?? null) ? $this->validar($valores) : 'validation.form_expired';
+        $token = $_POST['envio_token'] ?? null;
+        $autorizado = Auth::validarCsrf($_POST['csrf_token'] ?? null) && EnvioPaciente::valido($token, 'criar');
+        if ($autorizado && ($salvo = EnvioPaciente::resultado($token)) !== null) {
+            header('Location: /pacientes/' . $salvo, true, 303);
+            exit;
+        }
+        $code = $autorizado ? $this->validar($valores) : 'validation.form_expired';
         if ($code !== null) {
             http_response_code($code === 'validation.form_expired' ? 403 : 422);
             Toast::discardSuccess();
@@ -171,6 +216,7 @@ class PacienteController {
         try {
             $this->prepararModelos();
             [$id, $geracao] = AgendaTransacao::executar($this->db, function () use ($valores) {
+                if ($valores['dia_semana'] !== '') $this->consulta->validarAgendamento($valores);
                 $id = $this->paciente->criarPaciente($valores['nome'], $valores['cpf'], $valores['telefone'], $valores['data_nascimento']);
                 return [$id, $this->salvarAssociacoes($id, $valores, false)];
             });
@@ -190,6 +236,7 @@ class PacienteController {
             require __DIR__ . '/../../Views/Paciente/paciente-create.php';
             return;
         }
+        EnvioPaciente::concluir($token, $id);
         Toast::add('patient.created');
         if ($geracao['criadas'] > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
@@ -204,7 +251,13 @@ class PacienteController {
                 return;
             }
             $v = $this->valores();
-            $code = Auth::validarCsrf($_POST['csrf_token'] ?? null) ? $this->validar($v) : 'validation.form_expired';
+            $token = $_POST['envio_token'] ?? null;
+            $autorizado = Auth::validarCsrf($_POST['csrf_token'] ?? null) && EnvioPaciente::valido($token, 'editar:' . (int) $id);
+            if ($autorizado && EnvioPaciente::resultado($token) !== null) {
+                header('Location: /pacientes/' . (int) $id, true, 303);
+                exit;
+            }
+            $code = $autorizado ? $this->validar($v) : 'validation.form_expired';
             if ($code !== null) {
                 if ($code !== 'validation.form_expired') {
                     $dados = $this->dadosEnviados($dados, $v);
@@ -214,7 +267,9 @@ class PacienteController {
                 $this->formularioEdicao($dados, Toast::message($code));
                 return;
             }
-            $geracao = AgendaTransacao::executar($this->db, function () use ($id, $v) {
+            $geracao = AgendaTransacao::executar($this->db, function () use ($id, $v, $dados) {
+                $status = $v['status'] !== '' ? $v['status'] : $dados['paciente']['status'];
+                if ($status === 'Ativo' && $v['dia_semana'] !== '') $this->consulta->validarAgendamento($v, (int) ($dados['agendamento']['id_agendamento'] ?? 0));
                 $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
                 if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
                 return $this->salvarAssociacoes($id, $v, true);
@@ -230,6 +285,7 @@ class PacienteController {
             $this->falhar('patient.save_failed', 500);
             return;
         }
+        EnvioPaciente::concluir($token, (int) $id);
         Toast::add('patient.updated');
         if ($geracao['criadas'] > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);

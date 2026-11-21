@@ -279,6 +279,8 @@
 
         const pageSize = Math.max(1, parseInt(table.dataset.pageSize, 10) || 10);
         let currentPage = 1;
+        const statusTabs = table.id === 'tabela-pacientes' ? Array.from(document.querySelectorAll('[data-patient-status]')) : [];
+        let statusFilter = table.dataset.statusFilter || 'Todos';
         const emptyRow = body.querySelector('[data-empty-row]') || body.insertRow();
         emptyRow.dataset.emptyRow = '';
         const emptyCell = emptyRow.cells[0] || emptyRow.insertCell();
@@ -303,11 +305,13 @@
 
         function showPage() {
             if (emptyRow.parentElement !== body) body.appendChild(emptyRow);
-            const rows = Array.from(body.rows).filter((row) => !row.hasAttribute('data-empty-row'));
+            const allRows = Array.from(body.rows).filter((row) => !row.hasAttribute('data-empty-row'));
+            const rows = allRows.filter((row) => !statusTabs.length || statusFilter === 'Todos' || row.dataset.status === statusFilter);
             const totalPages = Math.ceil(rows.length / pageSize);
             currentPage = Math.max(1, Math.min(currentPage, totalPages));
             const start = (currentPage - 1) * pageSize;
 
+            allRows.forEach((row) => { row.hidden = true; });
             rows.forEach((row, index) => {
                 row.hidden = index < start || index >= start + pageSize;
             });
@@ -320,6 +324,41 @@
             previous.disabled = currentPage === 1;
             next.disabled = currentPage >= totalPages;
         }
+
+        function selectStatus(tab, focus = false) {
+            statusFilter = tab.dataset.patientStatus;
+            currentPage = 1;
+            table.dataset.statusFilter = statusFilter;
+            statusTabs.forEach((item) => {
+                item.setAttribute('aria-selected', String(item === tab));
+                item.tabIndex = item === tab ? 0 : -1;
+            });
+            if (table.caption) table.caption.textContent = tab.dataset.patientTitle;
+            emptyCell.textContent = tab.dataset.patientEmpty;
+            document.getElementById('patient-list-panel').setAttribute('aria-labelledby', tab.id);
+            window.history.replaceState(null, '', tab.href);
+            showPage();
+            if (focus) tab.focus();
+        }
+
+        statusTabs.forEach((tab, index) => {
+            tab.addEventListener('click', (event) => {
+                if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                selectStatus(tab);
+            });
+            tab.addEventListener('keydown', (event) => {
+                let target;
+                if (event.key === 'ArrowRight') target = (index + 1) % statusTabs.length;
+                else if (event.key === 'ArrowLeft') target = (index - 1 + statusTabs.length) % statusTabs.length;
+                else if (event.key === 'Home') target = 0;
+                else if (event.key === 'End') target = statusTabs.length - 1;
+                else if (event.key === ' ') target = index;
+                else return;
+                event.preventDefault();
+                selectStatus(statusTabs[target], true);
+            });
+        });
 
         previous.addEventListener('click', () => {
             currentPage--;

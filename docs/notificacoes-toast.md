@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 54 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 55 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -110,6 +110,7 @@ O método JavaScript `ClinicToast.show(code, source, message)` aceita um terceir
 | `report.load_failed` | Erro | Não foi possível carregar o relatório. Tente novamente. |
 | `patient.created` | Sucesso | Paciente cadastrado com sucesso. |
 | `patient.updated` | Sucesso | Dados do paciente atualizados. |
+| `consultation.rescheduled` | Sucesso | Os horários das consultas pendentes foram atualizados. |
 | `patient.missing` | Erro | Paciente não encontrado. |
 | `patient.save_failed` | Erro | Não foi possível salvar os dados do paciente. Tente novamente. |
 | `patient.date_invalid` | Atenção | Informe uma data de nascimento válida. |

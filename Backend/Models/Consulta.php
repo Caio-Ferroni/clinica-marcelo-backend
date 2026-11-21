@@ -92,6 +92,22 @@ require_once __DIR__ . '/../Support/DisponibilidadeAgenda.php';
             (new DisponibilidadeAgenda($this->db))->validar($agendamento, $idAgendamento);
         }
 
+        public function atualizarHorariosPendentes(int $idPaciente, string $inicio, string $fim): int {
+            return AgendaTransacao::executar($this->db, function () use ($idPaciente, $inicio, $fim) {
+                $stmt = $this->db->prepare("SELECT c.*, a.id_paciente, p.nome AS paciente_nome FROM consulta c
+                    INNER JOIN agendamento a ON a.id_agendamento = c.id_agendamento
+                    INNER JOIN paciente p ON p.id_paciente = a.id_paciente
+                    WHERE a.id_paciente = ? AND c.status = 'Pendente' ORDER BY c.data, c.id_consulta");
+                $stmt->execute([$idPaciente]);
+                $consultas = $stmt->fetchAll();
+                (new DisponibilidadeAgenda($this->db))->validarAlteracaoHorarios($consultas, $inicio, $fim);
+                $stmt = $this->db->prepare("UPDATE consulta c INNER JOIN agendamento a ON a.id_agendamento = c.id_agendamento
+                    SET c.horario_inicio = ?, c.horario_fim = ? WHERE a.id_paciente = ? AND c.status = 'Pendente'");
+                $stmt->execute([$inicio, $fim, $idPaciente]);
+                return $stmt->rowCount();
+            });
+        }
+
         private function horarioValido($horario): bool {
             return is_string($horario) && preg_match('/^(?:[01][0-9]|2[0-3]):[0-5][0-9](?::[0-5][0-9])?$/D', $horario) === 1;
         }
@@ -176,7 +192,8 @@ require_once __DIR__ . '/../Support/DisponibilidadeAgenda.php';
         private function consultaExiste($id_agendamento, $data_consultada, $horario_inicio): bool {
             $stmt = $this->db->prepare("
                 SELECT COUNT(*) FROM consulta
-                WHERE id_agendamento = :id_agendamento AND data = :data AND horario_inicio = :horario_inicio
+                WHERE id_agendamento = :id_agendamento AND data = :data
+                    AND (horario_inicio = :horario_inicio OR status IN ('Concluído', 'Cancelado'))
             ");
             $stmt->execute([
                 ':id_agendamento' => $id_agendamento,

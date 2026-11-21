@@ -24,7 +24,17 @@ Consultas canceladas liberam o horário para outro agendamento. Uma ocorrência 
 - Geração geral: cria somente horários livres. Após o redirecionamento, mostra quantidades criadas e existentes, conflitos com os dois pacientes e seus horários, e agendamentos que precisam ser corrigidos. O resumo é consumido uma vez.
 - Reativação: retorna HTTP 409 com `schedule.conflict`, `mensagem` e `conflito` quando o horário está ocupado. O select permanece no status anterior e mostra o aviso recebido como texto.
 
-A verificação no cadastro e na edição considera as consultas já gravadas e as ocorrências previstas dos outros agendamentos, mesmo quando suas consultas ainda não foram geradas. A pré-validação ocorre dentro da trava e antes de inserir ou alterar qualquer dado do paciente. Agendamentos quinzenais em semanas alternadas podem compartilhar o mesmo horário. Não há reserva antecipada de todos os meses futuros: o salvamento verifica as ocorrências do mês atual, e a disponibilidade é conferida novamente a cada geração.
+A verificação no cadastro e na edição considera as consultas já gravadas e as ocorrências previstas dos outros agendamentos, mesmo quando suas consultas ainda não foram geradas. No cadastro, a pré-validação ocorre dentro da trava e antes de inserir o paciente. Na edição, a atualização das pendentes e a validação do agendamento compartilham a transação do paciente; qualquer conflito ou falha reverte todas as alterações. Agendamentos quinzenais em semanas alternadas podem compartilhar o mesmo horário. Não há reserva antecipada de todos os meses futuros: a geração verifica as ocorrências do mês atual, e a disponibilidade é conferida novamente a cada geração.
+
+## Alteração dos horários do paciente
+
+Ao editar um agendamento existente e mudar o início ou o término, o sistema atualiza esses dois campos somente nas consultas com status `Pendente` do paciente. Mantém IDs, datas, status e relatórios. A regra inclui pendentes antigas ou de outros meses e também pendentes já existentes de pacientes inativos; inativos continuam sem gerar novas consultas. Alterar apenas dados pessoais, sem mudar os horários do agendamento, não reprograma as consultas.
+
+As novas faixas são verificadas em todas as datas das pendentes, incluindo consultas e agendamentos previstos de outros pacientes. Os horários antigos das próprias pendentes em atualização não bloqueiam a mudança. Conflitos entre as próprias consultas resultantes também são bloqueados. Um conflito retorna HTTP 409 e desfaz a edição do paciente, do agendamento e das consultas; uma falha SQL tem a mesma reversão.
+
+Consultas `Concluído` e `Cancelado` não são alteradas. A geração mensal reconhece essas ocorrências pela combinação de agendamento e data, mesmo se seus horários forem diferentes do novo agendamento, para não criar substitutas. As sugestões na edição desconsideram os horários antigos das pendentes e as ocorrências encerradas que não serão geradas novamente. O salvamento sempre verifica todas as pendentes antes de confirmar.
+
+Quando houve atualização de pendentes, a confirmação inclui `consultation.rescheduled`: “Os horários das consultas pendentes foram atualizados.” Passaram 42 verificações HTTP específicas de mudança de início e término, preservação de histórico, ausência de duplicatas, pendentes de outros meses, edição de inativo, conflito e rollback por falha SQL, em banco isolado. Também passaram 22 de geração, 76 HTTP de regressão e 120 do catálogo e fila de toasts.
 
 ## Reenvio do formulário
 

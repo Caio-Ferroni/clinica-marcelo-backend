@@ -182,9 +182,22 @@ class PacienteController {
             $this->encaminhamento->$metodo($id, $v['historico_paciente'], $v['tipo_encaminhamento']);
         }
         if ($v['dia_semana'] !== '') {
+            $atualizadas = 0;
+            if ($editar) {
+                $anterior = $this->agendamento->buscarPorPaciente($id);
+                $hora = static fn($valor) => strlen($valor) === 5 ? $valor . ':00' : $valor;
+                if ($anterior && ($hora($v['horario_inicio']) !== $anterior['horario_inicio'] || $hora($v['horario_termino']) !== $anterior['horario_termino'])) {
+                    $atualizadas = $this->consulta->atualizarHorariosPendentes((int) $id, $v['horario_inicio'], $v['horario_termino']);
+                }
+            }
             $metodo = $editar ? 'atualizarAgendamento' : 'criarAgendamento';
             $this->agendamento->$metodo($id, $v['dia_semana'], $v['repeticao'], $v['horario_inicio'], $v['horario_termino'], $v['data_inicio']);
-            return $this->consulta->gerarConsultas((int) $id);
+            $paciente = $this->paciente->visualizarPaciente($id)[0];
+            if ($editar && $paciente['status'] === 'Ativo') {
+                $agenda = $this->agendamento->buscarPorPaciente($id);
+                $this->consulta->validarAgendamento($v, (int) $agenda['id_agendamento']);
+            }
+            return $this->consulta->gerarConsultas((int) $id) + ['atualizadas' => $atualizadas];
         }
         return ['criadas' => 0, 'existentes' => 0, 'conflitos' => [], 'agendamentos_invalidos' => []];
     }
@@ -267,9 +280,7 @@ class PacienteController {
                 $this->formularioEdicao($dados, Toast::message($code));
                 return;
             }
-            $geracao = AgendaTransacao::executar($this->db, function () use ($id, $v, $dados) {
-                $status = $v['status'] !== '' ? $v['status'] : $dados['paciente']['status'];
-                if ($status === 'Ativo' && $v['dia_semana'] !== '') $this->consulta->validarAgendamento($v, (int) ($dados['agendamento']['id_agendamento'] ?? 0));
+            $geracao = AgendaTransacao::executar($this->db, function () use ($id, $v) {
                 $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
                 if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
                 return $this->salvarAssociacoes($id, $v, true);
@@ -287,6 +298,7 @@ class PacienteController {
         }
         EnvioPaciente::concluir($token, (int) $id);
         Toast::add('patient.updated');
+        if (($geracao['atualizadas'] ?? 0) > 0) Toast::add('consultation.rescheduled');
         if ($geracao['criadas'] > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;

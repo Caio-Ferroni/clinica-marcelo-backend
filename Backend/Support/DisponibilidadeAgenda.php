@@ -24,6 +24,13 @@ final class DisponibilidadeAgenda {
         return RecorrenciaConsulta::datas((string) ($agenda['data_inicio'] ?? ''), (int) $agenda['dia_semana'], (string) ($agenda['repeticao'] ?? ''), $de, $ate);
     }
 
+    private function removerOcorrenciasEncerradas(array $datas, int $idAgendamento): array {
+        if (!$datas || $idAgendamento === 0) return $datas;
+        $stmt = $this->db->prepare("SELECT DISTINCT data FROM consulta WHERE id_agendamento = ? AND status IN ('Concluído', 'Cancelado')");
+        $stmt->execute([$idAgendamento]);
+        return array_values(array_diff($datas, $stmt->fetchAll(PDO::FETCH_COLUMN)));
+    }
+
     private function ocupacoes(DateTimeImmutable $de, DateTimeImmutable $ate, int $idAgendamento): array {
         $stmt = $this->db->prepare('SELECT c.id_consulta, c.id_agendamento, c.data, c.horario_inicio, c.horario_fim, c.status, a.id_paciente, p.nome AS paciente_nome
             FROM consulta c LEFT JOIN agendamento a ON a.id_agendamento = c.id_agendamento
@@ -33,7 +40,7 @@ final class DisponibilidadeAgenda {
         $existentes = [];
         foreach ($stmt->fetchAll() as $consulta) {
             $existentes[$consulta['id_agendamento'] . '|' . $consulta['data'] . '|' . $this->normalizarHora($consulta['horario_inicio'])] = true;
-            if ($consulta['status'] !== 'Cancelado') $ocupacoes[$consulta['data']][] = $consulta;
+            if ($consulta['status'] !== 'Cancelado' && !($idAgendamento > 0 && (int) $consulta['id_agendamento'] === $idAgendamento && $consulta['status'] === 'Pendente')) $ocupacoes[$consulta['data']][] = $consulta;
         }
         $stmt = $this->db->query("SELECT a.*, p.nome AS paciente_nome FROM agendamento a INNER JOIN paciente p ON p.id_paciente = a.id_paciente WHERE p.status = 'Ativo' ORDER BY a.id_agendamento");
         foreach ($stmt->fetchAll() as $agenda) {
@@ -79,9 +86,32 @@ final class DisponibilidadeAgenda {
         $inicio = $this->normalizarHora((string) $agenda['horario_inicio']);
         $termino = $this->normalizarHora((string) $agenda['horario_termino']);
         if ($termino <= $inicio) throw new InvalidArgumentException('Intervalo inválido.');
-        $datas = $this->datas($agenda, $agora, $fim);
+        $datas = $this->removerOcorrenciasEncerradas($this->datas($agenda, $agora, $fim), $idAgendamento);
         $avaliacao = $this->avaliar($datas, $inicio, $termino, $this->ocupacoes($agora, $fim, $idAgendamento), $idAgendamento, $agora);
         if ($avaliacao['conflito'] !== null) throw new ConflitoAgendaException($avaliacao['conflito']);
+    }
+
+    public function validarAlteracaoHorarios(array $consultas, string $inicio, string $fim): void {
+        $inicio = $this->normalizarHora($inicio);
+        $fim = $this->normalizarHora($fim);
+        if ($fim <= $inicio) throw new InvalidArgumentException('Intervalo inválido.');
+        if (!$consultas) return;
+        $datas = array_column($consultas, 'data');
+        $fuso = new DateTimeZone('America/Sao_Paulo');
+        $de = new DateTimeImmutable(min($datas), $fuso);
+        $ate = new DateTimeImmutable(max($datas), $fuso);
+        $ocupacoes = $this->ocupacoes($de, $ate, 0);
+        $ids = array_column($consultas, 'id_consulta');
+        $agendamentos = array_column($consultas, 'id_agendamento');
+        foreach ($ocupacoes as $data => $dia) {
+            $ocupacoes[$data] = array_filter($dia, static fn($c) => !in_array($c['id_consulta'], $ids)
+                && !($c['id_consulta'] === null && in_array($c['id_agendamento'], $agendamentos)));
+        }
+        foreach ($consultas as $consulta) {
+            $avaliacao = $this->avaliar([$consulta['data']], $inicio, $fim, $ocupacoes, 0, $de->modify('-1 day'));
+            if ($avaliacao['conflito'] !== null) throw new ConflitoAgendaException($avaliacao['conflito']);
+            $ocupacoes[$consulta['data']][] = array_replace($consulta, ['horario_inicio' => $inicio, 'horario_fim' => $fim]);
+        }
     }
 
     public function sugerir(array $agenda, string $de, string $ate, int $duracao, int $idAgendamento = 0, ?DateTimeImmutable $agora = null): array {
@@ -90,16 +120,16 @@ final class DisponibilidadeAgenda {
         if ($duracao < 1 || $duracao > 720 || $fimBusca <= $inicioBusca || $fimBusca - $inicioBusca < $duracao) throw new InvalidArgumentException('Faixa inválida.');
         $agora = ($agora ?? new DateTimeImmutable('now'))->setTimezone(new DateTimeZone('America/Sao_Paulo'));
         $fim = $agora->modify('last day of this month');
-        $datas = $this->datas($agenda, $agora, $fim);
+        $datas = $this->removerOcorrenciasEncerradas($this->datas($agenda, $agora, $fim), $idAgendamento);
         if ((string) $agenda['dia_semana'] === '0') return ['sugestoes' => [], 'motivo' => 'domingo', 'atual' => null];
         $limite = $agora;
         if (!$datas || (count($datas) === 1 && $datas[0] === $agora->format('Y-m-d') && $this->hora($fimBusca - $duracao) <= $agora->format('H:i'))) {
             $limite = max($agora->modify('first day of next month')->setTime(0, 0), new DateTimeImmutable($agenda['data_inicio'], $agora->getTimezone()));
             $fim = $limite->modify('last day of this month');
-            $datas = $this->datas($agenda, $limite, $fim);
+            $datas = $this->removerOcorrenciasEncerradas($this->datas($agenda, $limite, $fim), $idAgendamento);
             if (!$datas) {
                 $fim = $fim->modify('last day of next month');
-                $datas = $this->datas($agenda, $limite, $fim);
+                $datas = $this->removerOcorrenciasEncerradas($this->datas($agenda, $limite, $fim), $idAgendamento);
             }
         }
         $ocupacoes = $this->ocupacoes($limite, $fim, $idAgendamento);

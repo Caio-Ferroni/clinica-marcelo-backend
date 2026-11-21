@@ -38,6 +38,7 @@ class Toast {
         'report.load_failed' => ['type' => 'error', 'message' => 'Não foi possível carregar o relatório. Tente novamente.'],
         'patient.created' => ['type' => 'success', 'message' => 'Paciente cadastrado com sucesso.'],
         'patient.updated' => ['type' => 'success', 'message' => 'Dados do paciente atualizados.'],
+        'consultation.rescheduled' => ['type' => 'success', 'message' => 'Os horários das consultas pendentes foram atualizados.'],
         'patient.missing' => ['type' => 'error', 'message' => 'Paciente não encontrado.'],
         'patient.save_failed' => ['type' => 'error', 'message' => 'Não foi possível salvar os dados do paciente. Tente novamente.'],
         'patient.date_invalid' => ['type' => 'warning', 'message' => 'Informe uma data de nascimento válida.'],

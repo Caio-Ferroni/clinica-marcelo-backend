@@ -29,13 +29,13 @@
     } catch {}
     let pending = Promise.resolve();
 
-    function notify(code) {
+    function notify(code, message = null) {
         const entry = catalog[code] || catalog['operation.failed'];
         if (!entry) return;
-        feedback.textContent = entry.message;
+        feedback.textContent = typeof message === 'string' ? message : entry.message;
         feedback.hidden = false;
         feedback.setAttribute('role', entry.type === 'error' ? 'alert' : 'status');
-        window.ClinicToast?.show(catalog[code] ? code : 'operation.failed', feedback);
+        window.ClinicToast?.show(catalog[code] ? code : 'operation.failed', feedback, message);
     }
 
     function setEditing(form, enabled, saving = false) {
@@ -69,7 +69,7 @@
             });
             const result = await response.json();
             if (!response.ok || result.ok !== true) {
-                notify(response.status === 401 ? 'auth.required' : result.toast_code || 'consultation.save_failed');
+                notify(response.status === 401 ? 'auth.required' : result.toast_code || 'consultation.save_failed', result.mensagem);
                 return;
             }
             if (result.id !== Number(form.dataset.id)

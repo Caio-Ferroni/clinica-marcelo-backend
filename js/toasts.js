@@ -164,8 +164,9 @@
     }
 
     window.ClinicToast = Object.freeze({
-        show(code, source = null) {
-            return display(Object.hasOwn(catalog, code) ? catalog[code] : null, source);
+        show(code, source = null, message = null) {
+            const entry = Object.hasOwn(catalog, code) ? catalog[code] : null;
+            return display(entry && typeof message === 'string' ? { ...entry, message } : entry, source);
         }
     });
 

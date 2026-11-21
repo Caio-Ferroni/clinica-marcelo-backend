@@ -1,6 +1,6 @@
 # Notificações toast
 
-O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 47 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
+O sistema usa Toastify.js 1.12.0 nas páginas PHP, com arquivos locais e um catálogo compartilhado de 51 mensagens. As mensagens confirmam o resultado real das ações. O cadastro e a edição de pacientes, a atualização de tarefas e o relatório de consultas confirmam o sucesso somente após a gravação.
 
 ## Comportamento
 
@@ -61,13 +61,13 @@ A abertura e o salvamento do relatório verificam o status no servidor; a atuali
 
 ## Geração mensal de consultas
 
-A lista de consultas inclui “Gerar consultas do mês”, conectado a `POST /consultas/gerar`, com autenticação e token CSRF da lista. A operação preserva o cálculo mensal existente para `Semanal`, `Quinzenal` e `Mensal`, usando o mês atual de São Paulo. Enquanto envia, o botão fica indisponível e mostra “Gerando consultas…”. Sem JavaScript, o formulário também funciona.
+O botão “Gerar consultas do mês” e o salvamento do agendamento do paciente compartilham a recorrência contínua a partir da data inicial e criam somente horários futuros do mês atual. A geração geral cria os horários livres e apresenta um resumo dos conflitos. No paciente, um conflito bloqueia todo o salvamento, preserva os dados enviados e informa o paciente que ocupa o horário.
 
-Ao cadastrar ou editar um paciente com os campos completos de agendamento, o controller salva o agendamento e chama o mesmo método de geração somente para aquele paciente. Sem dados de agendamento, não inicia a geração. `Consulta::gerarConsultas(?int $idPaciente = null): int` retorna a quantidade criada; sem argumento, processa todos os agendamentos completos. O cálculo de recorrência existente não foi alterado.
+A recorrência mensal mantém a posição do dia da semana, como segunda quinta-feira, e usa a última ocorrência quando uma quinta não existir. Consultas antigas são preservadas. Horários consecutivos são permitidos, cancelamentos liberam o intervalo e a reativação passa novamente pela verificação. Regras, resultado interno e proteção de concorrência estão em [agenda-consultas.md](agenda-consultas.md).
 
-Paciente, associações e consultas usam a mesma transação. A geração manual também usa uma transação própria; no MySQL, os agendamentos são bloqueados durante a geração. Consultas já existentes para o mesmo agendamento, data e horário inicial são preservadas, inclusive status e relatório. Repetir o salvamento com o mesmo agendamento não duplica as consultas. Alterar o horário pode acrescentar ocorrências; essa ação não remove consultas anteriores.
+O cadastro ou edição confirma o paciente e apresenta `patient-consultation.generated` quando criou consultas. A geração geral sem pendências mantém `consultation.generated` ou `consultation.none_generated`. Resultados parciais usam `consultation.generated_partial`; conflitos ou agendamentos inválidos sem novas consultas usam `consultation.generation_blocked`. Falha de gravação usa `consultation.generate_failed`, conflito usa `schedule.conflict` e timeout da trava usa `schedule.busy`.
 
-As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro ou edição confirma o paciente e também apresenta `patient-consultation.generated` quando criou consultas apenas para esse paciente. A geração manual geral mantém `consultation.generated`; zero novas ocorrências apresenta `consultation.none_generated`. Uma falha apresenta `consultation.generate_failed`, sem confirmação de sucesso e sem gravações parciais. Token inválido retorna HTTP 403 com `validation.form_expired`.
+O método JavaScript `ClinicToast.show(code, source, message)` aceita um terceiro argumento opcional para o texto contextual retornado pelo servidor, mantendo o tipo do catálogo e o escape de texto. O resumo do lote permanece visível na página após o toast.
 
 ## Catálogo
 
@@ -103,6 +103,10 @@ As novas consultas recebem status `Pendente`. Depois da gravação, o cadastro o
 | `patient-consultation.generated` | Sucesso | As consultas do mês para este paciente foram geradas. |
 | `consultation.none_generated` | Informação | Nenhuma nova consulta foi gerada. |
 | `consultation.generate_failed` | Erro | Não foi possível gerar as consultas. Tente novamente. |
+| `consultation.generated_partial` | Atenção | Algumas consultas foram geradas. Revise os horários ocupados e os agendamentos indicados. |
+| `consultation.generation_blocked` | Atenção | Nenhuma nova consulta foi gerada. Revise os horários ocupados e os agendamentos indicados. |
+| `schedule.conflict` | Atenção | Já existe uma consulta nesse horário. Escolha outro horário. |
+| `schedule.busy` | Atenção | A agenda está sendo atualizada. Tente novamente em instantes. |
 | `report.load_failed` | Erro | Não foi possível carregar o relatório. Tente novamente. |
 | `patient.created` | Sucesso | Paciente cadastrado com sucesso. |
 | `patient.updated` | Sucesso | Dados do paciente atualizados. |
@@ -132,3 +136,5 @@ Para os ajustes de consultas, passaram 135 verificações HTTP, 50 de regressão
 Para a correção do registro, passaram 51 verificações HTTP, 11 em tabela temporária MySQL com modo estrito, os 19 cenários de autenticação e 100 do catálogo e da fila PHP. A página real `/registrar` passou de HTTP 503 para HTTP 200 sem toast de erro inicial após corrigir as extensões do PHP local. Detalhes em [configuracao-local.md](configuracao-local.md).
 
 Para a geração mensal, passaram 88 verificações HTTP, 21 em tabelas temporárias MySQL com modo estrito, 12 de regressão do cliente e 102 do catálogo e da fila PHP. Também passaram as 135 verificações de regressão de status e edição de relatório. No navegador foram conferidos cadastro e edição com geração automática, geração manual e repetição sem novas ocorrências. Os testes não alteraram pacientes nem consultas reais.
+
+Para recorrência contínua e bloqueio de sobreposição, passaram 276 verificações de datas, 22 de geração e conflitos no MariaDB isolado, 69 HTTP, 6 de concorrência com duas conexões, 12 do cliente e 112 do catálogo/fila. Cadastro bloqueado com nome do paciente e geração parcial também foram conferidos no navegador.

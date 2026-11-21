@@ -133,7 +133,7 @@ class PacienteController {
         return null;
     }
 
-    private function salvarAssociacoes($id, array $v, bool $editar): int {
+    private function salvarAssociacoes($id, array $v, bool $editar): array {
         if ($v['quadro'] !== '') {
             $metodo = $editar ? 'atualizarPerfil' : 'criarPerfil';
             $this->perfil->$metodo($id, $v['quadro'], $v['descricao']);
@@ -147,7 +147,15 @@ class PacienteController {
             $this->agendamento->$metodo($id, $v['dia_semana'], $v['repeticao'], $v['horario_inicio'], $v['horario_termino'], $v['data_inicio']);
             return $this->consulta->gerarConsultas((int) $id);
         }
-        return 0;
+        return ['criadas' => 0, 'existentes' => 0, 'conflitos' => [], 'agendamentos_invalidos' => []];
+    }
+
+    private function dadosEnviados(array $dados, array $valores): array {
+        $dados['paciente'] = array_replace($dados['paciente'], array_intersect_key($valores, array_flip(['nome', 'cpf', 'telefone', 'data_nascimento', 'status'])));
+        foreach (['perfil' => ['quadro', 'descricao'], 'encaminhamento' => ['tipo_encaminhamento', 'historico_paciente'], 'agendamento' => ['dia_semana', 'repeticao', 'horario_inicio', 'horario_termino', 'data_inicio']] as $grupo => $campos) {
+            $dados[$grupo] = array_replace($dados[$grupo], array_intersect_key($valores, array_flip($campos), $_POST));
+        }
+        return $dados;
     }
 
     public function criar(): void {
@@ -162,10 +170,17 @@ class PacienteController {
         }
         try {
             $this->prepararModelos();
-            $this->db->beginTransaction();
-            $id = $this->paciente->criarPaciente($valores['nome'], $valores['cpf'], $valores['telefone'], $valores['data_nascimento']);
-            $consultasCriadas = $this->salvarAssociacoes($id, $valores, false);
-            $this->db->commit();
+            [$id, $geracao] = AgendaTransacao::executar($this->db, function () use ($valores) {
+                $id = $this->paciente->criarPaciente($valores['nome'], $valores['cpf'], $valores['telefone'], $valores['data_nascimento']);
+                return [$id, $this->salvarAssociacoes($id, $valores, false)];
+            });
+        } catch (ConflitoAgendaException | AgendaOcupadaException | InvalidArgumentException $e) {
+            http_response_code($e instanceof ConflitoAgendaException ? 409 : ($e instanceof AgendaOcupadaException ? 503 : 422));
+            Toast::discardSuccess();
+            $toastType = 'warning';
+            $erro = $e instanceof InvalidArgumentException ? Toast::message('patient.schedule_invalid') : $e->getMessage();
+            require __DIR__ . '/../../Views/Paciente/paciente-create.php';
+            return;
         } catch (PDOException $e) {
             if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
             http_response_code(500);
@@ -176,7 +191,7 @@ class PacienteController {
             return;
         }
         Toast::add('patient.created');
-        if ($consultasCriadas > 0) Toast::add('patient-consultation.generated');
+        if ($geracao['criadas'] > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }
@@ -192,28 +207,31 @@ class PacienteController {
             $code = Auth::validarCsrf($_POST['csrf_token'] ?? null) ? $this->validar($v) : 'validation.form_expired';
             if ($code !== null) {
                 if ($code !== 'validation.form_expired') {
-                    $dados['paciente'] = array_replace($dados['paciente'], array_intersect_key($v, array_flip(['nome','cpf','telefone','data_nascimento','status'])));
-                    foreach (['perfil' => ['quadro','descricao'], 'encaminhamento' => ['tipo_encaminhamento','historico_paciente'], 'agendamento' => ['dia_semana','repeticao','horario_inicio','horario_termino','data_inicio']] as $grupo => $campos) {
-                        $dados[$grupo] = array_replace($dados[$grupo], array_intersect_key($v, array_flip($campos), $_POST));
-                    }
+                    $dados = $this->dadosEnviados($dados, $v);
                 }
                 Toast::discardSuccess();
                 http_response_code($code === 'validation.form_expired' ? 403 : 422);
                 $this->formularioEdicao($dados, Toast::message($code));
                 return;
             }
-            $this->db->beginTransaction();
-            $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
-            if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
-            $consultasCriadas = $this->salvarAssociacoes($id, $v, true);
-            $this->db->commit();
+            $geracao = AgendaTransacao::executar($this->db, function () use ($id, $v) {
+                $this->paciente->atualizarPaciente($id, $v['nome'], $v['cpf'], $v['telefone'], $v['data_nascimento']);
+                if ($v['status'] !== '') $this->paciente->atualizarStatus($id, $v['status']);
+                return $this->salvarAssociacoes($id, $v, true);
+            });
+        } catch (ConflitoAgendaException | AgendaOcupadaException | InvalidArgumentException $e) {
+            http_response_code($e instanceof ConflitoAgendaException ? 409 : ($e instanceof AgendaOcupadaException ? 503 : 422));
+            Toast::discardSuccess();
+            $erro = $e instanceof InvalidArgumentException ? Toast::message('patient.schedule_invalid') : $e->getMessage();
+            $this->formularioEdicao($this->dadosEnviados($dados, $v), $erro);
+            return;
         } catch (PDOException $e) {
             if (isset($this->db) && $this->db->inTransaction()) $this->db->rollBack();
             $this->falhar('patient.save_failed', 500);
             return;
         }
         Toast::add('patient.updated');
-        if ($consultasCriadas > 0) Toast::add('patient-consultation.generated');
+        if ($geracao['criadas'] > 0) Toast::add('patient-consultation.generated');
         header('Location: /pacientes/' . $id, true, 303);
         exit;
     }

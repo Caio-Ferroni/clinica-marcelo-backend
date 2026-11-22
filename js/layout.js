@@ -99,8 +99,7 @@
                         </nav>
                         <nav aria-label="Conta" class="mt-auto pt-5 border-top clinic-sidebar-account">
                             <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0 clinic-sidebar-links">
-                                ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
-                                ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
+                                ${renderMenuItem('website', 'Home', 'house-door', 'https://psicologomarcelovilela.com.br')}
                                 ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
                             </ul>
                         </nav>

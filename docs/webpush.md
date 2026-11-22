@@ -117,6 +117,8 @@ Troque o contato pelo endereço real do responsável técnico; também é aceita
 
 `WEBPUSH_REMINDER_MINUTES` define a antecedência do primeiro aviso: aceita de 1 a 1440 e vale 10 quando omitido ou inválido. O segundo aviso é sempre no horário marcado, com tolerância fixa de 15 minutos.
 
+`WEBPUSH_TIMEZONE` (padrão `America/Sao_Paulo`) precisa ser **o mesmo fuso em que `consulta.data` e `consulta.horario_inicio` são gravados**. O módulo compara a data/hora local da consulta com o relógio do PHP nesse fuso; não usa o fuso padrão do PHP nem o `NOW()` do MySQL. Trocar para `UTC` em uma base gravada em horário de Brasília desloca a janela em três horas e nenhum lembrete é enviado — por isso altere apenas se o banco realmente guardar horários em outro fuso. Um valor inválido volta ao padrão, sem erro fatal.
+
 ### 3. Ativar após preparar banco, tela e ambiente
 
 Defina `WEBPUSH_ENABLED=true`. Sem essa configuração, o CLI encerra sem conectar ao banco e a API recusa novos cadastros. A remoção de inscrições continua disponível para o psicólogo autenticado mesmo com o módulo desabilitado.
@@ -275,6 +277,10 @@ php Backend/Cron/notificar_consultas.php --diagnostico
 Ele não envia, não grava tentativas e não imprime endpoints, chaves nem nomes de pacientes. Reporta, em ordem, cada etapa que pode impedir a entrega: extensões PHP, `WEBPUSH_ENABLED`, antecedência configurada, formato e par das chaves VAPID, conexão com o banco, existência das tabelas, inscrições ativas (total, vencidas e por conta), número de contas de psicólogo, consultas `Pendente` de paciente `Ativo` dentro do aviso prévio, consultas já iniciadas dentro da tolerância, pares elegíveis, próxima consulta, últimas dez entregas com `kind`/`status`/`http_status` e alcançabilidade HTTPS de cada serviço de push em uso.
 
 Interpretação do histórico: `vazio` indica que o agendador não executou ou não encontrou pares elegíveis; `pending` com `http` nulo indica falha local de rede, TLS/CA bundle ou tempo esgotado; `failed` com 401/403 indica recusa de autenticação VAPID; `failed` com `http` nulo indica inscrição com chaves inválidas na tabela; `failed` com 404/410 desativa a inscrição como `expired`; `sent` indica aceitação pelo provedor e desloca a investigação para o dispositivo e o service worker.
+
+A seção **Próximas consultas Pendente** mostra, para cada uma das cinco seguintes, se entraria na fila agora e o motivo quando não entra: paciente não `Ativo`, nenhum dispositivo ativo, fora da antecedência configurada, já passou da tolerância ou já entregue. É o caminho mais curto para explicar por que um paciente recém-cadastrado ainda não gerou aviso.
+
+A seção **Janela atual** exibe o fuso usado na comparação, o offset atual e o `NOW()` do banco. O relógio do banco aparece só como referência: a decisão de enviar usa exclusivamente o relógio do PHP convertido para `WEBPUSH_TIMEZONE`.
 
 ### Teste de envio
 

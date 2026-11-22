@@ -43,9 +43,9 @@ try {
     $config->assertReady();
     $db = Database::getConnection(true);
     if (in_array('--teste', $arguments, true)) {
-        exit(WebPushTestSender::run(new WebPushRepository($db), new WebPushService($config)));
+        exit(WebPushTestSender::run(new WebPushRepository($db), new WebPushService($config), null, $config->timezone));
     }
-    $reminder = new ConsultaReminder(new WebPushRepository($db), new WebPushService($config), null, $config->reminderSeconds);
+    $reminder = new ConsultaReminder(new WebPushRepository($db), new WebPushService($config), null, $config->reminderSeconds, $config->timezone);
     $counts = $reminder->run(in_array('--dry-run', $arguments, true));
     echo json_encode($counts, JSON_THROW_ON_ERROR) . PHP_EOL;
     exit(($counts['temporary'] + $counts['permanent']) > 0 ? 2 : 0);

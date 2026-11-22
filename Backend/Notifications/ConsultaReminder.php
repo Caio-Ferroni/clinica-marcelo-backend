@@ -16,9 +16,10 @@ final class ConsultaReminder
         private WebPushRepository $repository,
         private PushTransport $transport,
         ?Closure $clock = null,
-        private int $reminderSeconds = 600
+        private int $reminderSeconds = 600,
+        private string $timezone = WebPushConfig::TIMEZONE
     ) {
-        $this->clock = $clock ?? static fn () => new DateTimeImmutable('now', new DateTimeZone(WebPushConfig::TIMEZONE));
+        $this->clock = $clock ?? static fn () => new DateTimeImmutable('now', new DateTimeZone($timezone));
         $this->reminderSeconds = max(60, $reminderSeconds);
     }
 
@@ -33,7 +34,7 @@ final class ConsultaReminder
             foreach ($this->repository->candidates($this->now(), $this->reminderSeconds, self::AT_TIME_GRACE) as $candidate) {
                 $now = $this->now();
                 $current = $this->repository->current($candidate, $now);
-                $start = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $candidate['starts_at'], new DateTimeZone(WebPushConfig::TIMEZONE));
+                $start = DateTimeImmutable::createFromFormat('!Y-m-d H:i:s', $candidate['starts_at'], new DateTimeZone($this->timezone));
                 if ($start === false) {
                     $counts['skipped']++;
                     continue;
@@ -116,6 +117,6 @@ final class ConsultaReminder
 
     private function now(): DateTimeImmutable
     {
-        return ($this->clock)()->setTimezone(new DateTimeZone(WebPushConfig::TIMEZONE));
+        return ($this->clock)()->setTimezone(new DateTimeZone($this->timezone));
     }
 }

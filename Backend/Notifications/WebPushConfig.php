@@ -10,7 +10,8 @@ final class WebPushConfig
         public readonly string $publicKey = '',
         public readonly string $privateKey = '',
         public readonly string $subject = '',
-        public readonly int $reminderSeconds = 600
+        public readonly int $reminderSeconds = 600,
+        public readonly string $timezone = self::TIMEZONE
     ) {}
 
     public static function fromEnvironment(): self
@@ -24,8 +25,26 @@ final class WebPushConfig
             trim((string) ($env['WEBPUSH_VAPID_PUBLIC_KEY'] ?? '')),
             trim((string) ($env['WEBPUSH_VAPID_PRIVATE_KEY'] ?? '')),
             trim((string) ($env['WEBPUSH_VAPID_SUBJECT'] ?? '')),
-            ($minutes === false ? 10 : (int) $minutes) * 60
+            ($minutes === false ? 10 : (int) $minutes) * 60,
+            self::resolveTimezone($env['WEBPUSH_TIMEZONE'] ?? '')
         );
+    }
+
+    /**
+     * O fuso precisa ser o mesmo usado em consulta.data/horario_inicio — o horário local da clínica.
+     * Um valor inválido cai no padrão para não deslocar a janela de envio em silêncio.
+     */
+    private static function resolveTimezone(mixed $value): string
+    {
+        $name = trim((string) $value);
+        if ($name === '') {
+            return self::TIMEZONE;
+        }
+        try {
+            return (new DateTimeZone($name))->getName();
+        } catch (Throwable $error) {
+            return self::TIMEZONE;
+        }
     }
 
     public function assertReady(): void

@@ -12,9 +12,9 @@ require_once __DIR__ . '/PushTransport.php';
  */
 final class WebPushTestSender
 {
-    public static function run(\WebPushRepository $repository, PushTransport $transport, ?DateTimeImmutable $now = null): int
+    public static function run(\WebPushRepository $repository, PushTransport $transport, ?DateTimeImmutable $now = null, string $timezone = WebPushConfig::TIMEZONE): int
     {
-        $now ??= new DateTimeImmutable('now', new DateTimeZone(WebPushConfig::TIMEZONE));
+        $now ??= new DateTimeImmutable('now', new DateTimeZone($timezone));
         $subscriptions = $repository->activeSubscriptions($now);
         if (!$subscriptions) {
             echo "Nenhum dispositivo inscrito e ativo. Ative os lembretes na tela Notificações.\n";

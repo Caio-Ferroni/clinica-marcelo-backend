@@ -20,7 +20,7 @@ class DashboardController {
     public function index() {
         try {
             $this->prepararModelos();
-            $pacientes = $this->paciente->listarTodos();
+            $pacientes = $this->paciente->listarTodos(null);
             $consultas = $this->consulta->listarTodos();
             $tarefas = $this->tarefa->listarTodos();
         } catch (PDOException $e) {

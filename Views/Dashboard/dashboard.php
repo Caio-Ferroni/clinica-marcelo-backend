@@ -23,9 +23,16 @@ $dadosGrafico = [];
 $mesBase = $agora->modify('first day of this month');
 for ($i = 5; $i >= 0; $i--) {
     $mes = $mesBase->modify('-' . $i . ' months');
-    $mesConsultas = array_filter($consultas, static fn($c) => substr((string) ($c['data'] ?? ''), 0, 7) === $mes->format('Y-m'));
-    $realizadas = count(array_filter($mesConsultas, $concluida));
-    $dadosGrafico[] = ['label' => $mesesNomes[(int) $mes->format('n')], 'outras' => count($mesConsultas) - $realizadas, 'realizadas' => $realizadas, 'total' => count($mesConsultas)];
+    $mesAno = $mes->format('Y-m');
+    $mesPacientes = array_filter($pacientes, static fn($p) => substr((string) ($p['criado_em'] ?? ''), 0, 7) === $mesAno);
+    $ativos = count(array_filter($mesPacientes, static fn($p) => ($p['status'] ?? 'Ativo') === 'Ativo'));
+    $inativos = count(array_filter($mesPacientes, static fn($p) => ($p['status'] ?? '') === 'Inativo'));
+    $dadosGrafico[] = [
+        'label' => $mesesNomes[(int) $mes->format('n')],
+        'ativos' => $ativos,
+        'inativos' => $inativos,
+        'total' => count($mesPacientes)
+    ];
 }
 $pacientesNovos = $pacientes;
 usort($pacientesNovos, static fn($a, $b) => strcmp((string) ($b['criado_em'] ?? ''), (string) ($a['criado_em'] ?? '')) ?: ((int) $b['id_paciente'] <=> (int) $a['id_paciente']));
@@ -122,7 +129,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
 
 
                     <section aria-labelledby="pacientes-mes-heading" class="mb-7">
-                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Consultas por mês</p>
+                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes novos por mês</p>
                         <div class="border rounded-4 shadow-sm p-7 md:p-8" style="background: var(--color-surface);">
                             <div style="height: 250px; position: relative;">
                                 <canvas id="chartPacientesMes"></canvas>
@@ -261,15 +268,15 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                         labels: <?= json_encode(array_column($dadosGrafico, 'label')) ?>,
                         datasets: [
                             {
-                                label: 'Outras consultas',
-                                data: <?= json_encode(array_column($dadosGrafico, 'outras')) ?>,
+                                label: 'Pacientes ativos',
+                                data: <?= json_encode(array_column($dadosGrafico, 'ativos')) ?>,
                                 backgroundColor: '#102d5b',
                                 borderRadius: { bottomLeft: 4, bottomRight: 4 },
                                 stack: 'pacientes'
                             },
                             {
-                                label: 'Consultas concluídas',
-                                data: <?= json_encode(array_column($dadosGrafico, 'realizadas')) ?>,
+                                label: 'Pacientes inativos',
+                                data: <?= json_encode(array_column($dadosGrafico, 'inativos')) ?>,
                                 backgroundColor: '#a8ddf5',
                                 borderRadius: { topLeft: 6, topRight: 6 },
                                 stack: 'pacientes'
@@ -292,7 +299,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (item) => `${item.dataset.label}: ${item.parsed.y} consulta(s)`
+                                    label: (item) => `${item.dataset.label}: ${item.parsed.y} paciente(s)`
                                 }
                             }
                         },

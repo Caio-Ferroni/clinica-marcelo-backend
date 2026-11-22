@@ -54,6 +54,15 @@ final class WebPushRepository
         $stmt->execute([$this->lockName]);
     }
 
+    /** Dispositivos ativos e não vencidos, para o envio de teste. Não expõe os dados fora do processo. */
+    public function activeSubscriptions(DateTimeImmutable $now): array
+    {
+        $stmt = $this->db->prepare('SELECT id, endpoint, p256dh, auth FROM webpush_subscriptions
+            WHERE active = 1 AND (expires_at IS NULL OR expires_at > ?) ORDER BY id');
+        $stmt->execute([self::utc($now)]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function candidates(DateTimeImmutable $now, int $reminderSeconds, int $graceSeconds): array
     {
         if ((int) $this->db->query('SELECT COUNT(*) FROM psicologo')->fetchColumn() > 1) {

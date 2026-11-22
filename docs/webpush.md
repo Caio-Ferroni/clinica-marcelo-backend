@@ -274,7 +274,26 @@ php Backend/Cron/notificar_consultas.php --diagnostico
 
 Ele não envia, não grava tentativas e não imprime endpoints, chaves nem nomes de pacientes. Reporta, em ordem, cada etapa que pode impedir a entrega: extensões PHP, `WEBPUSH_ENABLED`, antecedência configurada, formato e par das chaves VAPID, conexão com o banco, existência das tabelas, inscrições ativas (total, vencidas e por conta), número de contas de psicólogo, consultas `Pendente` de paciente `Ativo` dentro do aviso prévio, consultas já iniciadas dentro da tolerância, pares elegíveis, próxima consulta, últimas dez entregas com `kind`/`status`/`http_status` e alcançabilidade HTTPS de cada serviço de push em uso.
 
-Interpretação do histórico: `vazio` indica que o agendador não executou ou não encontrou pares elegíveis; `pending` com `http` nulo indica falha local de rede, TLS/CA bundle ou tempo esgotado; `failed` com 401/403 indica recusa de autenticação VAPID; `failed` com 404/410 desativa a inscrição como `expired`; `sent` indica aceitação pelo provedor e desloca a investigação para o dispositivo e o service worker.
+Interpretação do histórico: `vazio` indica que o agendador não executou ou não encontrou pares elegíveis; `pending` com `http` nulo indica falha local de rede, TLS/CA bundle ou tempo esgotado; `failed` com 401/403 indica recusa de autenticação VAPID; `failed` com `http` nulo indica inscrição com chaves inválidas na tabela; `failed` com 404/410 desativa a inscrição como `expired`; `sent` indica aceitação pelo provedor e desloca a investigação para o dispositivo e o service worker.
+
+### Teste de envio
+
+Para separar “o servidor envia” de “o dispositivo exibe”, dispare uma notificação de teste a todos os dispositivos inscritos:
+
+```sh
+php Backend/Cron/notificar_consultas.php --teste
+```
+
+O comando não grava histórico nem altera inscrições; mostra uma linha por dispositivo com `status` e código HTTP. Não depende de consulta, de horário ou do agendador.
+
+| Resultado | Significado |
+| --- | --- |
+| `sent` | O provedor aceitou. Se nada aparecer, o problema é o dispositivo: permissão do site no navegador, notificações do navegador desativadas no sistema operacional, Assistente de Foco, modo silencioso ou economia de bateria. |
+| `expired` (404/410) | Inscrição morta no provedor. Desative e ative os lembretes de novo no dispositivo. |
+| `permanent` com `http` nulo | As chaves `p256dh`/`auth` gravadas estão corrompidas ou não são P-256. Desative e ative novamente. |
+| `permanent` 401/403 | VAPID: chaves trocadas depois da inscrição, `WEBPUSH_VAPID_SUBJECT` inválido ou relógio do servidor fora de sincronia. |
+| `temporary` com `http` nulo | Rede/TLS de saída: CA bundle, proxy ou firewall. Confirme com `--diagnostico`. |
+| `temporary` 429/5xx | Limite ou indisponibilidade temporária do provedor. Repetir depois. |
 
 O modo convive com `--dry-run` e `--help` e retorna `0` mesmo quando aponta problemas, para não confundir o agendador.
 

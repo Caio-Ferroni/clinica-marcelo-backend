@@ -93,10 +93,10 @@ foreach ($tarefas as $t) {
                                             <td class="text-center text-sm align-middle" data-field="status"><?= $escape(!empty($t['status']) ? $t['status'] : 'Pendente') ?></td>
                                             <td class="text-center align-middle">
                                                 <div class="d-flex justify-content-center gap-3">
-                                                    <a class="btn btn-sm p-2" href="/tarefas/<?= $escape($t['id_tarefa'] ?? '') ?>/editar" aria-label="Editar tarefa" title="Editar">
+                                                    <a class="btn btn-sm btn-table-action btn-table-edit" href="/tarefas/<?= $escape($t['id_tarefa'] ?? '') ?>/editar" aria-label="Editar tarefa" title="Editar">
                                                         <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                                                     </a>
-                                                    <a class="btn btn-sm p-2" href="/tarefas/<?= $escape($t['id_tarefa'] ?? '') ?>" aria-label="Visualizar tarefa" title="Visualizar">
+                                                    <a class="btn btn-sm btn-table-action btn-table-view" href="/tarefas/<?= $escape($t['id_tarefa'] ?? '') ?>" aria-label="Visualizar tarefa" title="Visualizar">
                                                         <i class="bi bi-eye-fill" aria-hidden="true"></i>
                                                     </a>
                                                 </div>

@@ -23,7 +23,7 @@ require_once __DIR__ . '/../Support/DisponibilidadeAgenda.php';
                     FROM consulta c
                     LEFT JOIN agendamento a ON c.id_agendamento = a.id_agendamento
                     LEFT JOIN paciente p ON a.id_paciente = p.id_paciente
-                    ORDER BY c.data DESC, c.horario_inicio ASC, c.id_consulta DESC;';
+                    ORDER BY c.data ASC, c.horario_inicio ASC, c.id_consulta DESC;';
             $stmt = $this->db->query($sql);
             return $stmt->fetchAll();
         }

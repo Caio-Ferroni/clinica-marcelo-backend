@@ -104,8 +104,8 @@ $formatarData = static function ($valor): string {
                                     <tr data-id="<?= $id ?>">
                                         <td class="text-center text-sm align-middle" data-field="paciente"><?= $escapar($consulta['paciente_nome'] ?? 'Paciente indisponível') ?></td>
                                         <td class="text-center text-sm align-middle" data-field="horario">
-                                            <span class="d-block"><?= $formatarData($consulta['data']) ?></span>
-                                            <?= $escapar(substr((string) $consulta['horario_inicio'], 0, 5)) ?>
+                                            <span class="d-block"><?= $formatarData($consulta['data']) ?> - <?= $escapar(substr((string) $consulta['horario_inicio'], 0, 5)) ?></span>
+                                            
                                         </td>
                                         <td class="text-center text-sm align-middle" data-field="status">
                                             <form method="post" action="/consultas/<?= $id ?>/status" data-status-form data-id="<?= $id ?>" data-toast-validate class="d-flex flex-column align-items-stretch gap-3 m-0" style="min-width: 165px;">
@@ -125,10 +125,10 @@ $formatarData = static function ($valor): string {
                                         <td class="text-center text-sm align-middle" data-field="relatorio">
                                             <?php $podeEditar = Consulta::podeEditarRelatorio($consulta); ?>
                                             <div class="d-flex justify-content-center gap-3">
-                                                <a class="btn btn-sm p-2<?= $podeEditar ? '' : ' disabled' ?>" data-consulta-edit data-edit-url="/consultas/<?= $id ?>/editar" aria-label="Editar relatório" title="<?= $podeEditar ? 'Editar relatório' : $escapar(Toast::message('report.not_completed')) ?>" <?= $podeEditar ? 'href="/consultas/' . $id . '/editar"' : 'role="link" aria-disabled="true" tabindex="-1"' ?>>
+                                                <a class="btn btn-sm btn-table-action btn-table-edit<?= $podeEditar ? '' : ' disabled' ?>" data-consulta-edit data-edit-url="/consultas/<?= $id ?>/editar" aria-label="Editar relatório" title="<?= $podeEditar ? 'Editar relatório' : $escapar(Toast::message('report.not_completed')) ?>" <?= $podeEditar ? 'href="/consultas/' . $id . '/editar"' : 'role="link" aria-disabled="true" tabindex="-1"' ?>>
                                                     <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                                                 </a>
-                                                <a class="btn btn-sm p-2" href="/consultas/<?= $id ?>" aria-label="Visualizar consulta" title="Visualizar consulta">
+                                                <a class="btn btn-sm btn-table-action btn-table-view" href="/consultas/<?= $id ?>" aria-label="Visualizar consulta" title="Visualizar consulta">
                                                     <i class="bi bi-eye-fill" aria-hidden="true"></i>
                                                 </a>
                                             </div>

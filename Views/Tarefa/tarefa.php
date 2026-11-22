@@ -28,8 +28,8 @@ foreach ($tarefas as $t) {
     <title>Tarefas | Clínica</title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/layout.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime(__DIR__ . '/../../css/style.css') ?>">
+    <script src="/js/layout.js?v=<?= filemtime(__DIR__ . '/../../js/layout.js') ?>" defer></script>
 </head>
 <body class="tasks-list">
     <div class="d-flex flex-column md:flex-row min-vh-100">

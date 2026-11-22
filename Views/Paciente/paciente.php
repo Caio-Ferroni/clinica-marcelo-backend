@@ -45,7 +45,7 @@ foreach ($pacientes as $p) {
     <title>Pacientes | Clínica</title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime(__DIR__ . '/../../css/style.css') ?>">
     <link rel="stylesheet" href="/css/patient-tabs.css?v=<?= filemtime(__DIR__ . '/../../css/patient-tabs.css') ?>">
     <script src="/js/layout.js?v=<?= filemtime(__DIR__ . '/../../js/layout.js') ?>" defer></script>
 </head>

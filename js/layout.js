@@ -19,6 +19,17 @@
         document.head.appendChild(stylesheet);
     }
 
+    const SECTION_TITLES = {
+        home: 'Início',
+        patients: 'Pacientes',
+        appointments: 'Consultas',
+        tasks: 'Tarefas',
+        profile: 'Meu perfil',
+        reports: 'Relatórios',
+        website: 'Início',
+        logout: 'Sair'
+    };
+
     function renderMenuItem(section, label, icon, link) {
         return `
             <li>
@@ -38,46 +49,132 @@
         }
 
         connectedCallback() {
-            this.classList.add('d-flex', 'col-12', 'md:col-3', 'xl:col-2', 'flex-shrink-0');
+            if (this.dataset.menuReady === 'true') return;
+            this.dataset.menuReady = 'true';
+            this.classList.add('clinic-shell', 'd-flex', 'col-12', 'md:col-3', 'xl:col-2', 'flex-shrink-0');
+            this.dataset.menuOpen = 'false';
             this.innerHTML = `
-                <aside class="d-flex flex-column w-100 p-7 text-sm" aria-label="Menu da clínica" style="background: var(--color-dark-blue); color: var(--color-white);">
-                    <div class="d-flex align-items-center gap-4 py-5" style="--bs-border-color: var(--color-light-blue);">
-                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" aria-hidden="true" style="width: 42px; height: 42px; background: var(--color-light-blue); color: var(--color-dark-blue);">
-                            <i class="bi bi-person text-lg"></i>
-                        </span>
-                        <div>
-                            <small class="d-block" style="color: var(--color-light-blue);">Bem-vindo</small>
-                            <strong>Olá, Marcelo!</strong>
+                <header class="clinic-topbar">
+                    <button type="button" class="clinic-menu-button" data-menu-toggle aria-label="Abrir menu" aria-controls="clinic-menu" aria-expanded="false">
+                        <i class="bi bi-list" aria-hidden="true"></i>
+                    </button>
+                    <span class="clinic-topbar-title" data-menu-title></span>
+                </header>
+                <button type="button" class="clinic-drawer-backdrop" data-menu-close tabindex="-1" aria-label="Fechar menu"></button>
+                <div class="clinic-drawer" id="clinic-menu">
+                    <div class="clinic-drawer-head">
+                        <span class="clinic-drawer-label">Menu</span>
+                        <button type="button" class="clinic-drawer-close" data-menu-close aria-label="Fechar menu">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <aside class="clinic-sidebar d-flex flex-column w-100 p-7 text-sm" aria-label="Menu da clínica">
+                        <div class="d-flex align-items-center gap-4 py-5 clinic-sidebar-user">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" aria-hidden="true" style="width: 42px; height: 42px; background: var(--color-light-blue); color: var(--color-dark-blue);">
+                                <i class="bi bi-person text-lg"></i>
+                            </span>
+                            <div>
+                                <small class="d-block">Bem-vindo</small>
+                                <strong>Olá, Marcelo!</strong>
+                            </div>
                         </div>
-                    </div>
-                    <div class="d-flex flex-wrap gap-5 mb-7">
-                        <a href="#webpush-modal" data-open-webpush aria-haspopup="dialog" aria-controls="webpush-modal" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
-                            <i class="bi bi-bell text-lg" aria-hidden="true"></i>
-                            Notificações
-                        </a>
-                        <a href="#" data-open-tutorial aria-haspopup="dialog" aria-controls="tutorial-modal" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none" style="color: var(--color-light-blue);">
-                            <i class="bi bi-play-circle text-lg" aria-hidden="true"></i>
-                            Ajuda
-                        </a>
-                    </div>
-                    <nav aria-label="Navegação principal" class="mb-7">
-                        <p class="text-xs mb-4" style="color: var(--color-light-blue);">MENU PRINCIPAL</p>
-                        <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('home', 'Início', 'house-door', '/dashboard')}
-                            ${renderMenuItem('patients', 'Pacientes', 'people', '/pacientes')}
-                            ${renderMenuItem('appointments', 'Consultas', 'calendar-event', '/consultas')}
-                            ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check', '/tarefas')}
-                        </ul>
-                    </nav>
-                    <nav aria-label="Conta" class="mt-auto pt-5 border-top" style="--bs-border-color: var(--color-light-blue);">
-                        <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
-                            ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
-                            ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
-                        </ul>
-                    </nav>
-                </aside>`;
+                        <div class="d-flex flex-wrap gap-5 mb-7 clinic-sidebar-shortcuts">
+                            <a href="#webpush-modal" data-open-webpush aria-haspopup="dialog" aria-controls="webpush-modal" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none">
+                                <i class="bi bi-bell text-lg" aria-hidden="true"></i>
+                                Notificações
+                            </a>
+                            <a href="#" data-open-tutorial aria-haspopup="dialog" aria-controls="tutorial-modal" class="d-inline-flex align-items-center gap-2 p-0 text-xs text-decoration-none">
+                                <i class="bi bi-play-circle text-lg" aria-hidden="true"></i>
+                                Ajuda
+                            </a>
+                        </div>
+                        <nav aria-label="Navegação principal" class="mb-7">
+                            <p class="text-xs mb-4 clinic-sidebar-caption">MENU PRINCIPAL</p>
+                            <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0 clinic-sidebar-links">
+                                ${renderMenuItem('home', 'Início', 'house-door', '/dashboard')}
+                                ${renderMenuItem('patients', 'Pacientes', 'people', '/pacientes')}
+                                ${renderMenuItem('appointments', 'Consultas', 'calendar-event', '/consultas')}
+                                ${renderMenuItem('tasks', 'Tarefas', 'clipboard-check', '/tarefas')}
+                            </ul>
+                        </nav>
+                        <nav aria-label="Conta" class="mt-auto pt-5 border-top clinic-sidebar-account">
+                            <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0 clinic-sidebar-links">
+                                ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
+                                ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
+                                ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
+                            </ul>
+                        </nav>
+                    </aside>
+                </div>`;
+            document.body.classList.add('clinic-app');
+            this.setupMenu();
             this.updateActive();
+        }
+
+        setupMenu() {
+            const toggle = this.querySelector('[data-menu-toggle]');
+            const drawer = this.querySelector('.clinic-drawer');
+            const desktop = window.matchMedia('(min-width: 768px)');
+            const isOpen = () => this.dataset.menuOpen === 'true';
+
+            const setOpen = (open, { restoreFocus = true } = {}) => {
+                this.dataset.menuOpen = open ? 'true' : 'false';
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.setAttribute('aria-label', open ? 'Fechar menu' : 'Abrir menu');
+                document.body.classList.toggle('clinic-menu-open', open);
+
+                if (open) {
+                    this.querySelector('.clinic-drawer-close')?.focus();
+                } else if (restoreFocus && this.contains(document.activeElement)) {
+                    toggle.focus();
+                }
+            };
+
+            toggle.addEventListener('click', () => setOpen(!isOpen()));
+
+            this.querySelectorAll('[data-menu-close]').forEach((element) => {
+                element.addEventListener('click', () => setOpen(false));
+            });
+
+            drawer.addEventListener('click', (event) => {
+                if (event.target.closest('a[href], [data-open-webpush], [data-open-tutorial]')) {
+                    setOpen(false, { restoreFocus: false });
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (!isOpen()) return;
+
+                if (event.key === 'Escape') {
+                    event.preventDefault();
+                    setOpen(false);
+                    return;
+                }
+
+                if (event.key !== 'Tab') return;
+
+                const focusable = Array.from(drawer.querySelectorAll('a[href], button:not([disabled])'))
+                    .filter((element) => element.getClientRects().length > 0);
+                if (!focusable.length) return;
+
+                const first = focusable[0];
+                const last = focusable[focusable.length - 1];
+
+                if (event.shiftKey && (document.activeElement === first || !drawer.contains(document.activeElement))) {
+                    event.preventDefault();
+                    last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first.focus();
+                }
+            });
+
+            const closeOnDesktop = () => {
+                if (desktop.matches && isOpen()) setOpen(false, { restoreFocus: false });
+            };
+            if (desktop.addEventListener) desktop.addEventListener('change', closeOnDesktop);
+            else desktop.addListener(closeOnDesktop);
+            closeOnDesktop();
         }
 
         attributeChangedCallback() {
@@ -86,6 +183,9 @@
 
         updateActive() {
             const activeSection = this.getAttribute('active');
+            const title = this.querySelector('[data-menu-title]');
+
+            if (title) title.textContent = SECTION_TITLES[activeSection] || 'Clínica';
 
             this.querySelectorAll('[data-section]').forEach((link) => {
                 const isActive = link.dataset.section === activeSection;

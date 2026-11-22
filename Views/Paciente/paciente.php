@@ -115,10 +115,10 @@ foreach ($pacientes as $p) {
                                             <td class="text-center text-sm align-middle" data-field="status"><?= $escape($p['status'] ?? 'Ativo') ?></td>
                                             <td class="text-center align-middle">
                                                 <div class="d-flex justify-content-center gap-3">
-                                                    <a class="btn btn-sm p-2" href="/pacientes/<?= $escape($p['id_paciente'] ?? '') ?>/editar" aria-label="Editar">
+                                                    <a class="btn btn-sm btn-table-action btn-table-edit" href="/pacientes/<?= $escape($p['id_paciente'] ?? '') ?>/editar" aria-label="Editar" title="Editar paciente">
                                                         <i class="bi bi-pencil-fill" aria-hidden="true"></i>
                                                     </a>
-                                                    <a class="btn btn-sm p-2" href="/pacientes/<?= $escape($p['id_paciente'] ?? '') ?>" aria-label="Visualizar">
+                                                    <a class="btn btn-sm btn-table-action btn-table-view" href="/pacientes/<?= $escape($p['id_paciente'] ?? '') ?>" aria-label="Visualizar" title="Visualizar paciente">
                                                         <i class="bi bi-eye-fill" aria-hidden="true"></i>
                                                     </a>
                                                 </div>

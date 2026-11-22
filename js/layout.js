@@ -71,8 +71,7 @@
                     </nav>
                     <nav aria-label="Conta" class="mt-auto pt-5 border-top" style="--bs-border-color: var(--color-light-blue);">
                         <ul class="list-unstyled d-flex flex-wrap md:flex-column gap-2 mb-0">
-                            ${renderMenuItem('profile', 'Meu perfil', 'person', '/perfil')}
-                            ${renderMenuItem('website', 'Home', 'house-door', '/dashboard')}
+                            ${renderMenuItem('website', 'Home', 'house-door', 'https://psicologomarcelovilela.com.br')}
                             ${renderMenuItem('logout', 'Sair', 'box-arrow-right', '/logout')}
                         </ul>
                     </nav>
@@ -107,8 +106,8 @@
         connectedCallback() {
             this.classList.add('d-block', 'mt-auto');
             this.innerHTML = `
-                <footer class="d-flex flex-wrap align-items-center justify-content-between gap-3 border-top p-5 text-xs" style="background: var(--color-white); color: var(--color-dark-blue); --bs-border-color: var(--color-light-blue);">
-                    <span>Footer <span aria-hidden="true">·</span> A Fazer</span>
+                <footer class="d-flex flex-wrap align-items-center justify-content-center gap-3 border-top p-5 text-xs" style="background: var(--color-white); color: var(--color-dark-blue); --bs-border-color: var(--color-light-blue);">
+                    <span> © ${new Date().getFullYear()} Marcelo Vilela. Todos os direitos reservados. Psicólogo · CRP 06/141470</span>
                 </footer>`;
         }
     }

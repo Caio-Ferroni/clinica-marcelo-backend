@@ -117,3 +117,68 @@
     --color-field-background: #f7fafc;
     --color-lighter-blue:#bfebff;
 }
+
+/* Botões de ação das tabelas */
+.btn-table-action,
+.table td .btn.btn-sm.p-2 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    border: 1px solid #000000 !important;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.btn-table-action:hover,
+.table td .btn.btn-sm.p-2:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    border-color: #000000 !important;
+}
+
+/* Cor de destaque para Editar */
+.btn-table-action.btn-table-edit,
+.table td .btn[aria-label*="Editar"],
+.table td a[href*="editar"] {
+    background-color: #fef08a;
+    color: #1a1a1a;
+}
+
+.btn-table-action.btn-table-edit:hover,
+.table td .btn[aria-label*="Editar"]:hover,
+.table td a[href*="editar"]:hover {
+    background-color: #facc15;
+    color: #000000;
+}
+
+/* Cor de destaque para Visualizar */
+.btn-table-action.btn-table-view,
+.table td .btn[aria-label*="Visualizar"],
+.table td a:not([href*="editar"])[aria-label*="Visualizar"] {
+    background-color: #a8ddf5;
+    color: #1a1a1a;
+}
+
+.btn-table-action.btn-table-view:hover,
+.table td .btn[aria-label*="Visualizar"]:hover,
+.table td a:not([href*="editar"])[aria-label*="Visualizar"]:hover {
+    background-color: #8cd0f0;
+    color: #000000;
+}
+
+.btn-table-action:disabled,
+.btn-table-action.disabled,
+.table td .btn.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+    border-color: #000000 !important;
+}

@@ -20,8 +20,8 @@ $abrirEncaminhamento = ($valores['tipo_encaminhamento'] ?? '') !== '' || ($valor
     <title>Adicionar paciente | Clínica</title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/layout.js" defer></script>
+    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime(__DIR__ . '/../../css/style.css') ?>">
+    <script src="/js/layout.js?v=<?= filemtime(__DIR__ . '/../../js/layout.js') ?>" defer></script>
     <script src="/js/patient-masks.js" defer></script>
     <script src="/js/patient-schedule.js?v=<?= filemtime(__DIR__ . '/../../js/patient-schedule.js') ?>" defer></script>
 </head>

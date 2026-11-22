@@ -55,9 +55,9 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
     <title>Dashboard | Clínica</title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=<?= filemtime(__DIR__ . '/../../css/style.css') ?>">
     <script src="/js/chart.min.js"></script>
-    <script src="/js/layout.js" defer></script>
+    <script src="/js/layout.js?v=<?= filemtime(__DIR__ . '/../../js/layout.js') ?>" defer></script>
 </head>
 <body class="dashboard-page">
     <div class="d-flex flex-column md:flex-row min-vh-100">
@@ -71,7 +71,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
 
 
                     <section aria-labelledby="proxima-heading" class="mb-7">
-                        <p id="proxima-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Próxima consulta</p>
+                        <p id="proxima-heading" class="section-label text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Próxima consulta</p>
                         <div class="border rounded-4 shadow-sm p-6" style="background: var(--color-surface);">
                             <div class="row align-items-center g-4 text-center">
                                 <div class="col-12 md:col-6 border-end-md" style="--bs-border-color: var(--color-border);">
@@ -108,7 +108,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
 
 
                     <section aria-labelledby="atalhos-heading" class="mb-7">
-                        <p id="atalhos-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Atalhos</p>
+                        <p id="atalhos-heading" class="section-label text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Atalhos</p>
                         <div class="row g-5">
                             <div class="col-12 md:col-6">
                                 <a href="/pacientes/criar" class="border rounded-4 shadow-sm p-6 text-center text-decoration-none d-flex flex-column justify-content-center align-items-center h-100" style="background: var(--color-surface); color: var(--color-dark-blue); min-height: 110px;">
@@ -129,7 +129,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
 
 
                     <section aria-labelledby="pacientes-mes-heading" class="mb-7">
-                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes novos por mês</p>
+                        <p id="pacientes-mes-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Consultas por mês</p>
                         <div class="border rounded-4 shadow-sm p-7 md:p-8" style="background: var(--color-surface);">
                             <div style="height: 250px; position: relative;">
                                 <canvas id="chartPacientesMes"></canvas>
@@ -140,10 +140,10 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
 
-                    <div class="row g-7 mb-7">
+                    <div class="row g-7 dashboard-stack mb-7">
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="novos-heading" class="h-100">
-                                <p id="novos-heading" class="text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes recentes</p>
+                                <p id="novos-heading" class="section-label text-sm fw-medium mb-3" style="color: var(--color-text-muted);">Pacientes recentes</p>
                                 <div class="border rounded-4 shadow-sm p-6 h-100 d-flex flex-column" style="background: var(--color-surface);">
                                     <?php if (empty($pacientesNovos)): ?>
                                         <p class="text-sm mb-0 text-center my-auto" style="color: var(--color-text-muted);">Nenhum paciente cadastrado recentemente.</p>
@@ -167,7 +167,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="consultas-heading" class="h-100">
                                 <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                    <p id="consultas-heading" class="text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Consultas</p>
+                                    <p id="consultas-heading" class="section-label text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Consultas</p>
                                     <small class="text-xs" style="color: var(--color-text-muted);">Visão geral</small>
                                 </div>
                                 <div class="border rounded-4 shadow-sm p-6 h-100 d-flex flex-column justify-content-center" style="background: var(--color-surface);">
@@ -194,11 +194,11 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                     <hr class="my-7" style="border-top: 1px dashed var(--color-border); opacity: 1;">
 
 
-                    <div class="row g-7 mb-7">
+                    <div class="row g-7 dashboard-stack mb-7">
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="tarefas-heading" class="h-100">
                                 <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                    <p id="tarefas-heading" class="text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Tarefas</p>
+                                    <p id="tarefas-heading" class="section-label text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Tarefas</p>
                                     <a href="/tarefas" class="text-xs text-decoration-none" style="color: var(--color-dark-blue);">Ver todas &rarr;</a>
                                 </div>
                                 <div class="border rounded-4 shadow-sm p-6 h-100" style="background: var(--color-surface);">
@@ -222,7 +222,7 @@ $agendaHoje = array_slice($agendaHoje, 0, 5);
                         <div class="col-12 md:col-6">
                             <section aria-labelledby="agenda-heading" class="h-100">
                                 <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-                                    <p id="agenda-heading" class="text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Agenda hoje</p>
+                                    <p id="agenda-heading" class="section-label text-sm fw-medium mb-0" style="color: var(--color-text-muted);">Agenda hoje</p>
                                     <a href="/consultas" class="text-xs text-decoration-none" style="color: var(--color-dark-blue);">Ver consultas &rarr;</a>
                                 </div>
                                 <div class="border rounded-4 shadow-sm p-6 h-100" style="background: var(--color-surface);">

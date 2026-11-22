@@ -116,6 +116,285 @@
     --color-border: #dce6ed;
     --color-field-background: #f7fafc;
     --color-lighter-blue:#bfebff;
+    --clinic-topbar-height: 3.5rem;
+}
+
+.clinic-sidebar {
+    background: var(--color-dark-blue);
+    color: var(--color-white);
+    flex: 1 1 auto;
+}
+
+.clinic-sidebar small,
+.clinic-sidebar-caption {
+    color: var(--color-light-blue);
+}
+
+.clinic-sidebar-shortcuts a {
+    color: var(--color-light-blue);
+}
+
+.clinic-sidebar-account {
+    --bs-border-color: var(--color-light-blue);
+}
+
+.clinic-sidebar-links {
+    flex-direction: column;
+}
+
+.clinic-sidebar-links a {
+    min-height: 2.75rem;
+}
+
+.clinic-topbar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1040;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: calc(var(--clinic-topbar-height) + env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) 0.75rem 0;
+    background: var(--color-dark-blue);
+    color: var(--color-white);
+    box-shadow: 0 2px 10px rgb(16 45 91 / 25%);
+}
+
+.clinic-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid rgb(168 221 245 / 45%);
+    border-radius: 0.75rem;
+    background: rgb(255 255 255 / 10%);
+    color: var(--color-white);
+    font-size: 1.4rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.clinic-menu-button:hover {
+    background: rgb(255 255 255 / 18%);
+}
+
+.clinic-menu-button:focus-visible,
+.clinic-drawer-close:focus-visible {
+    outline: 2px solid var(--color-light-blue);
+    outline-offset: 2px;
+}
+
+.clinic-topbar-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.clinic-drawer {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1055;
+    display: flex;
+    flex-direction: column;
+    width: min(19rem, 86vw);
+    padding-top: env(safe-area-inset-top, 0px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--color-dark-blue);
+    color: var(--color-white);
+    box-shadow: 0 20px 45px rgb(16 45 91 / 35%);
+    transform: translateX(-104%);
+    visibility: hidden;
+    transition: transform 0.28s ease, visibility 0s linear 0.28s;
+}
+
+.clinic-shell[data-menu-open="true"] .clinic-drawer {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.28s ease, visibility 0s;
+}
+
+.clinic-drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgb(16 45 91 / 55%);
+    opacity: 0;
+    visibility: hidden;
+    cursor: pointer;
+    transition: opacity 0.28s ease, visibility 0s linear 0.28s;
+}
+
+.clinic-shell[data-menu-open="true"] .clinic-drawer-backdrop {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.28s ease, visibility 0s;
+}
+
+.clinic-drawer-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--color-dark-blue);
+    border-bottom: 1px solid rgb(168 221 245 / 30%);
+}
+
+.clinic-drawer-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-light-blue);
+}
+
+.clinic-drawer-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0;
+    border-radius: 0.6rem;
+    background: rgb(255 255 255 / 10%);
+    color: var(--color-white);
+    cursor: pointer;
+}
+
+.clinic-drawer .clinic-sidebar {
+    padding: 1rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+body.clinic-menu-open {
+    overflow: hidden;
+}
+
+@media (min-width: 768px) {
+    .clinic-topbar,
+    .clinic-drawer-backdrop,
+    .clinic-drawer-head {
+        display: none;
+    }
+
+    .border-end-md {
+        border-inline-end: 1px solid var(--bs-border-color, var(--color-border));
+    }
+
+    .clinic-drawer {
+        display: contents;
+        visibility: visible;
+        transform: none;
+    }
+
+    .clinic-drawer .clinic-sidebar {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    body:has(clinic-sidebar) main,
+    body.clinic-app main {
+        padding-top: calc(var(--clinic-topbar-height) + 1rem + env(safe-area-inset-top, 0px));
+        padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .section-label.mb-3 {
+        margin-bottom: 0.75rem;
+    }
+
+    .dashboard-stack {
+        --bs-gutter-y: 0;
+        row-gap: 2.5rem;
+    }
+}
+
+canvas {
+    max-width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .clinic-drawer,
+    .clinic-drawer-backdrop {
+        transition: none;
+    }
+}
+
+/* Botões de ação das tabelas */
+.btn-table-action,
+.table td .btn.btn-sm.p-2 {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0 !important;
+    border: 1px solid #000000 !important;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.btn-table-action:hover,
+.table td .btn.btn-sm.p-2:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+    border-color: #000000 !important;
+}
+
+/* Cor de destaque para Editar */
+.btn-table-action.btn-table-edit,
+.table td .btn[aria-label*="Editar"],
+.table td a[href*="editar"] {
+    background-color: #fef08a;
+    color: #1a1a1a;
+}
+
+.btn-table-action.btn-table-edit:hover,
+.table td .btn[aria-label*="Editar"]:hover,
+.table td a[href*="editar"]:hover {
+    background-color: #facc15;
+    color: #000000;
+}
+
+/* Cor de destaque para Visualizar */
+.btn-table-action.btn-table-view,
+.table td .btn[aria-label*="Visualizar"],
+.table td a:not([href*="editar"])[aria-label*="Visualizar"] {
+    background-color: #a8ddf5;
+    color: #1a1a1a;
+}
+
+.btn-table-action.btn-table-view:hover,
+.table td .btn[aria-label*="Visualizar"]:hover,
+.table td a:not([href*="editar"])[aria-label*="Visualizar"]:hover {
+    background-color: #8cd0f0;
+    color: #000000;
+}
+
+.btn-table-action:disabled,
+.btn-table-action.disabled,
+.table td .btn.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+    border-color: #000000 !important;
 }
 
 /* Botões de ação das tabelas */

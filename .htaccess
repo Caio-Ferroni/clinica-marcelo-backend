@@ -4,7 +4,9 @@ Options -MultiViews -Indexes
     Require all denied
 </FilesMatch>
 
+# Logs e artefatos locais do agendador não devem ser servidos.
 RewriteEngine On
+RewriteRule ^\.local/ - [F,L]
 
 # Redireciona tudo para o index.php, exceto arquivos e diretórios que realmente existem
 RewriteCond %{REQUEST_FILENAME} !-f
